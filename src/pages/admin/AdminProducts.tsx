@@ -10,6 +10,8 @@ export const AdminProducts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   // Retrieve current admin details
   const currentAdminStr = localStorage.getItem('siddhi_admin_user');
@@ -241,10 +243,26 @@ export const AdminProducts: React.FC = () => {
             </button>
           )}
         </div>
-        <button className="flex items-center px-4 py-2 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors border border-slate-200">
-          <Filter size={18} className="mr-2" />
-          Filters
-        </button>
+        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2 sm:pb-0">
+          <button 
+            onClick={() => setActiveCategory('All')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${activeCategory === 'All' ? 'bg-amber-100 text-amber-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+          >
+            All Products
+          </button>
+          {Array.from(new Set(products.map(p => {
+            const cat = p.category?.name || 'Uncategorized';
+            return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+          }))).map(cat => (
+            <button 
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${activeCategory === cat ? 'bg-amber-100 text-amber-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table */}
@@ -263,17 +281,18 @@ export const AdminProducts: React.FC = () => {
                     />
                   </th>
                 )}
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Part No</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Product</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category & Brand</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Core / Size</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Price / MRP</th>
                 {isAdmin && <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
                     <div className="flex justify-center items-center">
                       <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-3"></div>
                       Loading products...
@@ -282,7 +301,7 @@ export const AdminProducts: React.FC = () => {
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                       <ShoppingBag size={24} className="text-slate-400" />
                     </div>
@@ -291,7 +310,12 @@ export const AdminProducts: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                products.map((product) => (
+                products
+                  .filter(p => {
+                    const normalizedCat = (p.category?.name || 'Uncategorized').charAt(0).toUpperCase() + (p.category?.name || 'Uncategorized').slice(1).toLowerCase();
+                    return activeCategory === 'All' || normalizedCat === activeCategory;
+                  })
+                  .map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                     {isAdmin && (
                       <td className="px-6 py-4">
@@ -303,38 +327,70 @@ export const AdminProducts: React.FC = () => {
                         />
                       </td>
                     )}
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700">
+                      {product.partNo || '-'}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden relative group">
                           {product.imageUrl ? (
-                            <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <ShoppingBag size={18} className="text-slate-400" />
-                          )}
-                          {isAdmin && (
-                            <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer">
-                              <Upload size={14} className="text-white" />
-                              <input 
-                                type="file" 
-                                className="hidden" 
-                                accept="image/*"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const fd = new FormData();
-                                  fd.append('image', file);
-                                  try {
-                                    const res = await fetch(`http://localhost:5000/api/products/${product.id}/image`, {
-                                      method: 'POST',
-                                      body: fd
-                                    });
-                                    if (res.ok) fetchProducts();
-                                  } catch (err) {
-                                    console.error(err);
-                                  }
-                                }}
+                            <>
+                              <img 
+                                src={product.imageUrl} 
+                                alt={product.name} 
+                                className="h-full w-full object-cover cursor-pointer" 
+                                onClick={() => setViewingImage(product.imageUrl)}
                               />
-                            </label>
+                              {isAdmin && (
+                                <button 
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if(confirm('Delete image?')) {
+                                      try {
+                                        const res = await fetch(`http://localhost:5000/api/products/${product.id}/image`, {
+                                          method: 'DELETE',
+                                          headers: { 'Authorization': `Bearer ${localStorage.getItem('siddhi_admin_token')}` }
+                                        });
+                                        if (res.ok) fetchProducts();
+                                      } catch (err) { console.error(err); }
+                                    }
+                                  }}
+                                  className="absolute inset-0 bg-black/50 hidden group-hover:flex flex-col items-center justify-center cursor-pointer text-white text-xs"
+                                >
+                                  <X size={14} className="text-red-400 mb-1" />
+                                  Remove
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag size={18} className="text-slate-400" />
+                              {isAdmin && (
+                                <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer">
+                                  <Upload size={14} className="text-white" />
+                                  <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      const fd = new FormData();
+                                      fd.append('image', file);
+                                      try {
+                                        const res = await fetch(`http://localhost:5000/api/products/${product.id}/image`, {
+                                          method: 'POST',
+                                          body: fd
+                                        });
+                                        if (res.ok) fetchProducts();
+                                      } catch (err) {
+                                        console.error(err);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              )}
+                            </>
                           )}
                         </div>
                         <div className="ml-4">
@@ -395,12 +451,24 @@ export const AdminProducts: React.FC = () => {
                   <input type="text" name="name" defaultValue={currentProduct?.name || ''} required className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Category Name</label>
-                  <input type="text" name="categoryName" defaultValue={currentProduct?.category?.name || ''} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Category / Group *</label>
+                  <select name="categoryName" defaultValue={currentProduct?.category?.name || currentProduct?.categoryName || ''} required className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="">Select Category...</option>
+                    <option value="Power and Control Cables">Power and Control Cables (ÖLFLEX)</option>
+                    <option value="Data Communication Cables">Data Communication Cables (UNITRONIC)</option>
+                    <option value="Control Cabinet Single Cores">Control Cabinet Single Cores (UNIPLUS)</option>
+                    <option value="Cable Glands & Counter Nuts">Cable Glands & Counter Nuts (SKINTOP)</option>
+                    <option value="Rill, Conduit & Klick">Rill, Conduit & Klick (SILVYN)</option>
+                    <option value="Switchgear">Switchgear</option>
+                    <option value="Earthing">Earthing</option>
+                    <option value="Marking Systems">Marking Systems</option>
+                    <option value="Plugs & Sockets">Plugs & Sockets</option>
+                    <option value="Accessories">Accessories</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Brand Name</label>
-                  <input type="text" name="brandName" defaultValue={currentProduct?.brand?.name || ''} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="text" name="brandName" defaultValue={currentProduct?.brand?.name || currentProduct?.brandName || ''} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Price</label>
@@ -412,7 +480,7 @@ export const AdminProducts: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Core Size</label>
-                  <input type="text" name="coreSize" defaultValue={currentProduct?.coreSize || ''} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="text" name="coreSize" defaultValue={currentProduct?.coreSize || currentProduct?.size || ''} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
               </div>
               <div className="flex justify-end pt-4 border-t border-slate-100">
@@ -424,6 +492,17 @@ export const AdminProducts: React.FC = () => {
         </div>
       )}
 
+      {/* Image Viewer Modal */}
+      {viewingImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4" onClick={() => setViewingImage(null)}>
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setViewingImage(null)} className="absolute -top-10 right-0 text-white hover:text-red-400 p-2">
+              <X size={28} />
+            </button>
+            <img src={viewingImage} alt="Product full view" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -322,87 +322,150 @@ export const AdminRFQs: React.FC = () => {
       </div>
 
       {selectedRfq && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 shrink-0">
-              <h3 className="text-xl font-bold text-slate-800">Quotation Details: {selectedRfq.quoteNo}</h3>
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white shadow-2xl w-full max-w-4xl min-h-[80vh] flex flex-col relative my-auto animate-in zoom-in-95 duration-300 print:w-full print:h-auto print:shadow-none print:m-0 print:p-0 rounded-xl overflow-hidden">
+            
+            {/* Top Toolbar (Hidden on Print) */}
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center print:hidden shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-200/50 px-2.5 py-1 rounded-md">
+                  Status: <span className="text-slate-800">{selectedRfq.status}</span>
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-200/50 px-2.5 py-1 rounded-md">
+                  Assigned: <span className="text-slate-800">{selectedRfq.assignedToName || 'None'}</span>
+                </span>
+              </div>
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => window.print()}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium text-sm print:hidden"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold text-sm shadow-sm"
                 >
                   <Printer size={16} />
-                  Print PDF
+                  Print Document
                 </button>
-                <button onClick={() => setSelectedRfq(null)} className="text-slate-400 hover:text-slate-600 print:hidden">
-                  <X size={24} />
+                <button onClick={() => setSelectedRfq(null)} className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-lg transition-colors">
+                  <X size={20} />
                 </button>
               </div>
             </div>
-            
-            <div className="p-6 overflow-y-auto print:overflow-visible print:h-auto print:max-h-none print:p-0">
-              <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+
+            {/* Official Invoice / Bill Document Area */}
+            <div className="p-8 sm:p-12 print:p-0 bg-white flex-1">
+              
+              {/* Header: Logo and Company Info */}
+              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">
                 <div>
-                  <p className="text-slate-500 font-medium">Customer Details</p>
-                  <p className="font-bold text-slate-800">{selectedRfq.companyName}</p>
-                  <p className="text-slate-600">{selectedRfq.customerName}</p>
-                  <p className="text-slate-600">{selectedRfq.email} | {selectedRfq.phone}</p>
+                  <img 
+                    src="/images/siddhi-kabel-lockup.png" 
+                    alt="Siddhi Kabel" 
+                    className="h-16 w-auto object-contain mb-4"
+                    onError={(e) => { e.currentTarget.src = '/images/siddhi-kabel-logo.png'; }}
+                  />
+                  <h1 className="text-xl font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
+                  <p className="text-sm text-slate-500 mt-1">Plot 42, Peenya Industrial Area, 2nd Stage</p>
+                  <p className="text-sm text-slate-500">Bangalore, Karnataka 560058</p>
+                  <p className="text-sm font-medium text-slate-600 mt-1">GSTIN: 29AABCU9603R1ZM</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-slate-500 font-medium">Date / Status</p>
-                  <p className="font-bold text-slate-800">{selectedRfq.date}</p>
-                  <p className="text-slate-600">{selectedRfq.status}</p>
+                <div className="sm:text-right mt-6 sm:mt-0 bg-slate-50 p-4 rounded-xl border border-slate-200 min-w-[240px]">
+                  <h2 className="text-2xl font-black text-slate-800 mb-1">QUOTATION</h2>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-3 text-left">
+                    <span className="text-slate-500 font-medium">Quote No:</span>
+                    <span className="font-bold text-slate-900 font-mono text-right">{selectedRfq.quoteNo}</span>
+                    <span className="text-slate-500 font-medium">Date:</span>
+                    <span className="font-bold text-slate-900 text-right">{selectedRfq.date || new Date(selectedRfq.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
 
-              <h4 className="font-bold text-slate-800 mb-3 uppercase tracking-wider text-xs">Requested Items</h4>
-              {selectedRfq.items && selectedRfq.items.length > 0 ? (
-                <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2 px-3 font-semibold text-slate-600">Part No</th>
-                        <th className="py-2 px-3 font-semibold text-slate-600">Description</th>
-                        <th className="py-2 px-3 font-semibold text-slate-600">Brand</th>
-                        <th className="py-2 px-3 font-semibold text-slate-600 text-right">Qty</th>
-                        <th className="py-2 px-3 font-semibold text-slate-600 text-right">Unit Price</th>
-                        <th className="py-2 px-3 font-semibold text-slate-600 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {selectedRfq.items.map((item: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="py-2 px-3 font-mono">{item.partNo}</td>
-                          <td className="py-2 px-3">{item.name}</td>
-                          <td className="py-2 px-3">{item.brand}</td>
-                          <td className="py-2 px-3 text-right">{item.qty}</td>
-                          <td className="py-2 px-3 text-right">₹{item.unitPrice?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                          <td className="py-2 px-3 text-right font-medium">₹{item.totalBeforeTax?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              {/* Bill To Section */}
+              <div className="mb-8">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1 inline-block">Billed To</h3>
+                <div className="text-slate-800">
+                  <p className="text-lg font-bold">{selectedRfq.companyName}</p>
+                  <p className="text-sm font-medium mt-1">Attn: {selectedRfq.customerName}</p>
+                  <p className="text-sm text-slate-600 mt-1">Email: {selectedRfq.email}</p>
+                  <p className="text-sm text-slate-600">Phone: {selectedRfq.phone}</p>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-900 text-white">
+                    <tr>
+                      <th className="py-3 px-4 font-semibold w-12 text-center">#</th>
+                      <th className="py-3 px-4 font-semibold">Part Number & Description</th>
+                      <th className="py-3 px-4 font-semibold">Brand</th>
+                      <th className="py-3 px-4 font-semibold text-right">Qty</th>
+                      <th className="py-3 px-4 font-semibold text-right">Unit Rate</th>
+                      <th className="py-3 px-4 font-semibold text-right">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 text-slate-700">
+                    {selectedRfq.items && selectedRfq.items.length > 0 ? (
+                      selectedRfq.items.map((item: any, idx: number) => (
+                        <tr key={idx} className="group hover:bg-slate-50">
+                          <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
+                          <td className="py-3 px-4">
+                            <p className="font-bold text-slate-900 font-mono">{item.partNo}</p>
+                            <p className="text-slate-500 text-xs mt-0.5">{item.name}</p>
+                          </td>
+                          <td className="py-3 px-4 font-medium">{item.brand}</td>
+                          <td className="py-3 px-4 text-right font-bold">{item.qty} {item.unit || 'nos'}</td>
+                          <td className="py-3 px-4 text-right font-mono">₹{item.unitPrice?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td className="py-3 px-4 text-right font-bold text-slate-900 font-mono">₹{item.totalBeforeTax?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500 italic">No items found for this quotation.</p>
-              )}
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-slate-500 italic">No items listed in this quotation.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-              <div className="mt-6 flex justify-end">
-                <div className="w-64 space-y-2 text-sm">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal:</span>
-                    <span className="font-mono">₹{selectedRfq.subtotal?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</span>
+              {/* Totals Section */}
+              <div className="flex flex-col sm:flex-row justify-between items-end border-t-2 border-slate-900 pt-6">
+                <div className="w-full sm:w-1/2 mb-6 sm:mb-0">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Terms & Conditions</h4>
+                  <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
+                    <li>Validity: 30 Days from date of quotation</li>
+                    <li>Delivery: Ex-Stock Bangalore</li>
+                    <li>Payment: 30 Days Credit against approved PO</li>
+                    <li>Subject to Bangalore Jurisdiction</li>
+                  </ul>
+                </div>
+                <div className="w-full sm:w-72 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                  <div className="space-y-2 text-sm text-slate-600 mb-3 pb-3 border-b border-slate-200">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span className="font-mono font-medium text-slate-800">₹{selectedRfq.subtotal?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tax (GST 18%)</span>
+                      <span className="font-mono font-medium text-slate-800">₹{((selectedRfq.grandTotal || 0) - (selectedRfq.subtotal || 0))?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between font-bold text-slate-800 text-lg border-t border-slate-200 pt-2">
-                    <span>Grand Total:</span>
-                    <span className="font-mono">₹{selectedRfq.grandTotal?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                  <div className="flex justify-between items-center text-lg font-black text-slate-900">
+                    <span>Grand Total</span>
+                    <span className="font-mono text-xl text-blue-700">₹{selectedRfq.grandTotal?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</span>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="p-4 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setSelectedRfq(null)} className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg font-medium">Close</button>
+
+              {/* Footer / Signature Area */}
+              <div className="mt-16 pt-8 border-t border-slate-200 flex justify-between items-end text-sm">
+                <div className="text-slate-500">
+                  <p>Computer generated document.</p>
+                  <p>No signature required.</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-slate-800 mb-12">For Siddhi Kabel Corp Pvt Ltd</p>
+                  <p className="text-slate-500 border-t border-slate-300 pt-1 inline-block px-4">Authorized Signatory</p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

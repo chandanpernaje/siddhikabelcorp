@@ -26,14 +26,20 @@ mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 5000 })
 
 // --- Mongoose Schemas & Models ---
 const productSchema = new mongoose.Schema({
+  partNo: { type: String, required: false },
   name: { type: String, required: true },
+  description: { type: String, default: null },
   categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
   categoryName: { type: String, default: null },
   brandId: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', default: null },
   brandName: { type: String, default: null },
   price: { type: Number, default: null },
+  mrp: { type: Number, default: null },
+  gst: { type: Number, default: null },
   core: { type: String, default: null },
   coreSize: { type: String, default: null },
+  pe: { type: String, default: null },
+  size: { type: Number, default: null },
   outerDiameter: { type: String, default: null },
   copperIndex: { type: String, default: null },
   weight: { type: String, default: null },
@@ -357,7 +363,10 @@ app.get('/api/products', async (req, res) => {
       brand: { name: p.brandName },
       core: p.core,
       coreSize: p.coreSize,
+      size: p.size,
       price: p.price,
+      mrp: p.mrp,
+      gst: p.gst,
       imageUrl: p.imageUrl
     }));
     res.json(formatted);
@@ -440,6 +449,48 @@ app.put('/api/products/:id', verifyAdmin, async (req, res) => {
   }
 });
 
+// Upload Product Image API
+app.post('/api/products/:id/image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image provided' });
+    }
+    // In a real app, upload to S3/Cloudinary and get URL.
+    // Here we'll just mock a URL or save it locally.
+    // For local, we'd need express.static. Let's just create a mock or data URI
+    // But since multer uses memoryStorage (assuming), let's create a base64 string
+    const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    
+    const product = await Product.findByIdAndUpdate(
+      req.params.id, 
+      { imageUrl: base64Image }, 
+      { new: true }
+    );
+    
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json({ message: 'Image uploaded successfully', imageUrl: product.imageUrl });
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Delete Product Image API
+app.delete('/api/products/:id/image', verifyAdmin, async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id, 
+      { $unset: { imageUrl: 1 } }, 
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json({ message: 'Image deleted successfully' });
+  } catch (error) {
+    console.error('Delete image error:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
+  }
+});
+
 // Delete Product API
 app.delete('/api/products/:id', verifyAdmin, async (req, res) => {
   try {
@@ -510,12 +561,18 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
 
         // Create product directly
         await Product.create({
+          partNo: row['Part No'] ? String(row['Part No']) : null,
           name: String(productName),
+          description: row['Description'] ? String(row['Description']) : null,
           categoryName: categoryName,
           brandName: brandName,
           price: row['Price'] ? parseFloat(row['Price']) : null,
+          mrp: row['MRP'] ? parseFloat(row['MRP']) : null,
+          gst: row['GST'] ? parseFloat(row['GST']) : null,
           core: row['Core'] ? String(row['Core']) : null,
           coreSize: row['Core Size'] ? String(row['Core Size']) : null,
+          pe: row['PE'] ? String(row['PE']) : null,
+          size: row['Size'] ? parseFloat(row['Size']) : null,
           outerDiameter: row['Outer Diameter'] ? String(row['Outer Diameter']) : null,
           copperIndex: row['Copper Index'] ? String(row['Copper Index']) : null,
           weight: row['Weight'] ? String(row['Weight']) : null,

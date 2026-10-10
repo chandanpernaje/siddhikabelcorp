@@ -100,61 +100,49 @@ export const OlflexCables: React.FC = () => {
   const groupParam = searchParams.get("group") || "olflex";
   
   const [dbProducts, setDbProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/products')
       .then(res => res.json())
       .then(data => {
         setDbProducts(data);
-        setLoading(false);
       })
-      .catch(err => {
-        console.error("Failed to fetch products:", err);
-        setLoading(false);
-      });
+      .catch(err => console.error("Failed to fetch products:", err));
   }, []);
 
   // Fallback to static data by default
   let SECTIONS: any[] = [];
-  if (groupParam === "unitronic") SECTIONS = UNITRONIC_SECTIONS;
-  else if (groupParam === "skintop") SECTIONS = SKINTOP_SECTIONS;
-  else if (groupParam === "silvyn") SECTIONS = SILVYN_SECTIONS;
-  else if (groupParam === "uniplus") SECTIONS = UNIPLUS_SECTIONS;
-  else if (groupParam === "infra") SECTIONS = INFRA_SECTIONS;
-  else SECTIONS = OLFLEX_SECTIONS;
+  if (groupParam === "unitronic") SECTIONS = [...UNITRONIC_SECTIONS];
+  else if (groupParam === "skintop") SECTIONS = [...SKINTOP_SECTIONS];
+  else if (groupParam === "silvyn") SECTIONS = [...SILVYN_SECTIONS];
+  else if (groupParam === "uniplus") SECTIONS = [...UNIPLUS_SECTIONS];
+  else if (groupParam === "infra") SECTIONS = [...INFRA_SECTIONS];
+  else SECTIONS = [...OLFLEX_SECTIONS];
 
-  // If DB products exist, override the static data
-  if (!loading && dbProducts.length > 0) {
-    const grouped: Record<string, any[]> = {};
-    dbProducts.forEach(p => {
-      // Create a mapped product
-      const mapped = {
-        id: p.id,
-        partNo: p.partNo || `P-${p.id.substring(0,6)}`,
-        name: p.name,
-        brand: p.brand?.name || (typeof p.brand === 'string' ? p.brand : 'LAPP'),
-        price: p.price || 0,
-        core: p.core,
-        size: p.coreSize,
-        imageUrl: p.imageUrl
-      };
-      // Try to group by category name, fallback to a default
-      const catName = p.category?.name || p.categoryName || 'Siddhi Products';
-      if (!grouped[catName]) grouped[catName] = [];
-      grouped[catName].push(mapped);
+  if (dbProducts.length > 0) {
+    const newItems = dbProducts.filter((p: any) => {
+      const cat = p.category?.name || p.categoryName || '';
+      if (groupParam === "olflex" && cat === "Power and Control Cables") return true;
+      if (groupParam === "unitronic" && cat === "Data Communication Cables") return true;
+      if (groupParam === "skintop" && cat === "Cable Glands & Counter Nuts") return true;
+      if (groupParam === "silvyn" && cat === "Rill, Conduit & Klick") return true;
+      if (groupParam === "uniplus" && cat === "Control Cabinet Single Cores") return true;
+      return false;
     });
 
-    const dbSections = Object.entries(grouped).map(([title, items], idx) => ({
-      id: `cat-${idx}`,
-      title,
-      data: items,
-      image: '/images/cable-olflex-cores.png' // Use a generic default for the section banner
-    }));
-    
-    SECTIONS = [...SECTIONS, ...dbSections];
+    if (newItems.length > 0) {
+      SECTIONS.push({
+        id: 'new-db-items',
+        title: 'Newly Added Products',
+        image: '/images/cable-olflex-cores.png',
+        data: newItems.map((p: any) => ({
+          ...p,
+          brand: p.brand?.name || p.brandName || 'LAPP',
+          size: p.coreSize
+        }))
+      });
+    }
   }
-  
   const groupTitle = groupParam === "unitronic" ? "UNITRONIC® Data Cables" 
                    : groupParam === "skintop" ? "SKINTOP® Cable Glands"
                    : groupParam === "silvyn" ? "SILVYN® Conduits"
