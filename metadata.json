@@ -1,0 +1,8 @@
+{
+  "name": "Siddhi E-Shop | Industrial Electrical & Cable Distribution",
+  "description": "Authorized distributor for Lapp Kabel, Eaton Moeller, Partex, and Mennekes. High-end industrial catalog, live cable configurator, and instant GST B2B quotation generator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

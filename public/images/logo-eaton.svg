@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 52" width="250" height="52">
+  <!-- EATON and Moeller in Blue colour as requested -->
+  <text x="0" y="32" font-family="'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="34" fill="#005eb8" letter-spacing="1">EATON</text>
+  <text x="116" y="32" font-family="'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="28" fill="#005eb8" letter-spacing="0.5">Moeller</text>
+  <text x="0" y="47" font-family="'Segoe UI', -apple-system, Arial, sans-serif" font-weight="700" font-size="10.5" fill="#475569" letter-spacing="0.4">Powering Business Worldwide</text>
+</svg>

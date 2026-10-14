@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 50" width="210" height="50">
+  <g transform="translate(0, 4)">
+    <path d="M0,0 L12,0 L22,20 L12,40 L0,40 L10,20 Z" fill="#e11d48"/>
+    <path d="M14,0 L26,0 L36,20 L26,40 L14,40 L24,20 Z" fill="#eab308"/>
+    <path d="M28,0 L40,0 L50,20 L40,40 L28,40 L38,20 Z" fill="#0284c7"/>
+  </g>
+  <text x="60" y="32" font-family="'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="32" fill="#1e293b" letter-spacing="1.5">PARTEX</text>
+  <text x="61" y="45" font-family="'Segoe UI', -apple-system, Arial, sans-serif" font-weight="800" font-size="9.5" fill="#64748b" letter-spacing="1">MARKING SYSTEMS</text>
+</svg>

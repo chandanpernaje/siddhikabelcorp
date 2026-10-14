@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ÖLFLEX® CLASSIC 110 | Lapp India - Siddhi Eshop</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/siddhi-logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    :root {
+      --lapp-orange: #ff6600;
+      --primary-blue: #0077b6;
+      --navy: #0f172a;
+    }
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Header */
+    .sheet-header {
+      background: #ffffff;
+      padding: 12px 0;
+      border-bottom: 2px solid #e2e8f0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .sheet-header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .sheet-logo-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .sheet-partner-pill {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #ea580c;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .sheet-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sheet-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .sheet-nav-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .sheet-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffffff;
+      background: var(--lapp-orange);
+      font-size: 12.5px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 7px 16px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .sheet-back-btn:hover {
+      background: #e65c00;
+      box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+    }
+
+    .pdp-main {
+      flex: 1;
+      padding: 20px 0 50px;
+    }
+    .pdp-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Breadcrumbs */
+    .pdp-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+    .pdp-breadcrumbs a {
+      color: #64748b;
+      text-decoration: none;
+    }
+    .pdp-breadcrumbs a:hover {
+      color: var(--lapp-orange);
+    }
+    .pdp-breadcrumbs .active-crumb {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    /* 3-Column Top Section */
+    .pdp-top-grid {
+      display: grid;
+      grid-template-columns: 440px 1fr 320px;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 36px;
+    }
+    @media (max-width: 1180px) {
+      .pdp-top-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .pdp-actions-col {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (max-width: 768px) {
+      .pdp-top-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Column: Enhanced High-Res Image Gallery with Point & Scroll Zoom */
+    .pdp-gallery-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 80px;
+    }
+    .pdp-img-preview {
+      width: 100%;
+      height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      margin-bottom: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+      user-select: none;
+    }
+    .pdp-img-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.12s ease-out;
+      transform-origin: center center;
+      pointer-events: none;
+    }
+    .pdp-zoom-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(6px);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+    }
+    .pdp-thumbs-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+    }
+    .pdp-thumb-item {
+      flex: 1;
+      max-width: 92px;
+      height: 64px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .pdp-thumb-item:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+    }
+    .pdp-thumb-item.active {
+      border-color: var(--lapp-orange, #ff6600);
+      box-shadow: 0 0 0 1px var(--lapp-orange, #ff6600);
+    }
+    .pdp-thumb-item img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* Middle Column: Specs & Selectors */
+    .pdp-info-col {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 22px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .pdp-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 4px;
+    }
+    .pdp-subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0 0 10px;
+    }
+    .pdp-part-badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 14px;
+    }
+    .pdp-callout-box {
+      background: #f8fafc;
+      border-left: 3px solid #0284c7;
+      border-top: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .pdp-callout-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .pdp-callout-desc {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .pdp-callout-bullet {
+      font-size: 11.5px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .pdp-pdf-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #dc2626;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .pdp-pdf-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* Price Bar */
+    .pdp-price-row {
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .pdp-price-tax-note {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .pdp-price-main-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .pdp-price-big {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .pdp-price-gst {
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .pdp-price-mrp-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .pdp-mrp-strike {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+    .pdp-discount-tag {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    /* Matrix Selectors */
+    .pdp-selector-group {
+      margin-bottom: 16px;
+    }
+    .pdp-selector-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+    .pdp-pills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pdp-pill-btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pdp-pill-btn:hover {
+      border-color: #94a3b8;
+      background: #f8fafc;
+    }
+    .pdp-pill-btn.active {
+      border-color: #ef4444;
+      color: #ef4444;
+      background: #fff;
+      box-shadow: 0 0 0 1px #ef4444;
+      font-weight: 700;
+    }
+    #pePillsWrap .pdp-pill-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+    #pePillsWrap .pdp-pill-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+    }
+    .pdp-toggle-pe {
+      display: inline-flex;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .pdp-toggle-btn {
+      border: none;
+      background: #ffffff;
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+    }
+    .pdp-toggle-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* Right Column: Actions */
+    .pdp-actions-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .pdp-action-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .pdp-qty-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 14px 0 10px;
+    }
+    .pdp-qty-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .pdp-qty-ctrl {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .pdp-qty-ctrl button {
+      background: #f8fafc;
+      border: none;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      cursor: pointer;
+      color: #334155;
+    }
+    .pdp-qty-ctrl button:hover {
+      background: #e2e8f0;
+    }
+    .pdp-qty-ctrl input {
+      width: 44px;
+      height: 32px;
+      border: none;
+      border-left: 1px solid #cbd5e1;
+      border-right: 1px solid #cbd5e1;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .pdp-caution-text {
+      font-size: 10.5px;
+      color: #d97706;
+      line-height: 1.4;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .btn-pdp-enquiry {
+      width: 100%;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      margin-bottom: 10px;
+    }
+    .btn-pdp-enquiry:hover {
+      background: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .btn-pdp-quote {
+      width: 100%;
+      background: #dc2626;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-pdp-quote:hover {
+      background: #b91c1c;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    /* Bulk Order Box */
+    .pdp-bulk-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .pdp-bulk-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #166534;
+      margin-bottom: 4px;
+    }
+    .pdp-bulk-desc {
+      font-size: 11.5px;
+      color: #15803d;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .btn-pdp-rfq {
+      width: 100%;
+      background: #16a34a;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+    }
+    .btn-pdp-rfq:hover {
+      background: #15803d;
+    }
+
+    /* Tech Summary Box */
+    .pdp-mini-tech-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .pdp-mini-tech-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #1e3a8a;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .pdp-mini-tech-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      text-align: center;
+      gap: 8px;
+    }
+    .pdp-mini-item-label {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-bottom: 3px;
+    }
+    .pdp-mini-item-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    /* Bottom Technical Details Grid */
+    .pdp-bottom-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .pdp-bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+    @media (max-width: 900px) {
+      .pdp-bottom-grid { grid-template-columns: 1fr; gap: 24px; }
+    }
+    .pdp-section-h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    .pdp-spec-block {
+      margin-bottom: 18px;
+    }
+    .pdp-spec-h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px;
+    }
+    .pdp-spec-ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 12.5px;
+      color: #475569;
+      line-height: 1.6;
+    }
+    .pdp-tech-item-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+    }
+    .pdp-tech-icon {
+      color: #64748b;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .pdp-tech-content strong {
+      display: block;
+      color: #0f172a;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .pdp-tech-content span {
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    /* Sourcing Footer */
+    .sheet-footer-bar {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+    .sheet-footer-text {
+      font-size: 12.5px;
+      color: #94a3b8;
+    }
+    .sheet-footer-text strong {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sheet-header">
+    <div class="sheet-header-inner">
+      <div class="sheet-logo-badge-wrap">
+        <a href="index.html" title="Siddhi Kabel Corporation Private Limited">
+          <img src="assets/images/siddhi-kabel-lockup.png" alt="Siddhi Kabel Corporation Private Limited" style="height: 46px; width: auto; object-fit: contain; display: block;">
+        </a>
+        <span class="sheet-partner-pill">Authorized Channel Partner</span>
+      </div>
+
+      <div class="sheet-header-actions">
+        <a href="about-lapp.html" class="sheet-nav-btn">
+          About LAPP India
+        </a>
+        <a href="olflex-cables.html" class="sheet-back-btn">
+          &larr; Back to ÖLFLEX® Sheet
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="pdp-main">
+    <div class="pdp-wrap">
+
+      <!-- Breadcrumbs -->
+      <div class="pdp-breadcrumbs">
+        <a href="index.html">Home</a>
+        <span>&rsaquo;</span>
+        <a href="about-lapp.html">LAPP India</a>
+        <span>&rsaquo;</span>
+        <a href="olflex-cables.html">ÖLFLEX® Power &amp; Control Cables</a>
+        <span>&rsaquo;</span>
+        <span class="active-crumb" id="pdpBreadcrumbName">ÖLFLEX® CLASSIC 110 2X0,5</span>
+      </div>
+
+      <!-- Top Section (3 Columns) -->
+      <div class="pdp-top-grid">
+
+        <!-- 1. Left Gallery (High-Res Images with Hover & Scroll Zoom) -->
+        <div class="pdp-gallery-card">
+          <div class="pdp-img-preview" id="pdpImgPreview" title="Hover to inspect &bull; Scroll wheel to zoom in/out">
+            <div class="pdp-zoom-badge" id="pdpZoomBadge">
+              🔍 Hover or scroll to zoom
+            </div>
+            <img src="assets/images/cable-olflex-angle.png" alt="ÖLFLEX CLASSIC 110 Cable View" id="pdpMainImg">
+          </div>
+          
+          <!-- 4 Interactive High-Res Thumbnails -->
+          <div class="pdp-thumbs-row">
+            <div class="pdp-thumb-item active" onclick="switchGalleryImage('assets/images/cable-olflex-angle.png', this)" title="Angle 3D Stripped Jacket View">
+              <img src="assets/images/cable-olflex-angle.png" alt="Angle View">
+            </div>
+            <div class="pdp-thumb-item" onclick="switchGalleryImage('assets/images/cable-olflex-cores.png', this)" title="Cross Section & Layer Structure">
+              <img src="assets/images/cable-olflex-cores.png" alt="Cross Section">
+            </div>
+            <div class="pdp-thumb-item" onclick="switchGalleryImage('assets/images/cable-olflex-drum.png', this)" title="Industrial Lapp Packaging Drum">
+              <img src="assets/images/cable-olflex-drum.png" alt="Packaging Drum">
+            </div>
+            <div class="pdp-thumb-item" onclick="switchGalleryImage('assets/images/cable-olflex-detail.png', this)" title="Detailed Cable Cut">
+              <img src="assets/images/cable-olflex-detail.png" alt="Detail Cut">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Middle Info & Variant Matrix -->
+        <div class="pdp-info-col">
+          <h1 class="pdp-title" id="pdpTitle">ÖLFLEX ® CLASSIC 110 2X0,5 Sqmm</h1>
+          <p class="pdp-subtitle" id="pdpSubtitle">PVC Copper Insulated Number coded cables</p>
+          <div class="pdp-part-badge">Part No: <span id="pdpPartNo" style="color: #0077b6;">1119752</span></div>
+
+          <div class="pdp-callout-box">
+            <div class="pdp-callout-title">Oil-resistant PVC control cable with numbered cores</div>
+            <div class="pdp-callout-desc">
+              ÖLFLEX® CLASSIC 110 - PVC control cable, VDE registered and with numbered cores, flexible cable for various applications, U0/U: 300/500V
+            </div>
+            <div class="pdp-callout-bullet">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              VDE certificate of conformity with factory surveillance
+            </div>
+            <a href="javascript:void(0)" onclick="downloadDatasheet()" class="pdp-pdf-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+              product information (PDF)
+            </a>
+          </div>
+
+          <!-- Price Display -->
+          <div class="pdp-price-row">
+            <div class="pdp-price-tax-note"><span id="pdpPriceGross">₹255.87</span> (incl. of all taxes) / mtr</div>
+            <div class="pdp-price-main-wrap">
+              <span class="pdp-price-big" id="pdpPriceMain">₹216.84</span>
+              <span class="pdp-price-gst" id="pdpPriceGst">+ ₹39.03 GST</span>
+            </div>
+            <div class="pdp-price-mrp-wrap">
+              <span>MRP</span>
+              <span class="pdp-mrp-strike" id="pdpPriceMrp">₹394.26</span>
+              <span class="pdp-discount-tag">45% OFF</span>
+            </div>
+          </div>
+
+          <!-- Matrix Selectors (Order: 1. Core -> 2. Size -> 3. Protective Conductor) -->
+          
+          <!-- 1. NUMBER OF CORE FIRST -->
+          <div class="pdp-selector-group">
+            <div class="pdp-selector-label">
+              <span>1. Number of core</span>
+              <span id="selectedCoreDisplay" style="font-size: 12px; font-weight: 700; color: #ea580c;">2 Cores</span>
+            </div>
+            <div class="pdp-pills-wrap" id="coresPillsWrap">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- 2. SIZE (SQMM) SECOND -->
+          <div class="pdp-selector-group">
+            <div class="pdp-selector-label">
+              <span>2. Size (Sqmm)</span>
+              <span id="selectedSizeDisplay" style="font-size: 12px; font-weight: 700; color: #ea580c;">0.5 Sqmm</span>
+            </div>
+            <div class="pdp-pills-wrap" id="sizesPillsWrap">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- 3. PROTECTIVE CONDUCTOR THIRD -->
+          <div class="pdp-selector-group" style="margin-bottom: 0;">
+            <div class="pdp-selector-label">
+              <span>3. Protective conductor (with/without Yellow/Green)</span>
+              <span id="selectedPeDisplay" style="font-size: 12px; font-weight: 700; color: #ea580c;">Without (Numbered)</span>
+            </div>
+            <div class="pdp-pills-wrap" id="pePillsWrap">
+              <button type="button" class="pdp-pill-btn" id="btnPeWith" onclick="setPe('G')">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, #22c55e 50%, #eab308 50%); margin-right: 6px; vertical-align: middle;"></span>
+                With (Yellow/Green - G)
+              </button>
+              <button type="button" class="pdp-pill-btn active" id="btnPeWithout" onclick="setPe('X')">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #0f172a; margin-right: 6px; vertical-align: middle;"></span>
+                Without (All Numbered - X)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Right Action Box -->
+        <div class="pdp-actions-col">
+          <div class="pdp-action-card">
+            <div class="pdp-price-tax-note"><span id="pdpSummaryGross">₹255.87</span> (incl. of all taxes)</div>
+            <div class="pdp-price-main-wrap" style="margin-bottom: 2px;">
+              <span class="pdp-price-big" style="font-size: 22px;" id="pdpSummaryMain">₹216.84</span>
+              <span class="pdp-price-gst" style="font-size: 12px;" id="pdpSummaryGst">+ ₹39.03 GST</span>
+            </div>
+            <div class="pdp-price-mrp-wrap" style="margin-bottom: 12px;">
+              <span style="color: #94a3b8; font-size: 11.5px;">MRP</span>
+              <span class="pdp-mrp-strike" style="font-size: 11.5px;" id="pdpSummaryMrp">₹394.26</span>
+              <span class="pdp-discount-tag" style="font-size: 11.5px;">45% OFF</span>
+            </div>
+
+            <div class="pdp-qty-row">
+              <span class="pdp-qty-label">Update Qty (Mtrs)</span>
+              <div class="pdp-qty-ctrl">
+                <button type="button" onclick="adjustQty(-10)">-</button>
+                <input type="number" id="pdpQtyInput" value="10" min="10" step="10">
+                <button type="button" onclick="adjustQty(10)">+</button>
+              </div>
+            </div>
+
+            <div class="pdp-caution-text">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Caution: order Multiple of 10 Mtrs or 25 mtrs for all multicore</span>
+            </div>
+
+            <button type="button" class="btn-pdp-enquiry" onclick="handleAddToEnquiry()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              ADD TO ENQUIRY
+            </button>
+
+            <button type="button" class="btn-pdp-quote" onclick="handleRequestQuoteNow()">
+              ADD &amp; REQUEST QUOTE
+            </button>
+          </div>
+
+          <!-- Bulk Order Box -->
+          <div class="pdp-bulk-box">
+            <div class="pdp-bulk-title">Bulk Order?</div>
+            <div class="pdp-bulk-desc">Need a large quantity? Raise an RFQ to get our best custom B2B pricing for your project.</div>
+            <button type="button" class="btn-pdp-rfq" onclick="window.location.href='index.html#rfqSection'">RAISE RFQ</button>
+          </div>
+
+          <!-- Mini Technical Data Box -->
+          <div class="pdp-mini-tech-box">
+            <div class="pdp-mini-tech-title">Technical Data</div>
+            <div class="pdp-mini-tech-grid">
+              <div>
+                <div class="pdp-mini-item-label">Outer dia</div>
+                <div class="pdp-mini-item-val" id="pdpOuterDia">7.8 mm</div>
+              </div>
+              <div>
+                <div class="pdp-mini-item-label">Copper</div>
+                <div class="pdp-mini-item-val" id="pdpCopperIndex">10 kg/km</div>
+              </div>
+              <div>
+                <div class="pdp-mini-item-label">Weight</div>
+                <div class="pdp-mini-item-val" id="pdpWeight">117 kg/km</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Detailed Tech Specs -->
+      <div class="pdp-bottom-card">
+        <div class="pdp-bottom-grid">
+
+          <!-- Left: Product Description -->
+          <div>
+            <h2 class="pdp-section-h2">Product Description</h2>
+
+            <div class="pdp-spec-block">
+              <h4 class="pdp-spec-h4">Benefits</h4>
+              <ul class="pdp-spec-ul">
+                <li>High electrical performance due to 4 kV test voltage</li>
+                <li>Oil-resistant according to DIN EN 50290-2-22 (TM54)</li>
+                <li>Space-saving installation due to small cable diameters</li>
+                <li>High flexibility thanks to fine-wire strand copper conductor construction</li>
+              </ul>
+            </div>
+
+            <div class="pdp-spec-block">
+              <h4 class="pdp-spec-h4">Application range</h4>
+              <ul class="pdp-spec-ul">
+                <li>Plant engineering, Industrial machinery, Heating and air-conditioning systems</li>
+                <li>Machine tools, automated production lines, and conveyor systems</li>
+                <li>Mainly used in dry, damp and wet interiors (including water-oil mixtures)</li>
+                <li>For fixed installation as well as occasional flexing at free, non-continuously recurring movement without tensile load</li>
+              </ul>
+            </div>
+
+            <div class="pdp-spec-block">
+              <h4 class="pdp-spec-h4">Product features</h4>
+              <ul class="pdp-spec-ul">
+                <li>Flame-retardant according IEC 60332-1-2</li>
+                <li>Good chemical resistance, see catalogue appendix T1</li>
+                <li>Oil-resistant according to DIN EN 50290-2-22 (TM54)</li>
+              </ul>
+            </div>
+
+            <div class="pdp-spec-block">
+              <h4 class="pdp-spec-h4">Norm references / Approvals</h4>
+              <ul class="pdp-spec-ul">
+                <li>VDE reg. no. 7030</li>
+                <li>CE compliant according to Low Voltage Directive 2014/35/EU</li>
+              </ul>
+            </div>
+
+            <div class="pdp-spec-block">
+              <h4 class="pdp-spec-h4">Product Make-up</h4>
+              <ul class="pdp-spec-ul">
+                <li>Fine-wire strand made of bare copper wires (Class 5 acc. IEC 60228)</li>
+                <li>PVC Insulation LAPP P8/1</li>
+                <li>Cores twisted in layers with optimal lay length</li>
+                <li>PVC outer sheath, silver-grey (RAL 7001)</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Right: Technical Data -->
+          <div>
+            <h2 class="pdp-section-h2">Technical Data</h2>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 4.9V17L12 22l-9-4.9V7z"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Classification ETIM 5 / ETIM 6</strong>
+                <span>ETIM 5.0 / 6.0 Class-ID: EC000104 (Control cable)</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Core identification code</strong>
+                <span>Black with white numbers acc. to VDE 0293-334 (consecutive numbering)</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Conductor stranding</strong>
+                <span>Fine wire according to DIN EN 60228 (VDE 0295), class 5 / IEC 60228 class 5</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Torsion movement in WTG</strong>
+                <span>TW-0 &amp; TW-1, refer to Appendix T0</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Minimum bending radius</strong>
+                <span>Occasional flexing: 10 &times; outer diameter<br>Fixed installation: 4 &times; outer diameter</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Nominal voltage</strong>
+                <span>U0/U: 300/500 V</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Test voltage</strong>
+                <span>4000 V AC</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Protective conductor</strong>
+                <span>G = with GN-YE protective conductor (Yellow/Green earth)<br>X = without protective conductor (Numbered black cores only)</span>
+              </div>
+            </div>
+
+            <div class="pdp-tech-item-row">
+              <div class="pdp-tech-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              </div>
+              <div class="pdp-tech-content">
+                <strong>Temperature range</strong>
+                <span>Occasional flexing: -5°C to +70°C<br>Fixed installation: -40°C to +80°C</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer Bar -->
+      <div class="sheet-footer-bar">
+        <div class="sheet-footer-text">
+          Authorized Lapp Channel Partner: <strong>Siddhi Kabel Corporation Private Limited</strong> &bull; Banashankari 3rd Stage, Bangalore 560085 &bull; Phone: 09620000947
+        </div>
+        <div>
+          <a href="index.html#rfqSection" class="sheet-back-btn" style="padding: 8px 18px; font-size: 12.5px;">
+            Submit Official RFQ / BOM &rarr;
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Load Data -->
+  <script src="assets/js/olflex-110-data.js"></script>
+  <script>
+    // State
+    let currentPartNo = '1119752';
+    let currentProduct = null;
+    let selectedCore = 2;
+    let selectedPe = 'X';
+    let selectedSize = 0.5;
+
+    function initPDP() {
+      // 1. Check URL param
+      const params = new URLSearchParams(window.location.search);
+      const partFromUrl = params.get('part');
+      if (partFromUrl && OLFLEX_110_PRODUCTS.some(p => p.partNo === partFromUrl)) {
+        currentPartNo = partFromUrl;
+      }
+
+      currentProduct = OLFLEX_110_PRODUCTS.find(p => p.partNo === currentPartNo) || OLFLEX_110_PRODUCTS[0];
+      selectedCore = currentProduct.core;
+      selectedPe = currentProduct.pe;
+      selectedSize = currentProduct.size;
+
+      renderSelectors();
+      updateProductView();
+    }
+
+    function renderSelectors() {
+      const coresWrap = document.getElementById('coresPillsWrap');
+      const sizesWrap = document.getElementById('sizesPillsWrap');
+
+      // Unique cores
+      const allCores = [...new Set(OLFLEX_110_PRODUCTS.map(p => p.core))].sort((a,b) => a - b);
+      // Unique sizes
+      const allSizes = [...new Set(OLFLEX_110_PRODUCTS.map(p => p.size))].sort((a,b) => a - b);
+
+      // 1. Render Cores
+      coresWrap.innerHTML = allCores.map(c => `
+        <button type="button" class="pdp-pill-btn ${c === selectedCore ? 'active' : ''}" onclick="selectCore(${c})">
+          ${c} Core
+        </button>
+      `).join('');
+
+      // 2. Render Sizes
+      sizesWrap.innerHTML = allSizes.map(s => `
+        <button type="button" class="pdp-pill-btn ${s === selectedSize ? 'active' : ''}" onclick="selectSize(${s})">
+          ${s} Sqmm
+        </button>
+      `).join('');
+
+      // 3. Render PE State
+      const btnWith = document.getElementById('btnPeWith');
+      const btnWithout = document.getElementById('btnPeWithout');
+      if (btnWith && btnWithout) {
+        btnWith.classList.toggle('active', selectedPe === 'G');
+        btnWithout.classList.toggle('active', selectedPe === 'X');
+      }
+
+      // Update Labels
+      const coreDisp = document.getElementById('selectedCoreDisplay');
+      const sizeDisp = document.getElementById('selectedSizeDisplay');
+      const peDisp = document.getElementById('selectedPeDisplay');
+      if (coreDisp) coreDisp.innerText = `${selectedCore} Cores`;
+      if (sizeDisp) sizeDisp.innerText = `${selectedSize} Sqmm`;
+      if (peDisp) peDisp.innerText = selectedPe === 'G' ? 'With Earth (G)' : 'Without Earth (X)';
+    }
+
+    // --- INTERACTIVE POINT & SCROLL IMAGE ZOOM ---
+    let zoomScale = 1.0;
+    let isZoomed = false;
+
+    function initImageZoom() {
+      const previewEl = document.getElementById('pdpImgPreview');
+      const mainImgEl = document.getElementById('pdpMainImg');
+      const zoomBadgeEl = document.getElementById('pdpZoomBadge');
+      if (!previewEl || !mainImgEl) return;
+
+      // Mouse Move: Point to Zoom
+      previewEl.addEventListener('mousemove', (e) => {
+        const rect = previewEl.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        if (!isZoomed) {
+          isZoomed = true;
+          if (zoomScale <= 1.0) zoomScale = 2.2;
+        }
+
+        mainImgEl.style.transformOrigin = `${x}% ${y}%`;
+        mainImgEl.style.transform = `scale(${zoomScale})`;
+        if (zoomBadgeEl) {
+          zoomBadgeEl.innerHTML = `🔍 Zoom: ${Math.round(zoomScale * 100)}% (Scroll wheel to adjust)`;
+          zoomBadgeEl.style.background = 'rgba(234, 88, 12, 0.9)';
+        }
+      });
+
+      // Mouse Leave: Reset
+      previewEl.addEventListener('mouseleave', () => {
+        isZoomed = false;
+        zoomScale = 1.0;
+        mainImgEl.style.transformOrigin = 'center center';
+        mainImgEl.style.transform = 'scale(1)';
+        if (zoomBadgeEl) {
+          zoomBadgeEl.innerHTML = `🔍 Hover or scroll to zoom`;
+          zoomBadgeEl.style.background = 'rgba(15, 23, 42, 0.82)';
+        }
+      });
+
+      // Wheel Scroll: Zoom in/out
+      previewEl.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = previewEl.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        if (e.deltaY < 0) {
+          zoomScale = Math.min(zoomScale + 0.35, 4.5);
+        } else {
+          zoomScale = Math.max(zoomScale - 0.35, 1.0);
+        }
+
+        isZoomed = zoomScale > 1.0;
+        mainImgEl.style.transformOrigin = `${x}% ${y}%`;
+        mainImgEl.style.transform = `scale(${zoomScale})`;
+
+        if (zoomBadgeEl) {
+          zoomBadgeEl.innerHTML = `🔍 Zoom: ${Math.round(zoomScale * 100)}% (Scroll wheel to adjust)`;
+          zoomBadgeEl.style.background = isZoomed ? 'rgba(234, 88, 12, 0.9)' : 'rgba(15, 23, 42, 0.82)';
+        }
+      }, { passive: false });
+    }
+
+    function switchGalleryImage(src, thumbEl) {
+      const mainImg = document.getElementById('pdpMainImg');
+      if (!mainImg) return;
+      mainImg.src = src;
+      document.querySelectorAll('.pdp-thumb-item').forEach(t => t.classList.remove('active'));
+      if (thumbEl) thumbEl.classList.add('active');
+    }
+
+    function setPe(pe) {
+      selectedPe = pe;
+      findAndApplyProduct();
+    }
+
+    function selectCore(c) {
+      selectedCore = c;
+      findAndApplyProduct();
+    }
+
+    function selectSize(s) {
+      selectedSize = s;
+      findAndApplyProduct();
+    }
+
+    function findAndApplyProduct() {
+      // Try exact match: core, pe, size
+      let match = OLFLEX_110_PRODUCTS.find(p => p.core === selectedCore && p.pe === selectedPe && p.size === selectedSize);
+      
+      // If no exact match with PE, toggle PE
+      if (!match) {
+        match = OLFLEX_110_PRODUCTS.find(p => p.core === selectedCore && p.size === selectedSize);
+        if (match) selectedPe = match.pe;
+      }
+
+      // If no match with core, find closest core with same size
+      if (!match) {
+        match = OLFLEX_110_PRODUCTS.find(p => p.size === selectedSize);
+        if (match) {
+          selectedCore = match.core;
+          selectedPe = match.pe;
+        }
+      }
+
+      // Fallback
+      if (!match) match = OLFLEX_110_PRODUCTS[0];
+
+      currentProduct = match;
+      currentPartNo = match.partNo;
+      selectedCore = match.core;
+      selectedPe = match.pe;
+      selectedSize = match.size;
+
+      // Update URL query string without refresh
+      const url = new URL(window.location);
+      url.searchParams.set('part', currentPartNo);
+      window.history.replaceState({}, '', url);
+
+      renderSelectors();
+      updateProductView();
+    }
+
+    function updateProductView() {
+      const p = currentProduct;
+      if (!p) return;
+
+      document.title = `${p.name} | Lapp India - Siddhi Eshop`;
+      document.getElementById('pdpBreadcrumbName').innerText = p.name;
+      document.getElementById('pdpTitle').innerText = `${p.name} Sqmm`;
+      document.getElementById('pdpPartNo').innerText = p.partNo;
+
+      const gross = (p.price + p.gst).toFixed(2);
+      document.getElementById('pdpPriceGross').innerText = `₹${gross}`;
+      document.getElementById('pdpPriceMain').innerText = `₹${p.price.toFixed(2)}`;
+      document.getElementById('pdpPriceGst').innerText = `+ ₹${p.gst.toFixed(2)} GST`;
+      document.getElementById('pdpPriceMrp').innerText = `₹${p.mrp.toFixed(2)}`;
+
+      document.getElementById('pdpSummaryGross').innerText = `₹${gross}`;
+      document.getElementById('pdpSummaryMain').innerText = `₹${p.price.toFixed(2)}`;
+      document.getElementById('pdpSummaryGst').innerText = `+ ₹${p.gst.toFixed(2)} GST`;
+      document.getElementById('pdpSummaryMrp').innerText = `₹${p.mrp.toFixed(2)}`;
+
+      document.getElementById('pdpOuterDia').innerText = `${p.outerDia} mm`;
+      document.getElementById('pdpCopperIndex').innerText = `${p.copperIndex} kg/km`;
+      document.getElementById('pdpWeight').innerText = `${p.weight} kg/km`;
+    }
+
+    function adjustQty(delta) {
+      const input = document.getElementById('pdpQtyInput');
+      let val = parseInt(input.value) || 10;
+      val += delta;
+      if (val < 10) val = 10;
+      input.value = val;
+    }
+
+    function handleAddToEnquiry() {
+      const qty = parseInt(document.getElementById('pdpQtyInput').value) || 10;
+      alert(`Added ${qty} Meters of ${currentProduct.name} (Part No: ${currentProduct.partNo}) to your Enquiry!`);
+    }
+
+    function handleRequestQuoteNow() {
+      const qty = parseInt(document.getElementById('pdpQtyInput').value) || 10;
+      window.location.href = `index.html?inquiry=${encodeURIComponent(currentProduct.name + ' (Part: ' + currentProduct.partNo + ', Qty: ' + qty + 'm)')}#rfqSection`;
+    }
+
+    function downloadDatasheet() {
+      alert(`Downloading Official Lapp Data Sheet for ${currentProduct.name} (Part No: ${currentProduct.partNo})...`);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => { initPDP(); initImageZoom(); });
+  </script>
+</body>
+</html>

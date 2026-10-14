@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ÖLFLEX® Power &amp; Control Cables | Lapp India - Siddhi Eshop</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/siddhi-logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    :root {
+      --lapp-orange: #ff6600;
+      --lapp-orange-hover: #e65c00;
+      --lapp-orange-light: #fff7ed;
+      --lapp-orange-border: #fed7aa;
+      --lapp-dark: #0f172a;
+      --lapp-navy: #1e293b;
+    }
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Sleek Header */
+    .sheet-header {
+      background: #ffffff;
+      padding: 10px 0;
+      border-top: 4px solid var(--lapp-orange);
+      border-bottom: 2px solid #e2e8f0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .sheet-header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .sheet-logo-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sheet-partner-pill {
+      background: var(--lapp-orange-light);
+      border: 1px solid var(--lapp-orange-border);
+      color: #ea580c;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .sheet-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sheet-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .sheet-nav-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .sheet-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--lapp-orange);
+      border: 1px solid var(--lapp-orange);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .sheet-back-btn:hover {
+      background: var(--lapp-orange-hover);
+    }
+
+    /* Content Layout */
+    .sheet-main {
+      flex: 1;
+      padding: 16px 20px 40px;
+    }
+    .sheet-content-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Breadcrumbs */
+    .sheet-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .sheet-breadcrumbs a {
+      color: #475569;
+      text-decoration: none;
+    }
+    .sheet-breadcrumbs a:hover {
+      color: var(--lapp-orange);
+    }
+
+    /* Top Compact Hero Card */
+    .sheet-hero-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .sheet-hero-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .sheet-hero-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-orange {
+      background: var(--lapp-orange);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .sheet-hero-lead {
+      font-size: 12px;
+      color: #475569;
+      margin: 0 0 10px;
+      line-height: 1.45;
+    }
+    .sheet-app-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .sheet-app-tag {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Jump Bar */
+    .subgroups-jump-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: #ffffff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+    .subgroup-jump-btn {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #334155;
+      text-decoration: none;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .subgroup-jump-btn:hover {
+      background: var(--lapp-orange);
+      color: #ffffff;
+      border-color: var(--lapp-orange);
+    }
+    .subgroup-jump-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    .subgroup-jump-btn .count-badge {
+      background: rgba(0,0,0,0.14);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+    .subgroup-jump-btn.active .count-badge {
+      background: var(--lapp-orange);
+      color: #fff;
+    }
+
+    /* --- MASTER FILTER BAR (FILTERS ALL 4 SUB-GROUPS BELOW) --- */
+    .master-filter-container {
+      background: #ffffff;
+      border: 2px solid var(--lapp-orange-border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px rgba(255, 102, 0, 0.06);
+      position: sticky;
+      top: 66px;
+      z-index: 95;
+    }
+    .master-filter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .master-filter-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .master-filter-title svg {
+      color: var(--lapp-orange);
+    }
+    .master-filter-stats {
+      font-size: 11.5px;
+      color: #475569;
+      background: var(--lapp-orange-light);
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--lapp-orange-border);
+    }
+    .master-filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .master-search-wrap {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+    .master-search-wrap svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+    .master-search-input {
+      width: 100%;
+      padding: 7px 12px 7px 32px;
+      font-size: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s ease;
+      font-family: inherit;
+    }
+    .master-search-input:focus {
+      border-color: var(--lapp-orange);
+      box-shadow: 0 0 0 2px rgba(255,102,0,0.15);
+    }
+    .master-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .master-filter-lbl {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .master-select {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #1e293b;
+      cursor: pointer;
+      font-family: inherit;
+      outline: none;
+    }
+    .master-select:focus {
+      border-color: var(--lapp-orange);
+      box-shadow: 0 0 0 2px rgba(255,102,0,0.15);
+    }
+    .master-reset-btn {
+      padding: 6px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .master-reset-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
+      border-color: #fca5a5;
+    }
+
+    /* --- SUB-GROUP SECTION (COMPACT CARD + 6 SCROLLABLE PRODUCTS) --- */
+    .subgroup-section-wrap {
+      margin-bottom: 28px;
+    }
+
+    /* Small / Compact Sub-Group Info Card */
+    .compact-subgroup-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      border-left: 4px solid var(--lapp-orange);
+      margin-bottom: 10px;
+    }
+    .compact-sg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .compact-sg-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .compact-sg-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+    .compact-sg-pill {
+      background: var(--lapp-orange-light);
+      border: 1px solid var(--lapp-orange-border);
+      color: #c2410c;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .compact-sg-badge {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .compact-sg-desc {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 0 6px;
+      line-height: 1.4;
+    }
+    .compact-sg-specs-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 11px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 5px 10px;
+      color: #475569;
+    }
+    .compact-sg-specs-row span strong {
+      color: #0f172a;
+    }
+
+    /* Carousel Top Bar */
+    .carousel-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .carousel-info-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .carousel-nav-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .carousel-arrow-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .carousel-arrow-btn:hover {
+      background: var(--lapp-orange);
+      color: #ffffff;
+      border-color: var(--lapp-orange);
+    }
+
+    /* 6 Cards Horizontal Scrollable Track */
+    .scrollable-products-track {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding: 4px 2px 14px;
+      -webkit-overflow-scrolling: touch;
+      min-height: 260px;
+    }
+    .scrollable-products-track::-webkit-scrollbar {
+      height: 6px;
+    }
+    .scrollable-products-track::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .scrollable-products-track::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .scrollable-products-track::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Each card fits 6 across on full width desktop */
+    .olflex-p-card {
+      flex: 0 0 calc((100% - 60px) / 6);
+      min-width: 195px;
+      max-width: 220px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+      box-sizing: border-box;
+    }
+    .olflex-p-card:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+    }
+    .p-card-img-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 80px;
+      margin-bottom: 6px;
+      text-decoration: none;
+    }
+    .p-card-img {
+      max-width: 100%;
+      max-height: 75px;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+    .olflex-p-card:hover .p-card-img {
+      transform: scale(1.04);
+    }
+    .p-card-cat {
+      font-size: 10px;
+      color: #64748b;
+      margin-bottom: 1px;
+    }
+    .p-card-subcat {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .p-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      text-decoration: none;
+      margin-bottom: 3px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 30px;
+    }
+    .p-card-title:hover {
+      color: var(--lapp-orange);
+    }
+    .p-card-part {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .p-card-part strong {
+      color: #0284c7;
+    }
+    .p-card-specs-pill {
+      font-size: 10px;
+      font-weight: 600;
+      color: #334155;
+      background: #f1f5f9;
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Price Block matching Image 4 */
+    .p-card-price-block {
+      margin-top: auto;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
+    .p-card-price-main {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+    .p-rupee-square {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border: 1px solid #0f172a;
+      font-size: 10px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1;
+      border-radius: 2px;
+    }
+    .p-price-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .p-card-gst {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+    .p-card-mrp-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+    }
+    .p-mrp-strike {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+    .p-off-tag {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    /* Action Button */
+    .p-card-btn-enquiry {
+      width: 100%;
+      background: var(--lapp-orange);
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      transition: background 0.15s ease;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      box-sizing: border-box;
+    }
+    .p-card-btn-enquiry:hover {
+      background: var(--lapp-orange-hover);
+    }
+
+    /* Technical Comparison Table */
+    .tech-table-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .tech-table-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tech-table-wrap {
+      overflow-x: auto;
+    }
+    .tech-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .tech-table th {
+      background: #f8fafc;
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 700;
+      color: #475569;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .tech-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: top;
+    }
+    .tech-table tr:hover td {
+      background: #f8fafc;
+    }
+
+    /* Sourcing Footer */
+    .sheet-footer-bar {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .sheet-footer-text {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .sheet-footer-text strong {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sheet-header">
+    <div class="sheet-header-inner">
+      <div class="sheet-logo-badge-wrap">
+        <a href="index.html" title="Siddhi Kabel Corporation Private Limited">
+          <img src="assets/images/siddhi-kabel-lockup.png" alt="Siddhi Kabel Corporation Private Limited" style="height: 42px; width: auto; object-fit: contain; display: block;">
+        </a>
+        <span class="sheet-partner-pill">Authorized Channel Partner</span>
+      </div>
+
+      <div class="sheet-header-actions">
+        <a href="about-lapp.html" class="sheet-nav-btn">
+          About LAPP India
+        </a>
+        <a href="index.html#lappPortfolioSection" class="sheet-back-btn">
+          &larr; Back to Catalog
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="sheet-main">
+    <div class="sheet-content-wrap">
+
+      <!-- Breadcrumbs -->
+      <div class="sheet-breadcrumbs">
+        <a href="index.html">Home</a>
+        <span>&rsaquo;</span>
+        <a href="about-lapp.html">LAPP India</a>
+        <span>&rsaquo;</span>
+        <span style="color: #0f172a; font-weight: 700;">ÖLFLEX® Power &amp; Control Cables</span>
+      </div>
+
+      <!-- Top Summary Card -->
+      <div class="sheet-hero-card">
+        <div class="sheet-hero-top-row">
+          <h1 class="sheet-hero-title">
+            <span class="badge-orange">ÖLFLEX®</span> Power and Control Cables
+          </h1>
+          <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">LAPP Germany Industrial Cabling</span>
+        </div>
+
+        <p class="sheet-hero-lead">
+          <strong>ÖLFLEX®</strong> is used in machinery, machine tools, system and appliance engineering, measuring, control, heating and air conditioning technologies.
+        </p>
+
+        <div class="sheet-app-tags">
+          <div class="sheet-app-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Machinery &amp; Machine Tools
+          </div>
+          <div class="sheet-app-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            System &amp; Appliance Engineering
+          </div>
+          <div class="sheet-app-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Measuring &amp; Control Systems
+          </div>
+          <div class="sheet-app-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Heating &amp; Air Conditioning (HVAC)
+          </div>
+        </div>
+      </div>
+
+      <!-- Jump Bar to Sub-Groups -->
+      <div class="subgroups-jump-bar">
+        <span style="font-size: 11.5px; font-weight: 700; color: #0f172a;">Jump to:</span>
+        <a href="#sectionClassic110" class="subgroup-jump-btn active">
+          ÖLFLEX® CLASSIC 110 <span class="count-badge" id="jumpCount110">113</span>
+        </a>
+        <a href="#sectionClassic110sy" class="subgroup-jump-btn">
+          ÖLFLEX® CLASSIC 110 SY <span class="count-badge" id="jumpCount110sy">30</span>
+        </a>
+        <a href="#sectionClassic110cy" class="subgroup-jump-btn">
+          ÖLFLEX® CLASSIC 110 CY <span class="count-badge" id="jumpCount110cy">28</span>
+        </a>
+        <a href="#section100i" class="subgroup-jump-btn">
+          ÖLFLEX® 100 I (IS 694) <span class="count-badge" id="jumpCount100i">25</span>
+        </a>
+      </div>
+
+      <!-- ======================================================================= -->
+      <!-- MASTER FILTER BAR (FILTERS IN ALL GROUPS BELOW) -->
+      <!-- ======================================================================= -->
+      <div class="master-filter-container">
+        <div class="master-filter-header">
+          <div class="master-filter-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span>Master Cable Filter (Filters in All Groups Below)</span>
+          </div>
+          <div class="master-filter-stats" id="masterFilterSummary">
+            Showing all cables across 4 groups
+          </div>
+        </div>
+
+        <div class="master-filter-controls">
+          <!-- 1. Search Box -->
+          <div class="master-search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="globalFilterSearch" class="master-search-input" placeholder="Search by Part No (e.g. 1119003, 1125003)..." oninput="applyGlobalFilter()">
+          </div>
+
+          <!-- 2. Core First (Matches media_1789630060055.png) -->
+          <div class="master-select-wrap">
+            <label class="master-filter-lbl">Core:</label>
+            <select id="globalFilterCore" class="master-select" onchange="applyGlobalFilter()">
+              <option value="all">All Cores</option>
+              <option value="2">2 Core</option>
+              <option value="3">3 Core</option>
+              <option value="4">4 Core</option>
+              <option value="5">5 Core</option>
+              <option value="7">7 Core</option>
+              <option value="10">10 Core</option>
+              <option value="12">12 Core</option>
+              <option value="14">14 Core</option>
+              <option value="18">18 Core</option>
+              <option value="21">21 Core</option>
+              <option value="25">25 Core</option>
+              <option value="30">30 Core</option>
+              <option value="35">35 Core</option>
+              <option value="40">40 Core</option>
+              <option value="52">52 Core</option>
+            </select>
+          </div>
+
+          <!-- 3. Size Second (Matches media_1789630060055.png) -->
+          <div class="master-select-wrap">
+            <label class="master-filter-lbl">Size:</label>
+            <select id="globalFilterSize" class="master-select" onchange="applyGlobalFilter()">
+              <option value="all">All Sizes</option>
+              <option value="0.5">0.5 mm²</option>
+              <option value="0.75">0.75 mm²</option>
+              <option value="1">1.0 mm²</option>
+              <option value="1.5">1.5 mm²</option>
+              <option value="2.5">2.5 mm²</option>
+              <option value="4">4.0 mm²</option>
+              <option value="6">6.0 mm²</option>
+              <option value="10">10 mm²</option>
+              <option value="16">16 mm²</option>
+              <option value="25">25 mm²</option>
+              <option value="35">35 mm²</option>
+            </select>
+          </div>
+
+          <!-- Reset Filter Button -->
+          <button type="button" class="master-reset-btn" onclick="resetGlobalFilter()" title="Clear and show all products">
+            ✕ Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- ======================================================================= -->
+      <!-- 1. SUB-GROUP 1: ÖLFLEX® CLASSIC 110 (SMALL CARD + 6 SCROLLABLE PRODUCTS) -->
+      <!-- ======================================================================= -->
+      <section class="subgroup-section-wrap" id="sectionClassic110">
+        <!-- Compact Info Card -->
+        <div class="compact-subgroup-card">
+          <div class="compact-sg-header">
+            <div class="compact-sg-title-row">
+              <h2 class="compact-sg-title">1. ÖLFLEX® CLASSIC 110</h2>
+              <span class="compact-sg-pill">PVC outer sheath and numbered cores</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="compact-sg-badge">VDE-Reg. No. 7030</span>
+              <span class="compact-sg-badge" style="background: #f0fdf4; border-color: #bbf7d0; color: #166534;" id="badgeCount110">113 Products</span>
+            </div>
+          </div>
+          <p class="compact-sg-desc">
+            The benchmark oil-resistant flexible control cable for universal installation in electrical engineering, automation, and machine tooling. Features black cores with white numbering.
+          </p>
+          <div class="compact-sg-specs-row">
+            <span><strong>Conductor:</strong> Bare copper wire, Class 5 fine strand</span>
+            <span><strong>Outer Sheath:</strong> Special PVC, Silver-grey (RAL 7001), Oil-resistant</span>
+            <span><strong>Cores:</strong> Black with continuous white numbers</span>
+            <span><strong>Voltage:</strong> U0/U: 300/500 V | Test: 4000 V</span>
+          </div>
+        </div>
+
+        <div class="carousel-top-bar">
+          <span class="carousel-info-text" id="count110Products">ÖLFLEX® CLASSIC 110 Products (Scroll horizontally &rarr;)</span>
+          <div class="carousel-nav-btns">
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track110', -1)" title="Scroll Left">&lsaquo;</button>
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track110', 1)" title="Scroll Right">&rsaquo;</button>
+          </div>
+        </div>
+
+        <!-- 6 Products Scrollable Row -->
+        <div class="scrollable-products-track" id="track110">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 2. SUB-GROUP 2: ÖLFLEX® CLASSIC 110 SY (SMALL CARD + 6 SCROLLABLE PRODUCTS) -->
+      <!-- ======================================================================= -->
+      <section class="subgroup-section-wrap" id="sectionClassic110sy">
+        <!-- Compact Info Card -->
+        <div class="compact-subgroup-card">
+          <div class="compact-sg-header">
+            <div class="compact-sg-title-row">
+              <h2 class="compact-sg-title">2. ÖLFLEX® CLASSIC 110 SY</h2>
+              <span class="compact-sg-pill">Steel wire braid &bull; Mechanically protected</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="compact-sg-badge">Galvanised Steel Braid</span>
+              <span class="compact-sg-badge" style="background: #fefce8; border-color: #fef08a; color: #854d0e;" id="badgeCount110sy">Mechanical Armor</span>
+            </div>
+          </div>
+          <p class="compact-sg-desc">
+            Reinforced flexible control cable equipped with internal galvanised steel wire braid for superior mechanical protection against crush, tensile forces, and rodents. Transparent outer PVC sheath.
+          </p>
+          <div class="compact-sg-specs-row">
+            <span><strong>Protection:</strong> Galvanised steel wire braid (SY)</span>
+            <span><strong>Outer Sheath:</strong> Transparent PVC (Shows internal braid)</span>
+            <span><strong>Cores:</strong> Black cores with white numbers</span>
+            <span><strong>Application:</strong> Heavy machinery, production lines, outdoor trays</span>
+          </div>
+        </div>
+
+        <div class="carousel-top-bar">
+          <span class="carousel-info-text" id="count110syProducts">ÖLFLEX® CLASSIC 110 SY Products (Scroll horizontally &rarr;)</span>
+          <div class="carousel-nav-btns">
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track110sy', -1)" title="Scroll Left">&lsaquo;</button>
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track110sy', 1)" title="Scroll Right">&rsaquo;</button>
+          </div>
+        </div>
+
+        <!-- 6 Scrollable SY Products -->
+        <div class="scrollable-products-track" id="track110sy">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 3. SUB-GROUP 3: ÖLFLEX® CLASSIC 110 CY (SMALL CARD + 6 SCROLLABLE PRODUCTS) -->
+      <!-- ======================================================================= -->
+      <section class="subgroup-section-wrap" id="sectionClassic110cy">
+        <!-- Compact Info Card -->
+        <div class="compact-subgroup-card">
+          <div class="compact-sg-header">
+            <div class="compact-sg-title-row">
+              <h2 class="compact-sg-title">3. ÖLFLEX® CLASSIC 110 CY</h2>
+              <span class="compact-sg-pill">Copper wire braid &bull; EMC Screened</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="compact-sg-badge">EMC Screened</span>
+              <span class="compact-sg-badge" style="background: #fdf2f8; border-color: #fbcfe8; color: #9d174d;" id="badgeCount110cy">Tinned Copper Braided</span>
+            </div>
+          </div>
+          <p class="compact-sg-desc">
+            Screened flexible control cable with tinned copper wire braid offering high electromagnetic compatibility (EMC) against interference in automation, PLC, and drive systems.
+          </p>
+          <div class="compact-sg-specs-row">
+            <span><strong>Screening:</strong> Tinned copper wire braid (CY) approx. 85%</span>
+            <span><strong>Outer Sheath:</strong> Special PVC, Transparent / Silver-grey</span>
+            <span><strong>Cores:</strong> Black with white numbers</span>
+            <span><strong>Primary Use:</strong> Plant engineering, industrial machinery, HVAC, conveyors, and EMC environments</span>
+          </div>
+        </div>
+
+        <div class="carousel-top-bar">
+          <span class="carousel-info-text" id="count110cyProducts">ÖLFLEX® CLASSIC 110 CY Products (Scroll horizontally &rarr;)</span>
+          <div class="carousel-nav-btns">
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track110cy', -1)" title="Scroll Left">&lsaquo;</button>
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track110cy', 1)" title="Scroll Right">&rsaquo;</button>
+          </div>
+        </div>
+
+        <!-- 6 Scrollable CY Products -->
+        <div class="scrollable-products-track" id="track110cy">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 4. SUB-GROUP 4: ÖLFLEX® 100 I (SMALL CARD + 6 SCROLLABLE PRODUCTS) -->
+      <!-- ======================================================================= -->
+      <section class="subgroup-section-wrap" id="section100i">
+        <!-- Compact Info Card -->
+        <div class="compact-subgroup-card">
+          <div class="compact-sg-header">
+            <div class="compact-sg-title-row">
+              <h2 class="compact-sg-title">4. ÖLFLEX® 100 I</h2>
+              <span class="compact-sg-pill">PVC outer sheath &bull; Colour coded as per IS 694 cores</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="compact-sg-badge">BIS IS 694:2010 (ISI Marked)</span>
+              <span class="compact-sg-badge" style="background: #f0fdf4; border-color: #bbf7d0; color: #166534;" id="badgeCount100i">Unshielded &bull; FR Only</span>
+            </div>
+          </div>
+          <p class="compact-sg-desc">
+            Engineered specifically for the Indian industrial and infrastructure market in full compliance with BIS IS 694. Uses vivid color-coded cores (RYB / Black / Green-Yellow) for intuitive three-phase and neutral identification.
+          </p>
+          <div class="compact-sg-specs-row">
+            <span><strong>Standard:</strong> IS 694:2010 (with ISI Mark) &amp; Flame Retardant (FR)</span>
+            <span><strong>Outer Sheath:</strong> Premium Flame Retardant PVC (FR), Grey / Black</span>
+            <span><strong>Cores:</strong> Colour coded as per IS 694</span>
+            <span><strong>Voltage:</strong> Up to 1100 V</span>
+          </div>
+        </div>
+
+        <div class="carousel-top-bar">
+          <span class="carousel-info-text" id="count100iProducts">ÖLFLEX® 100 I Products (Scroll horizontally &rarr;)</span>
+          <div class="carousel-nav-btns">
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track100i', -1)" title="Scroll Left">&lsaquo;</button>
+            <button type="button" class="carousel-arrow-btn" onclick="scrollTrack('track100i', 1)" title="Scroll Right">&rsaquo;</button>
+          </div>
+        </div>
+
+        <!-- 6 Scrollable 100 I Products -->
+        <div class="scrollable-products-track" id="track100i">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Technical Comparison Table -->
+      <div class="tech-table-card">
+        <h3 class="tech-table-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Technical Comparison &bull; Lapp Control Cable Sub-Groups
+        </h3>
+        <div class="tech-table-wrap">
+          <table class="tech-table">
+            <thead>
+              <tr>
+                <th>Product Group</th>
+                <th>Core Coding Scheme</th>
+                <th>Internal Protection / Screening</th>
+                <th>Outer Sheath Type</th>
+                <th>Standard / Certification</th>
+                <th>Primary Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ÖLFLEX® CLASSIC 110</strong></td>
+                <td>Black cores with white numbers</td>
+                <td>None (Standard Flexible)</td>
+                <td>Special Oil-Resistant PVC (Grey)</td>
+                <td>VDE Reg. No. 7030, CE</td>
+                <td>General machine tools &amp; control cabinets</td>
+              </tr>
+              <tr>
+                <td><strong>ÖLFLEX® CLASSIC 110 SY</strong></td>
+                <td>Black cores with white numbers</td>
+                <td><strong>Galvanised Steel Wire Braid (SY)</strong></td>
+                <td>Transparent PVC (Shows Braid)</td>
+                <td>VDE-based, CE</td>
+                <td>Heavy mechanical duty &amp; cable trays</td>
+              </tr>
+              <tr>
+                <td><strong>ÖLFLEX® CLASSIC 110 CY</strong></td>
+                <td>Black cores with white numbers</td>
+                <td><strong>Tinned Copper Wire Braid (CY)</strong></td>
+                <td>Special PVC (EMC Compliant)</td>
+                <td>VDE-based, CE, EMC Directive</td>
+                <td>
+                  <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; line-height: 1.4;">
+                    <li>Plant engineering, Industrial machinery, Heating and air-conditioning systems</li>
+                    <li>Conveyor and transport systems</li>
+                    <li>In EMC-sensitive environments (electromagnetic compatibility)</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>ÖLFLEX® 100 I</strong></td>
+                <td><strong>Colour coded as per IS 694</strong></td>
+                <td>Unshielded</td>
+                <td>Flame Retardant PVC (FR)</td>
+                <td><strong>BIS IS 694:2010 (ISI Marked)</strong></td>
+                <td>Indian plant engineering &amp; infrastructure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sourcing Footer Bar -->
+      <div class="sheet-footer-bar">
+        <div class="sheet-footer-text">
+          Authorized Lapp Channel Partner: <strong>Siddhi Kabel Corporation Private Limited</strong> &bull; Banashankari 3rd Stage, Bangalore 560085 &bull; Phone: 09620000947
+        </div>
+        <div>
+          <a href="index.html#rfqSection" class="sheet-back-btn" style="padding: 7px 16px; font-size: 12px;">
+            Submit Official RFQ / BOM &rarr;
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Load Data Files -->
+  <script src="assets/js/olflex-110-data.js"></script>
+  <script src="assets/js/olflex-subgroups-data.js"></script>
+  <script>
+    // Smooth scroll for 6 cards at a time
+    function scrollTrack(trackId, direction) {
+      const track = document.getElementById(trackId);
+      if (!track) return;
+      const card = track.querySelector('.olflex-p-card');
+      const cardWidth = card ? card.offsetWidth + 12 : 210;
+      const scrollAmount = cardWidth * 6 * direction;
+      track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+
+    // --- UNIVERSAL MASTER FILTER: FILTERS ALL 4 SUB-GROUPS SIMULTANEOUSLY ---
+    function applyGlobalFilter() {
+      const query = (document.getElementById('globalFilterSearch').value || '').trim().toLowerCase();
+      const coreVal = document.getElementById('globalFilterCore').value;
+      const sizeVal = document.getElementById('globalFilterSize').value;
+
+      function matches(p) {
+        if (query) {
+          const inPart = (p.partNo || '').toLowerCase().includes(query);
+          const inName = (p.name || '').toLowerCase().includes(query);
+          const inDesc = (p.desc || p.subCategory || '').toLowerCase().includes(query);
+          if (!inPart && !inName && !inDesc) return false;
+        }
+        if (coreVal !== 'all' && p.core !== parseInt(coreVal)) return false;
+        if (sizeVal !== 'all' && p.size !== parseFloat(sizeVal)) return false;
+        return true;
+      }
+
+      // Filter each group
+      const f110 = OLFLEX_110_PRODUCTS.filter(matches);
+      const f110Sy = (typeof OLFLEX_110SY_PRODUCTS !== 'undefined' ? OLFLEX_110SY_PRODUCTS : []).filter(matches);
+      const f110Cy = (typeof OLFLEX_110CY_PRODUCTS !== 'undefined' ? OLFLEX_110CY_PRODUCTS : []).filter(matches);
+      const f100i = (typeof OLFLEX_100I_PRODUCTS !== 'undefined' ? OLFLEX_100I_PRODUCTS : []).filter(matches);
+
+      // Render Tracks
+      renderGroupTrack('track110', f110, 'ÖLFLEX® CLASSIC 110', 'count110Products', 'badgeCount110', OLFLEX_110_PRODUCTS.length);
+      renderGroupTrack('track110sy', f110Sy, 'ÖLFLEX® CLASSIC 110 SY', 'count110syProducts', 'badgeCount110sy', OLFLEX_110SY_PRODUCTS.length);
+      renderGroupTrack('track110cy', f110Cy, 'ÖLFLEX® CLASSIC 110 CY', 'count110cyProducts', 'badgeCount110cy', OLFLEX_110CY_PRODUCTS.length);
+      renderGroupTrack('track100i', f100i, 'ÖLFLEX® 100 I', 'count100iProducts', 'badgeCount100i', OLFLEX_100I_PRODUCTS.length);
+
+      // Update Jump Bar badges
+      const j110 = document.getElementById('jumpCount110');
+      const j110sy = document.getElementById('jumpCount110sy');
+      const j110cy = document.getElementById('jumpCount110cy');
+      const j100i = document.getElementById('jumpCount100i');
+      if (j110) j110.innerText = f110.length;
+      if (j110sy) j110sy.innerText = f110Sy.length;
+      if (j110cy) j110cy.innerText = f110Cy.length;
+      if (j100i) j100i.innerText = f100i.length;
+
+      // Update Master Summary
+      const total = f110.length + f110Sy.length + f110Cy.length + f100i.length;
+      const sumEl = document.getElementById('masterFilterSummary');
+      if (sumEl) {
+        let criteria = [];
+        if (coreVal !== 'all') criteria.push(`${coreVal} Core`);
+        if (sizeVal !== 'all') criteria.push(`${sizeVal} mm²`);
+        if (query) criteria.push(`"${query}"`);
+
+        const filterLabel = criteria.length > 0 ? `Filtered by ${criteria.join(' + ')}: ` : '';
+        sumEl.innerHTML = `
+          <span>${filterLabel}<strong>${total}</strong> Total Matches (110: <strong>${f110.length}</strong> &bull; SY: <strong>${f110Sy.length}</strong> &bull; CY: <strong>${f110Cy.length}</strong> &bull; 100 I: <strong>${f100i.length}</strong>)</span>
+        `;
+      }
+    }
+
+    function renderGroupTrack(trackId, items, groupName, countElId, badgeElId, totalGroupCount) {
+      const track = document.getElementById(trackId);
+      const countEl = document.getElementById(countElId);
+      const badgeEl = document.getElementById(badgeElId);
+      if (!track) return;
+
+      if (countEl) {
+        countEl.innerHTML = `${groupName} Products: <strong>${items.length}</strong> of ${totalGroupCount} ${items.length > 6 ? '(Scroll &rarr;)' : ''}`;
+      }
+      if (badgeEl) {
+        badgeEl.innerText = `${items.length} Items`;
+      }
+
+      if (items.length === 0) {
+        track.innerHTML = `
+          <div style="padding: 26px; color: #64748b; font-size: 13px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>No <strong>${groupName}</strong> products match this filter combination.</span>
+            <button type="button" onclick="resetGlobalFilter()" style="background: none; border: none; color: #ea580c; font-weight: 700; cursor: pointer; text-decoration: underline; font-family: inherit;">Clear Filter</button>
+          </div>
+        `;
+        return;
+      }
+
+      track.innerHTML = items.map(p => `
+        <div class="olflex-p-card">
+          <a href="product-detail.html?part=${p.partNo}" class="p-card-img-link" title="View ${p.name} Details">
+            <img src="assets/images/cable-olflex-thumb.png" alt="${p.name}" class="p-card-img">
+          </a>
+          <div class="p-card-cat">${p.category || 'Power and control cables'}</div>
+          <div class="p-card-subcat">${p.desc || p.subCategory || 'Flexible Industrial Cable'}</div>
+          <a href="product-detail.html?part=${p.partNo}" class="p-card-title" title="${p.name}">
+            ${p.name}
+          </a>
+          <div class="p-card-part">Part No: <strong>${p.partNo}</strong></div>
+          <div class="p-card-specs-pill">${p.core} Cores &bull; ${p.size} mm&sup2; (${p.pe === 'G' ? 'With Earth' : 'Numbered'})</div>
+          
+          <div class="p-card-price-block">
+            <div class="p-card-price-main">
+              <span class="p-rupee-square">&#8377;</span>
+              <span class="p-price-val">${Number(p.price).toFixed(2)}</span>
+            </div>
+            <div class="p-card-gst">+ &#8377;${Number(p.gst).toFixed(2)} GST</div>
+            <div class="p-card-mrp-row">
+              <span class="p-mrp-strike">MRP &#8377;${Number(p.mrp).toFixed(2)}</span>
+              <span class="p-off-tag">45% OFF</span>
+            </div>
+          </div>
+
+          <button type="button" class="p-card-btn-enquiry" onclick="quickEnquiry('${p.partNo}', '${p.name}')">
+            ADD TO ENQUIRY
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function resetGlobalFilter() {
+      document.getElementById('globalFilterSearch').value = '';
+      document.getElementById('globalFilterCore').value = 'all';
+      document.getElementById('globalFilterSize').value = 'all';
+      applyGlobalFilter();
+    }
+
+    function quickEnquiry(partNo, name) {
+      alert(`Added ${name} (Part No: ${partNo}) to your Enquiry Cart!\n\nScroll to footer to submit your RFQ / BOM.`);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyGlobalFilter();
+    });
+  </script>
+</body>
+</html>

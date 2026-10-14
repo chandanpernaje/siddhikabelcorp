@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About EATON Moeller Switchgear | Siddhi Eshop - Authorized Partner</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/siddhi-logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    :root {
+      --brand-color: #005eb8;
+      --brand-dark: #0f172a;
+    }
+    body {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .sheet-header {
+      background: #ffffff;
+      padding: 12px 0;
+      border-bottom: 2px solid #e2e8f0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .sheet-header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .sheet-logo-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .sheet-partner-pill {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .sheet-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sheet-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffffff;
+      background: var(--brand-color);
+      font-size: 12.5px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 7px 16px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .sheet-back-btn:hover {
+      background: #004b93;
+      box-shadow: 0 4px 12px rgba(0, 94, 184, 0.3);
+    }
+    .sheet-main {
+      flex: 1;
+      padding: 24px 0 40px;
+    }
+    .sheet-content-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .sheet-hero-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+    }
+    .sheet-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 12px;
+    }
+    .sheet-brand-logo-img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+    .sheet-tag-capsule {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .sheet-page-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 16px;
+    }
+    .sheet-paragraphs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .sheet-paragraphs-grid { grid-template-columns: 1fr; }
+    }
+    .sheet-para-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .sheet-para-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-paragraph {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #475569;
+      margin: 0;
+    }
+    .sheet-products-header {
+      margin: 28px 0 16px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .sheet-products-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+    .sheet-products-sub {
+      font-size: 12.5px;
+      color: #64748b;
+    }
+    .sheet-products-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 1024px) {
+      .sheet-products-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .sheet-products-grid { grid-template-columns: 1fr; }
+    }
+    .sheet-prod-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.25s ease;
+    }
+    .sheet-prod-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      border-color: #cbd5e1;
+    }
+    .sheet-prod-img-wrap {
+      height: 190px;
+      background: #f8fafc;
+      overflow: hidden;
+      position: relative;
+    }
+    .sheet-prod-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.35s ease;
+    }
+    .sheet-prod-card:hover .sheet-prod-img {
+      transform: scale(1.04);
+    }
+    .sheet-prod-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(4px);
+    }
+    .sheet-prod-body {
+      padding: 16px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .sheet-prod-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px;
+    }
+    .sheet-prod-desc {
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.5;
+      margin: 0 0 14px;
+      flex: 1;
+    }
+    .sheet-prod-btn {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand-color);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sheet-footer-bar {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .sheet-footer-text {
+      font-size: 12.5px;
+      color: #94a3b8;
+    }
+    .sheet-footer-text strong {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <header class="sheet-header">
+    <div class="sheet-header-inner">
+      <div class="sheet-logo-badge-wrap">
+        <a href="index.html" title="Siddhi Kabel Corporation Private Limited">
+          <img src="assets/images/siddhi-kabel-lockup.png" alt="Siddhi Kabel Corporation Private Limited" style="height: 46px; width: auto; object-fit: contain; display: block;">
+        </a>
+        <span class="sheet-partner-pill">Authorized Industrial Distributor</span>
+      </div>
+      <div class="sheet-header-actions">
+        <a href="index.html#eatonPortfolioSection" class="sheet-back-btn">&larr; Back to Catalog</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="sheet-main">
+    <div class="sheet-content-wrap">
+      <div class="sheet-hero-card">
+        <div class="sheet-brand-row">
+          <div class="sheet-brand-logos">
+            <img src="assets/images/logo-eaton.png" alt="EATON" class="sheet-brand-logo-img">
+          </div>
+          <div class="sheet-tag-capsule">Global Power Management &bull; Moeller Series Switchgear</div>
+        </div>
+        <h1 class="sheet-page-title">About EATON Moeller Switchgear</h1>
+        <div class="sheet-paragraphs-grid">
+          <div class="sheet-para-box">
+            <div class="sheet-para-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              Global Power Management Leadership
+            </div>
+            <p class="sheet-paragraph">
+              <strong>Eaton</strong> is a global intelligent power management company dedicated to improving the quality of life and protecting the environment for people everywhere. With over a century of electrical engineering innovation, Eaton's Electrical Sector is a worldwide benchmark in power distribution, circuit protection, motor control, industrial automation, and harsh environment solutions. In India, Eaton operates state-of-the-art manufacturing and engineering development centers delivering certified, high-reliability switchgear designed for continuous industrial operation.
+            </p>
+          </div>
+          <div class="sheet-para-box">
+            <div class="sheet-para-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Comprehensive Moeller Series Automation Portfolio
+            </div>
+            <p class="sheet-paragraph">
+              Recognized across panel builders, machine tool manufacturers, and process industries, the world-famous <strong>Moeller series</strong> portfolio provides unmatched reliability. Key product families include <strong>PKZM0® &amp; PKE</strong> motor-protective circuit breakers up to 65A, <strong>DILM®</strong> contactors and thermal overload relays up to 1000A, <strong>NZM®</strong> molded case circuit breakers up to 1600A, <strong>FAZ®</strong> miniature circuit breakers (up to 15kA breaking capacity), <strong>RMQ-Titan®</strong> pilot devices, and <strong>PowerXL®</strong> variable speed drives.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-products-header">
+        <h2 class="sheet-products-title">
+          <span style="color: var(--brand-color);">EATON</span> Industrial Switchgear Available at Siddhi Kabel
+        </h2>
+        <span class="sheet-products-sub">Official Distributor &bull; Immediate Bangalore Stock &bull; Project Inquiries</span>
+      </div>
+
+      <div class="sheet-products-grid">
+        <a href="index.html#rfqSection" class="sheet-prod-card">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/eaton-pkzm0.jpg" alt="PKZM0 Motor-Protective Breakers" class="sheet-prod-img">
+            <span class="sheet-prod-badge">PKZM0®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Motor-Protective Breakers</h3>
+            <p class="sheet-prod-desc">PKZM0 &amp; PKZM4 rotary motor starters up to 65A with short-circuit and thermal overload protection.</p>
+            <div class="sheet-prod-btn">Request Quotation &rarr;</div>
+          </div>
+        </a>
+
+        <a href="index.html#rfqSection" class="sheet-prod-card">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/eaton-dilm.jpg" alt="DILM Power Contactors & Relays" class="sheet-prod-img">
+            <span class="sheet-prod-badge">DILM®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Power Contactors &amp; Relays</h3>
+            <p class="sheet-prod-desc">DILM 3-pole &amp; 4-pole contactors from 7A to 1000A with electronic coils and wide voltage tolerance.</p>
+            <div class="sheet-prod-btn">Request Quotation &rarr;</div>
+          </div>
+        </a>
+
+        <a href="index.html#rfqSection" class="sheet-prod-card">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/eaton-nzm.jpg" alt="NZM Molded Case Circuit Breakers" class="sheet-prod-img">
+            <span class="sheet-prod-badge">NZM®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Molded Case Circuit Breakers</h3>
+            <p class="sheet-prod-desc">NZM1 to NZM4 compact MCCBs up to 1600A with thermomagnetic and digital electronic trip units.</p>
+            <div class="sheet-prod-btn">Request Quotation &rarr;</div>
+          </div>
+        </a>
+
+        <a href="index.html#rfqSection" class="sheet-prod-card">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/eaton-faz.jpg" alt="FAZ Miniature Circuit Breakers" class="sheet-prod-img">
+            <span class="sheet-prod-badge">FAZ®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Miniature Circuit Breakers</h3>
+            <p class="sheet-prod-desc">FAZ industrial DIN-rail MCB 0.5A to 63A with 15kA breaking capacity and B, C, D trip curves.</p>
+            <div class="sheet-prod-btn">Request Quotation &rarr;</div>
+          </div>
+        </a>
+
+        <a href="index.html#rfqSection" class="sheet-prod-card">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/eaton-rmq.jpg" alt="RMQ-Titan Push Buttons & Pilot Lights" class="sheet-prod-img">
+            <span class="sheet-prod-badge">RMQ-TITAN®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Push Buttons &amp; Pilot Lights</h3>
+            <p class="sheet-prod-desc">M22 22mm pilot lights, selector switches, and illuminated mushroom e-stops with IP67/IP69K protection.</p>
+            <div class="sheet-prod-btn">Request Quotation &rarr;</div>
+          </div>
+        </a>
+
+        <a href="index.html#rfqSection" class="sheet-prod-card">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/eaton-drives.jpg" alt="PowerXL Variable Speed Drives" class="sheet-prod-img">
+            <span class="sheet-prod-badge">POWERXL®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Variable Speed Drives</h3>
+            <p class="sheet-prod-desc">DC1 &amp; DA1 high-performance AC frequency inverters for motors up to 250 kW with Modbus / CANopen.</p>
+            <div class="sheet-prod-btn">Request Quotation &rarr;</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="sheet-footer-bar">
+        <div class="sheet-footer-text">
+          Authorized Eaton Distributor: <strong>Siddhi Kabel Corporation Private Limited</strong> &bull; Banashankari 3rd Stage, Bangalore 560085 &bull; Phone: 09620000947
+        </div>
+        <div>
+          <a href="index.html#rfqSection" class="sheet-back-btn" style="padding: 8px 18px; font-size: 12.5px;">
+            Submit Official RFQ / BOM &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

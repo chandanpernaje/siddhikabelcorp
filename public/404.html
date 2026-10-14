@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+    <script>
+      // GitHub Pages serves this file for unknown paths. Send the requested
+      // client-side route to the React app so it can restore the correct view.
+      (function (location) {
+        const repositoryPathSegments = 1;
+        const basePath = location.pathname
+          .split("/")
+          .slice(0, 1 + repositoryPathSegments)
+          .join("/");
+        const route = location.pathname
+          .split("/")
+          .slice(1 + repositoryPathSegments)
+          .join("/")
+          .replace(/&/g, "~and~");
+        const query = location.search
+          ? "&" + location.search.slice(1).replace(/&/g, "~and~")
+          : "";
+
+        location.replace(basePath + "/?/" + route + query + location.hash);
+      })(window.location);
+    </script>
+  </head>
+  <body></body>
+</html>

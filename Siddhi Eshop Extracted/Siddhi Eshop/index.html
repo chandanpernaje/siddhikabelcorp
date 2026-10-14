@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIDDHI ESHOP | Siddhi Kabel Corporation Private Limited - Industrial Electrical & Automation</title>
+  <meta name="description" content="Siddhi Eshop - Authorised Distributors of Lapp Kabel Germany, Eaton Moeller, Partex Sweden, Mennekes Germany & Industrial Electrical Products in India.">
+  <link rel="icon" type="image/jpeg" href="assets/images/siddhi-logo.jpg">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <!-- 1. TOP ANNOUNCEMENT & CONTACT BAR -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="top-bar-inner">
+        <div class="top-tagline">
+          <span class="badge-live">Official</span>
+          <span>Siddhi Kabel Corporation Private Limited | Dependable Electrical Solutions</span>
+        </div>
+        <div class="top-links">
+          <a href="tel:09620000947" class="top-contact-item" title="Call Support">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span>096200 00947 / 098860 58511</span>
+          </a>
+          <a href="mailto:sales@siddhikabel.com" class="top-contact-item" title="Sales Email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span>sales@siddhikabel.com</span>
+          </a>
+          <a href="mailto:Enquiry@siddhikabel.com" class="top-contact-item" title="Enquiry Email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span>Enquiry@siddhikabel.com</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MAIN HEADER -->
+  <header class="main-header">
+    <div class="container">
+      <div class="header-inner">
+        <!-- Logo -->
+        <a href="index.html" class="brand-logo-wrap" title="Siddhi Kabel Corporation Private Limited">
+          <img src="assets/images/siddhi-kabel-lockup.png" alt="Siddhi Kabel Corporation Private Limited" class="brand-lockup-img" width="220" height="52" style="height: 52px !important; max-height: 52px !important; width: auto !important; max-width: 260px !important; object-fit: contain !important; display: block;">
+        </a>
+
+        <!-- Search with Category Filter -->
+        <div class="header-search-wrap">
+          <form class="search-form" onsubmit="event.preventDefault(); filterProducts();">
+            <select class="search-cat-select" id="searchCategorySelect" onchange="handleSearchCatChange()">
+              <option value="all">All Brands (4)</option>
+              <option value="lapp">Lapp Kabel Germany</option>
+              <option value="eaton">Eaton Moeller Germany</option>
+              <option value="partex">Partex Sweden</option>
+              <option value="mennekes">Mennekes Germany</option>
+            </select>
+            <input type="text" id="headerSearchInput" class="search-input" placeholder="Search Part No., Lapp ÖLFLEX, Eaton, Partex, Mennekes...">
+            <button type="submit" class="search-btn" title="Search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="header-actions">
+          <!-- Customer Account / Sign In Action -->
+          <div class="action-item action-auth-item" id="headerAuthAction" onclick="handleHeaderAccountClick()" title="Customer Account / Sign In">
+            <div class="action-icon-wrap" id="headerAuthIconWrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="action-text">
+              <span class="action-label" id="headerAuthLabel">Sign In / Register</span>
+              <span class="action-val" id="headerAuthVal">Customer Account</span>
+            </div>
+          </div>
+
+          <div class="action-item" onclick="scrollToRFQ()">
+            <div class="action-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="action-text">
+              <span class="action-label">Bulk Inquiry</span>
+              <span class="action-val">Quick RFQ</span>
+            </div>
+          </div>
+
+          <!-- Cart Drawer Button -->
+          <button class="action-item" onclick="openCartDrawer()" title="View RFQ Cart">
+            <div class="action-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              <span class="action-badge" id="cartCountBadge">0</span>
+            </div>
+            <div class="action-text">
+              <span class="action-label">Quotation Cart</span>
+              <span class="action-val" id="cartSubtotalHeader">₹0.00</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. NAVIGATION BAR -->
+    <nav class="nav-bar">
+      <div class="container">
+        <div class="nav-bar-inner">
+          <button class="mobile-toggler" id="mobileMenuBtn" aria-label="Toggle Menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
+          <ul class="nav-links" id="navLinksMenu">
+            <li class="nav-item active">
+              <a href="index.html" class="nav-link">Home</a>
+            </li>
+            <li class="nav-item">
+              <a href="#categoriesSection" class="nav-link">
+                <span>Products & Categories</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </a>
+              <ul class="cat-dropdown">
+                <li class="dropdown-submenu">
+                  <a href="about-lapp.html" title="View LAPP India Make Sheet">
+                    <span>Lapp Products</span>
+                    <span>&rarr;</span>
+                  </a>
+                  <ul class="submenu-list submenu-lapp">
+                    <li><a href="olflex-cables.html">Power &amp; Control Cables (ÖLFLEX®)</a></li>
+                    <li><a href="about-lapp.html">Data Communication Cables (UNITRONIC®)</a></li>
+                    <li><a href="about-lapp.html">Control Cabinet Single Cores (UNIPLUS®)</a></li>
+                    <li><a href="about-lapp.html">Cable Glands &amp; Counter Nuts (SKINTOP®)</a></li>
+                    <li><a href="about-lapp.html">Rill, Conduit &amp; Klick (SILVYN®)</a></li>
+                    <li><a href="about-lapp.html">Domestic / House Wiring (LAPP INFRA)</a></li>
+                  </ul>
+                </li>
+                <li class="dropdown-submenu">
+                  <a href="about-eaton.html" title="View EATON Moeller Make Sheet">
+                    <span>Eaton Products</span>
+                    <span>&rarr;</span>
+                  </a>
+                  <ul class="submenu-list submenu-eaton">
+                    <li><a href="about-eaton.html">Motor Protection (PKZM0®)</a></li>
+                    <li><a href="about-eaton.html">Power Contactors (DILM®)</a></li>
+                    <li><a href="about-eaton.html">Molded Case Breakers (NZM®)</a></li>
+                    <li><a href="about-eaton.html">Miniature Circuit Breakers (FAZ®)</a></li>
+                    <li><a href="about-eaton.html">Control &amp; Signaling (RMQ-TITAN®)</a></li>
+                    <li><a href="about-eaton.html">Variable Speed Drives (POWERXL®)</a></li>
+                  </ul>
+                </li>
+                <li class="dropdown-submenu">
+                  <a href="about-partex.html" title="View PARTEX Sweden Make Sheet">
+                    <span>Partex Products</span>
+                    <span>&rarr;</span>
+                  </a>
+                  <ul class="submenu-list submenu-partex">
+                    <li><a href="about-partex.html">Closed Wire Markers (PA®)</a></li>
+                    <li><a href="about-partex.html">Clip-on Open Markers (PC®)</a></li>
+                    <li><a href="about-partex.html">Printable Marker Tubing (PO / POZ®)</a></li>
+                    <li><a href="about-partex.html">Stainless Steel 316 Markers (PKS®)</a></li>
+                    <li><a href="about-partex.html">ProMark Thermal Printers</a></li>
+                    <li><a href="about-partex.html">Cable Ties &amp; Fasteners</a></li>
+                  </ul>
+                </li>
+                <li class="dropdown-submenu">
+                  <a href="about-mennekes.html" title="View MENNEKES Germany Make Sheet">
+                    <span>Mennekes Products</span>
+                    <span>&rarr;</span>
+                  </a>
+                  <ul class="submenu-list submenu-mennekes">
+                    <li><a href="about-mennekes.html">Industrial CEE Plugs (POWERTOP®)</a></li>
+                    <li><a href="about-mennekes.html">Switched Interlocked Sockets (DUO®)</a></li>
+                    <li><a href="about-mennekes.html">Panel Mounted Sockets (MENNEKES®)</a></li>
+                    <li><a href="about-mennekes.html">Phase Inverter Reversal Plugs</a></li>
+                    <li><a href="about-mennekes.html">EverGUM Solid Rubber Distro</a></li>
+                    <li><a href="about-mennekes.html">AMAXX® Modular Combinations</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a href="#aboutSection" class="nav-link">About Us</a>
+            </li>
+            <li class="nav-item">
+              <a href="#contactSection" class="nav-link">Contact Us</a>
+            </li>
+          </ul>
+
+          <div class="nav-cta">
+            <a href="#rfqSection" class="btn-rfq-nav">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Request Price List / RFQ
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- 4. TICKER ANNOUNCEMENT -->
+  <div class="announcement-ticker">
+    <div class="ticker-content">
+      <div class="ticker-item"><span class="ticker-star">★</span> Siddhi Kabel Corporation Private Limited - Bangalore Head Office</div>
+      <div class="ticker-item"><img src="assets/images/logo-lapp.png" alt="Lapp Logo" class="ticker-brand-logo"> Authorized Channel Partner for <span class="highlight-lapp">LAPP KABEL Germany</span></div>
+      <div class="ticker-item"><img src="assets/images/logo-eaton.png" alt="Eaton Logo" class="ticker-brand-logo"> Official Industrial Distributor: <span class="highlight-eaton">EATON MOELLER Switchgear</span></div>
+      <div class="ticker-item"><img src="assets/images/logo-partex.png" alt="Partex Logo" class="ticker-brand-logo"> Authorized Distributor: <span class="highlight-partex">PARTEX SWEDEN Marking Systems</span></div>
+      <div class="ticker-item"><img src="assets/images/logo-mennekes.png" alt="Mennekes Logo" class="ticker-brand-logo"> Genuine <span class="highlight-mennekes">MENNEKES Germany</span> CEE Industrial Plugs &amp; Sockets</div>
+      <div class="ticker-item"><span class="ticker-star">★</span> Direct Quotations: <span class="highlight">sales@siddhikabel.com</span> / <span class="highlight">Enquiry@siddhikabel.com</span></div>
+      <div class="ticker-item"><span class="ticker-star">★</span> Phone Support: 096200 00947 / 098860 58511</div>
+      <!-- Duplicate for seamless infinite loop -->
+      <div class="ticker-item"><span class="ticker-star">★</span> Siddhi Kabel Corporation Private Limited - Bangalore Head Office</div>
+      <div class="ticker-item"><img src="assets/images/logo-lapp.png" alt="Lapp Logo" class="ticker-brand-logo"> Authorized Channel Partner for <span class="highlight-lapp">LAPP KABEL Germany</span></div>
+      <div class="ticker-item"><img src="assets/images/logo-eaton.png" alt="Eaton Logo" class="ticker-brand-logo"> Official Industrial Distributor: <span class="highlight-eaton">EATON MOELLER Switchgear</span></div>
+      <div class="ticker-item"><img src="assets/images/logo-partex.png" alt="Partex Logo" class="ticker-brand-logo"> Authorized Distributor: <span class="highlight-partex">PARTEX SWEDEN Marking Systems</span></div>
+      <div class="ticker-item"><img src="assets/images/logo-mennekes.png" alt="Mennekes Logo" class="ticker-brand-logo"> Genuine <span class="highlight-mennekes">MENNEKES Germany</span> CEE Industrial Plugs &amp; Sockets</div>
+      <div class="ticker-item"><span class="ticker-star">★</span> Direct Quotations: <span class="highlight">sales@siddhikabel.com</span> / <span class="highlight">Enquiry@siddhikabel.com</span></div>
+      <div class="ticker-item"><span class="ticker-star">★</span> Phone Support: 096200 00947 / 098860 58511</div>
+    </div>
+  </div>
+
+  <!-- 5. MOGLIX-STYLE HERO BANNER SECTION (Height: 320px with 4 Tabs + 4 Promo Image Boxes) -->
+  <section class="hero-moglix-section">
+    <div class="container">
+      <div class="home-banner-container">
+        
+        <!-- Desktop Banner Section (320px Height) -->
+        <div class="desktop-banner-section">
+          <div class="banner-carousel-wrapper">
+
+            <!-- Slide 1: Lapp Cables Offer -->
+            <div class="moglix-slide slide-bg-1 active">
+              <div class="slide-body-split">
+                <div class="slide-text-col">
+                  <span class="slide-top-pill">⚡ MEGA INDUSTRIAL DEAL • LAPP KABEL</span>
+                  <h1 class="slide-heading-main">Up to 25% Off on <span class="highlight-red">ÖLFLEX® & UNITRONIC®</span> Drums</h1>
+                  <p class="slide-paragraph">Special bulk OEM project discount on 500m & 1000m wooden drum orders. Complete with manufacturer test certificates, oil resistance, and same-day Bangalore site dispatch.</p>
+                  <div class="slide-action-btns">
+                    <button class="btn btn-primary" onclick="setCategoryFilter('cables'); document.getElementById('productsSection').scrollIntoView({behavior: 'smooth'})">Claim Lapp Deal</button>
+                    <button class="btn btn-outline-white" onclick="scrollToRFQ('LAPP DRUM OFFER')">Request Drum Pricing</button>
+                  </div>
+                </div>
+                <div class="slide-graphic-col">
+                  <div class="slide-product-showcase showcase-lapp">
+                    <div class="slide-showcase-img-box">
+                      <img src="assets/images/promo-lapp.jpg" alt="Lapp Cables" class="slide-showcase-img">
+                      <span class="slide-img-badge">25% OFF</span>
+                    </div>
+                    <div class="slide-showcase-info">
+                      <div class="slide-showcase-brand-row">
+                        <img src="assets/images/logo-lapp.png" alt="Lapp Logo" class="slide-showcase-brand-logo">
+                        <span class="slide-showcase-origin">Germany</span>
+                      </div>
+                      <h4 class="slide-showcase-name">ÖLFLEX® CLASSIC 110</h4>
+                      <div class="slide-showcase-offer-badge">⚡ SPECIAL OEM PROJECT RATES</div>
+                      <div class="slide-showcase-bullets">
+                        <span>✓ 300/500V VDE Certified</span>
+                        <span>✓ Flame Retardant & Oil Resistant</span>
+                        <span>✓ Bangalore Ready Stock</span>
+                      </div>
+                      <button class="btn btn-primary btn-sm slide-showcase-btn" onclick="addToCart('lapp-01')">Quick Add to RFQ Cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2: Eaton Moeller Switchgear Offer -->
+            <div class="moglix-slide slide-bg-2">
+              <div class="slide-body-split">
+                <div class="slide-text-col">
+                  <span class="slide-top-pill">⚡ PANEL BUILDER SPECIAL • EATON MOELLER</span>
+                  <h1 class="slide-heading-main">Flat 18% Off on <span class="highlight-red">PKZM0 Breakers & Contactors</span></h1>
+                  <p class="slide-paragraph">Equip your motor control centers with genuine Eaton Moeller motor-protective circuit breakers, DILM contactors, and SmartWire-DT automation packages.</p>
+                  <div class="slide-action-btns">
+                    <button class="btn btn-primary" onclick="setCategoryFilter('switchgear'); document.getElementById('productsSection').scrollIntoView({behavior: 'smooth'})">Claim Eaton Deal</button>
+                    <button class="btn btn-outline-white" onclick="scrollToRFQ('EATON COMBO OFFER')">Combo Quotation</button>
+                  </div>
+                </div>
+                <div class="slide-graphic-col">
+                  <div class="slide-product-showcase showcase-eaton">
+                    <div class="slide-showcase-img-box">
+                      <img src="assets/images/promo-eaton.jpg" alt="Eaton Switchgear" class="slide-showcase-img">
+                      <span class="slide-img-badge">18% OFF</span>
+                    </div>
+                    <div class="slide-showcase-info">
+                      <div class="slide-showcase-brand-row">
+                        <img src="assets/images/logo-eaton.svg" alt="Eaton Logo" class="slide-showcase-brand-logo">
+                        <span class="slide-showcase-origin">USA / Germany</span>
+                      </div>
+                      <h4 class="slide-showcase-name">PKZM0 + DILM Contactor</h4>
+                      <div class="slide-showcase-offer-badge">⚡ PANEL BUILDER ADVANTAGE</div>
+                      <div class="slide-showcase-bullets">
+                        <span>✓ 150 kA Short Circuit Capacity</span>
+                        <span>✓ IEC/EN 60947, VDE 0660 Standards</span>
+                        <span>✓ Combo Starter Pack in Stock</span>
+                      </div>
+                      <button class="btn btn-primary btn-sm slide-showcase-btn" onclick="addToCart('eaton-01')">Quick Add to RFQ Cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Partex Marking Systems Offer -->
+            <div class="moglix-slide slide-bg-3">
+              <div class="slide-body-split">
+                <div class="slide-text-col">
+                  <span class="slide-top-pill">⚡ SWEDISH PRECISION • PARTEX MARKING</span>
+                  <h1 class="slide-heading-main">Special Offer on <span class="highlight-red">Partex Markers & Printers</span></h1>
+                  <p class="slide-paragraph">Complete cable identification systems: PA closed chevron wire markers, PO/POZ sleeves, and ProMark T-1000 thermal printers. Free sample kit with every bulk RFQ.</p>
+                  <div class="slide-action-btns">
+                    <button class="btn btn-primary" onclick="setCategoryFilter('data'); document.getElementById('productsSection').scrollIntoView({behavior: 'smooth'})">Claim Partex Deal</button>
+                    <button class="btn btn-outline-white" onclick="scrollToRFQ('PARTEX SAMPLE KIT')">Get Free Sample Kit</button>
+                  </div>
+                </div>
+                <div class="slide-graphic-col">
+                  <div class="slide-product-showcase showcase-partex">
+                    <div class="slide-showcase-img-box">
+                      <img src="assets/images/promo-partex.jpg" alt="Partex Marking" class="slide-showcase-img">
+                      <span class="slide-img-badge">FREE SAMPLE</span>
+                    </div>
+                    <div class="slide-showcase-info">
+                      <div class="slide-showcase-brand-row">
+                        <img src="assets/images/logo-partex.png" alt="Partex Logo" class="slide-showcase-brand-logo">
+                        <span class="slide-showcase-origin">Sweden</span>
+                      </div>
+                      <h4 class="slide-showcase-name">Partex Wire Markers & T-1000</h4>
+                      <div class="slide-showcase-offer-badge">⚡ SWEDISH WIRE MARKING OFFER</div>
+                      <div class="slide-showcase-bullets">
+                        <span>✓ Chevron-Cut Interlocking Grip</span>
+                        <span>✓ UL94-V0 Self-Extinguishing PVC</span>
+                        <span>✓ ProMark T-1000 Printer Kits</span>
+                      </div>
+                      <button class="btn btn-primary btn-sm slide-showcase-btn" onclick="addToCart('partex-01')">Quick Add to RFQ Cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4: Mennekes CEE Plugs Offer -->
+            <div class="moglix-slide slide-bg-4">
+              <div class="slide-body-split">
+                <div class="slide-text-col">
+                  <span class="slide-top-pill">⚡ GERMAN ENGINEERING • MENNEKES CEE</span>
+                  <h1 class="slide-heading-main">Direct OEM Box Rates on <span class="highlight-red">IP44 & IP67 Plugs</span></h1>
+                  <p class="slide-paragraph">World leader in industrial plugs and sockets, EverGUM distribution enclosures, and watertight connectors for extreme industrial environments.</p>
+                  <div class="slide-action-btns">
+                    <button class="btn btn-primary" onclick="setCategoryFilter('plugs'); document.getElementById('productsSection').scrollIntoView({behavior: 'smooth'})">Claim Mennekes Deal</button>
+                    <button class="btn btn-outline-white" onclick="scrollToRFQ('MENNEKES BULK BOX')">Bulk Box RFQ</button>
+                  </div>
+                </div>
+                <div class="slide-graphic-col">
+                  <div class="slide-product-showcase showcase-mennekes">
+                    <div class="slide-showcase-img-box">
+                      <img src="assets/images/promo-mennekes.jpg" alt="Mennekes Plugs" class="slide-showcase-img">
+                      <span class="slide-img-badge">OEM BOX RATE</span>
+                    </div>
+                    <div class="slide-showcase-info">
+                      <div class="slide-showcase-brand-row">
+                        <img src="assets/images/logo-mennekes.png" alt="Mennekes Logo" class="slide-showcase-brand-logo">
+                        <span class="slide-showcase-origin">Germany</span>
+                      </div>
+                      <h4 class="slide-showcase-name">CEE 16A & 32A (IP44 / IP67)</h4>
+                      <div class="slide-showcase-offer-badge">⚡ FACTORY BOX TIERED RATES</div>
+                      <div class="slide-showcase-bullets">
+                        <span>✓ Impact-Resistant Polyamide 6</span>
+                        <span>✓ Nickel-Plated Brass Pins</span>
+                        <span>✓ Bulk Pack Project Discounts</span>
+                      </div>
+                      <button class="btn btn-primary btn-sm slide-showcase-btn" onclick="addToCart('menn-01')">Quick Add to RFQ Cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Circular Navigation Arrows (Moglix Style) -->
+          <button class="banner-nav-arrow prev-arrow" onclick="prevSlide()" aria-label="Previous Slide">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="banner-nav-arrow next-arrow" onclick="nextSlide()" aria-label="Next Slide">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <!-- Progress Indicators (Moglix Style) -->
+          <div class="carousel-progress">
+            <div class="progress-item active" onclick="selectSlide(0)"><div class="progress-fill"></div></div>
+            <div class="progress-item" onclick="selectSlide(1)"><div class="progress-fill"></div></div>
+            <div class="progress-item" onclick="selectSlide(2)"><div class="progress-fill"></div></div>
+            <div class="progress-item" onclick="selectSlide(3)"><div class="progress-fill"></div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Moglix 4 Promotion Cards with Product Images, Company Logos, Slogans & Discount Badges -->
+      <div class="category-subBanner">
+        <!-- 1. Lapp Cables Offer Box -->
+        <a href="about-lapp.html" class="moglix-promo-card card-bg-lapp" title="View LAPP India Products & Solutions">
+          <div class="promo-card-left">
+            <div class="promo-brand-logo-wrap">
+              <img src="assets/images/logo-lapp.png" alt="Lapp Kabel" class="promo-brand-logo">
+            </div>
+            <div class="promo-slogan">Reliable Connection Solutions<br>for Industrial Projects</div>
+            <div class="promo-shop-btn">
+              SHOP NOW
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div class="promo-card-right">
+            <img src="assets/images/promo-lapp.jpg" alt="Lapp Industrial Cables" class="promo-product-img">
+          </div>
+        </a>
+
+        <!-- 2. Eaton Switchgear Offer Box -->
+        <a href="about-eaton.html" class="moglix-promo-card card-bg-eaton" title="View Eaton Moeller Switchgear">
+          <div class="promo-card-left">
+            <div class="promo-brand-logo-wrap">
+              <img src="assets/images/logo-eaton.png" alt="Eaton Moeller" class="promo-brand-logo">
+            </div>
+            <div class="promo-slogan">Powering Business Worldwide<br>Switchgear & Controls</div>
+            <div class="promo-shop-btn">
+              SHOP NOW
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div class="promo-card-right">
+            <img src="assets/images/promo-eaton.jpg" alt="Eaton PKZM0 Switchgear" class="promo-product-img">
+          </div>
+        </a>
+
+        <!-- 3. Partex Marking Systems Offer Box -->
+        <a href="about-partex.html" class="moglix-promo-card card-bg-partex" title="View Partex Sweden Marking Systems">
+          <div class="promo-card-left">
+            <div class="promo-brand-logo-wrap">
+              <img src="assets/images/logo-partex.png" alt="Partex Marking" class="promo-brand-logo">
+            </div>
+            <div class="promo-slogan">Marking Systems<br>Swedish Wire Markers</div>
+            <div class="promo-shop-btn">
+              SHOP NOW
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div class="promo-card-right">
+            <img src="assets/images/promo-partex.jpg" alt="Partex Wire Markers & Printer" class="promo-product-img">
+          </div>
+        </a>
+
+        <!-- 4. Mennekes CEE Plugs Offer Box -->
+        <a href="about-mennekes.html" class="moglix-promo-card card-bg-mennekes" title="View MENNEKES Germany Industrial Plugs">
+          <div class="promo-card-left">
+            <div class="promo-brand-logo-wrap">
+              <img src="assets/images/logo-mennekes.png" alt="Mennekes" class="promo-brand-logo">
+            </div>
+            <div class="promo-slogan">Plugs for the world<br>Heavy-Duty IP44 / IP67</div>
+            <div class="promo-shop-btn">
+              SHOP NOW
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div class="promo-card-right">
+            <img src="assets/images/promo-mennekes.jpg" alt="Mennekes CEE Plugs" class="promo-product-img">
+          </div>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LAPP KABEL GERMANY - AUTHORIZED PRODUCT PORTFOLIO SECTION -->
+  <section class="lapp-portfolio-section" id="lappPortfolioSection">
+    <div class="container">
+      <div class="lapp-header-row">
+        <div>
+          <div class="brand-header-title-wrap">
+            <a href="about-lapp.html" class="brand-header-logo-box" title="View About LAPP India (Official Profile)">
+              <img src="assets/images/logo-lapp.png" alt="Lapp" class="brand-header-logo-img">
+            </a>
+            <h2 class="section-title">Products</h2>
+            <a href="about-lapp.html" style="font-size: 11.5px; font-weight: 700; color: #ff6600; text-decoration: none; background: #fff7ed; border: 1px solid #fed7aa; padding: 3px 9px; border-radius: 12px; margin-left: 6px;">About Lapp &rarr;</a>
+          </div>
+          <p class="section-desc" style="text-align: left; margin: 6px 0 0; font-size: 13.5px; color: #64748b; max-width: none; width: 100%; white-space: nowrap;">World leader in integrated cable technology: ÖLFLEX® cables, UNITRONIC® data cables, SKINTOP® glands, SILVYN® conduits, and industrial single cores.</p>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs (Single View Responsive) -->
+      <div class="lapp-tabs-bar">
+        <button class="lapp-tab-btn active" onclick="filterLappCards('all', this)">All Lapp Products (6)</button>
+        <button class="lapp-tab-btn" onclick="filterLappCards('cables', this)">Power & Control Cables</button>
+        <button class="lapp-tab-btn" onclick="filterLappCards('data', this)">Data Communication</button>
+        <button class="lapp-tab-btn" onclick="filterLappCards('single-cores', this)">Cabinet Single Cores</button>
+        <button class="lapp-tab-btn" onclick="filterLappCards('glands', this)">Glands & Counter Nuts</button>
+        <button class="lapp-tab-btn" onclick="filterLappCards('conduits', this)">Rill, Conduit & Klick</button>
+        <button class="lapp-tab-btn" onclick="filterLappCards('domestic', this)">Domestic / House Wiring</button>
+      </div>
+
+      <!-- 6 Lapp Product Cards: Single Row Grid -->
+      <div class="lapp-carousel-container">
+        <div class="lapp-cards-grid" id="lappCardsGrid">
+        
+        <!-- 1. Power and control cables (Lapp ÖLFLEX) -->
+        <a href="olflex-cables.html" class="lapp-photo-card" data-cat="cables" title="View ÖLFLEX® Power & Control Cables Sheet">
+          <img src="assets/images/card-olflex.jpg" alt="Power and control cables" class="lapp-photo-card-bg">
+          <div class="lapp-photo-card-overlay"></div>
+          <div class="lapp-photo-card-content">
+            <span class="lapp-card-brand-tag">ÖLFLEX®</span>
+            <h3 class="lapp-card-title">Power and Control Cables</h3>
+            <p class="lapp-card-subtitle">ÖLFLEX® CLASSIC 110, 110 SY, 110 CY, 100 I flexible cabling</p>
+            <span class="lapp-card-arrow">&rarr;</span>
+          </div>
+        </a>
+
+        <!-- 2. Data communication cables (UNITRONIC) -->
+        <a href="#productsSection" class="lapp-photo-card" data-cat="data" onclick="setCategoryFilter('data')">
+          <img src="assets/images/card-unitronic.jpg" alt="Data communication cables" class="lapp-photo-card-bg">
+          <div class="lapp-photo-card-overlay"></div>
+          <div class="lapp-photo-card-content">
+            <span class="lapp-card-brand-tag">UNITRONIC®</span>
+            <h3 class="lapp-card-title">Data Communication Cables</h3>
+            <p class="lapp-card-subtitle">LiYY, LIYCY and LIYY(TP), LIYCY (TP)</p>
+            <span class="lapp-card-arrow">&rarr;</span>
+          </div>
+        </a>
+
+        <!-- 3. Control cabinet Single cores (UNIPLUS) -->
+        <a href="#productsSection" class="lapp-photo-card" data-cat="single-cores" onclick="setCategoryFilter('cables')">
+          <img src="assets/images/card-uniplus.jpg" alt="Control cabinet Single cores" class="lapp-photo-card-bg">
+          <div class="lapp-photo-card-overlay"></div>
+          <div class="lapp-photo-card-content">
+            <span class="lapp-card-brand-tag">UNIPLUS®</span>
+            <h3 class="lapp-card-title">Control Cabinet Single Cores</h3>
+            <p class="lapp-card-subtitle">UNIPLUS® FR, FRLS flexible single cores</p>
+            <span class="lapp-card-arrow">&rarr;</span>
+          </div>
+        </a>
+
+        <!-- 4. Cable Glands & Counter Nuts (SKINTOP) -->
+        <a href="#rfqSection" class="lapp-photo-card" data-cat="glands" onclick="scrollToRFQ('LAPP GLANDS AND COUNTER NUTS')">
+          <img src="assets/images/card-skintop.jpg" alt="Cable Glands and Counter Nuts" class="lapp-photo-card-bg">
+          <div class="lapp-photo-card-overlay"></div>
+          <div class="lapp-photo-card-content">
+            <span class="lapp-card-brand-tag">SKINTOP®</span>
+            <h3 class="lapp-card-title">Cable Glands & Counter Nuts</h3>
+            <p class="lapp-card-subtitle">SKINTOP® glands & SKINDICHT® counter nuts (Metric & PG)</p>
+            <span class="lapp-card-arrow">&rarr;</span>
+          </div>
+        </a>
+
+        <!-- 5. Rill, Conduit & Klick (SILVYN) -->
+        <a href="#rfqSection" class="lapp-photo-card" data-cat="conduits" onclick="scrollToRFQ('LAPP RILL CONDUIT AND KLICK')">
+          <img src="assets/images/card-conduit.jpg" alt="Rill, Conduit and Klick" class="lapp-photo-card-bg">
+          <div class="lapp-photo-card-overlay"></div>
+          <div class="lapp-photo-card-content">
+            <span class="lapp-card-brand-tag">SILVYN®</span>
+            <h3 class="lapp-card-title">Rill, Conduit & Klick</h3>
+            <p class="lapp-card-subtitle">SILVYN® RILL conduits & SILVYN® KLICK connectors</p>
+            <span class="lapp-card-arrow">&rarr;</span>
+          </div>
+        </a>
+
+        <!-- 6. Domestic / House Wiring (LAPP INFRA) -->
+        <a href="#rfqSection" class="lapp-photo-card" data-cat="domestic" onclick="scrollToRFQ('LAPP INFRA HOUSE WIRING')">
+          <img src="assets/images/card-infra.jpg" alt="Domestic House Wiring" class="lapp-photo-card-bg">
+          <div class="lapp-photo-card-overlay"></div>
+          <div class="lapp-photo-card-content">
+            <span class="lapp-card-brand-tag">LAPP INFRA</span>
+            <h3 class="lapp-card-title">Domestic / House Wiring</h3>
+            <p class="lapp-card-subtitle">LAPP INFRA Flame Retardant (FR-LSH) building wires</p>
+            <span class="lapp-card-arrow">&rarr;</span>
+          </div>
+        </a>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EATON MOELLER GERMANY - PRODUCT PORTFOLIO SECTION -->
+  <section class="brand-portfolio-section brand-eaton" id="eatonPortfolioSection">
+    <div class="container">
+      <div class="lapp-header-row">
+        <div>
+          <div class="brand-header-title-wrap">
+            <div class="brand-header-logo-box">
+              <img src="assets/images/logo-eaton.png" alt="Eaton" class="brand-header-logo-img">
+            </div>
+            <h2 class="section-title">Products</h2>
+          </div>
+          <p class="section-desc" style="text-align: left; margin: 6px 0 0; font-size: 13.5px; color: #64748b; max-width: none; width: 100%; white-space: nowrap;">Powering Business Worldwide: PKZM0 motor protection, DILM contactors, NZM breakers, and industrial control.</p>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="lapp-tabs-bar">
+        <button class="brand-tab-btn active" onclick="filterEatonCards('all', this)">All Eaton Products (6)</button>
+        <button class="brand-tab-btn" onclick="filterEatonCards('motor-protection', this)">Motor Protection</button>
+        <button class="brand-tab-btn" onclick="filterEatonCards('contactors', this)">Power Contactors</button>
+        <button class="brand-tab-btn" onclick="filterEatonCards('mccb', this)">Circuit Breakers</button>
+        <button class="brand-tab-btn" onclick="filterEatonCards('mcb', this)">Miniature Breakers</button>
+        <button class="brand-tab-btn" onclick="filterEatonCards('pilot-devices', this)">Control &amp; Signaling</button>
+        <button class="brand-tab-btn" onclick="filterEatonCards('drives', this)">Variable Drives</button>
+      </div>
+
+      <!-- 6 Eaton Product Cards -->
+      <div class="lapp-carousel-container">
+        <div class="lapp-cards-grid brand-cards-grid" id="eatonCardsGrid">
+          <!-- 1. PKZM0 -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="motor-protection" onclick="setCategoryFilter('switchgear')">
+            <img src="assets/images/eaton-pkzm0.jpg" alt="PKZM0 Motor-Protective Breakers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PKZM0®</span>
+              <h3 class="brand-card-title">Motor-Protective Breakers</h3>
+              <p class="brand-card-subtitle">PKZM0 &amp; PKZM4 rotary motor starters up to 65A</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 2. DILM -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="contactors" onclick="setCategoryFilter('switchgear')">
+            <img src="assets/images/eaton-dilm.jpg" alt="DILM Power Contactors" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">DILM®</span>
+              <h3 class="brand-card-title">Power Contactors &amp; Relays</h3>
+              <p class="brand-card-subtitle">DILM 3-pole &amp; 4-pole contactors 7A to 1000A</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 3. NZM -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="mccb" onclick="setCategoryFilter('switchgear')">
+            <img src="assets/images/eaton-nzm.jpg" alt="NZM Molded Case Circuit Breakers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">NZM®</span>
+              <h3 class="brand-card-title">Molded Case Circuit Breakers</h3>
+              <p class="brand-card-subtitle">NZM1 to NZM4 compact MCCB up to 1600A</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 4. FAZ -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="mcb" onclick="setCategoryFilter('switchgear')">
+            <img src="assets/images/eaton-faz.jpg" alt="FAZ Miniature Circuit Breakers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">FAZ®</span>
+              <h3 class="brand-card-title">Miniature Circuit Breakers</h3>
+              <p class="brand-card-subtitle">FAZ industrial DIN-rail MCB 0.5A to 63A 15kA</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 5. RMQ-TITAN -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="pilot-devices" onclick="setCategoryFilter('switchgear')">
+            <img src="assets/images/eaton-rmq.jpg" alt="RMQ-TITAN Push Buttons" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">RMQ-TITAN®</span>
+              <h3 class="brand-card-title">Push Buttons &amp; Pilot Lights</h3>
+              <p class="brand-card-subtitle">M22 22mm pilot lights, selectors &amp; e-stops</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 6. POWERXL -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="drives" onclick="setCategoryFilter('switchgear')">
+            <img src="assets/images/eaton-drives.jpg" alt="PowerXL Variable Speed Drives" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">POWERXL®</span>
+              <h3 class="brand-card-title">Variable Speed Drives</h3>
+              <p class="brand-card-subtitle">DC1 &amp; DA1 high performance AC frequency inverters</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARTEX SWEDEN - PRODUCT PORTFOLIO SECTION -->
+  <section class="brand-portfolio-section brand-partex" id="partexPortfolioSection">
+    <div class="container">
+      <div class="lapp-header-row">
+        <div>
+          <div class="brand-header-title-wrap">
+            <div class="brand-header-logo-box">
+              <img src="assets/images/logo-partex.png" alt="Partex" class="brand-header-logo-img">
+            </div>
+            <h2 class="section-title">Products</h2>
+          </div>
+          <p class="section-desc" style="text-align: left; margin: 6px 0 0; font-size: 13.5px; color: #64748b; max-width: none; width: 100%; white-space: nowrap;">Swedish wire &amp; cable marking systems: Closed chevron markers, clip-on markers, printable sleeves, and ProMark printers.</p>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="lapp-tabs-bar">
+        <button class="brand-tab-btn active" onclick="filterPartexCards('all', this)">All Partex Products (6)</button>
+        <button class="brand-tab-btn" onclick="filterPartexCards('pa', this)">Closed Wire Markers</button>
+        <button class="brand-tab-btn" onclick="filterPartexCards('pc', this)">Clip-on Markers</button>
+        <button class="brand-tab-btn" onclick="filterPartexCards('po', this)">Printable Sleeves</button>
+        <button class="brand-tab-btn" onclick="filterPartexCards('pks', this)">Stainless Steel Markers</button>
+        <button class="brand-tab-btn" onclick="filterPartexCards('promark', this)">ProMark Printers</button>
+        <button class="brand-tab-btn" onclick="filterPartexCards('ties', this)">Cable Ties</button>
+      </div>
+
+      <!-- 6 Partex Product Cards -->
+      <div class="lapp-carousel-container">
+        <div class="lapp-cards-grid brand-cards-grid" id="partexCardsGrid">
+          <!-- 1. PA -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="pa" onclick="setCategoryFilter('data')">
+            <img src="assets/images/partex-pa.jpg" alt="PA Closed Wire Markers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PA®</span>
+              <h3 class="brand-card-title">Closed Chevron Markers</h3>
+              <p class="brand-card-subtitle">PA02, PA1, PA2 interlocking pre-printed sleeves</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 2. PC -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="pc" onclick="setCategoryFilter('data')">
+            <img src="assets/images/partex-pc.jpg" alt="PC Snap-on Open Markers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PC®</span>
+              <h3 class="brand-card-title">Snap-on Open Markers</h3>
+              <p class="brand-card-subtitle">PC10, PC20, PC30 snap-on markers for installed cables</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 3. PO / POZ -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="po" onclick="setCategoryFilter('data')">
+            <img src="assets/images/partex-po.jpg" alt="PO Printable Marker Sleeves" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PO / POZ®</span>
+              <h3 class="brand-card-title">Printable Marker Tubing</h3>
+              <p class="brand-card-subtitle">PO profile oval tubing &amp; POZ zero-halogen sleeves</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 4. PKS -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="pks" onclick="setCategoryFilter('data')">
+            <img src="assets/images/partex-pks.jpg" alt="PKS Stainless Steel Markers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PKS®</span>
+              <h3 class="brand-card-title">Stainless Steel 316 Markers</h3>
+              <p class="brand-card-subtitle">Acid-proof stainless markers for harsh marine environments</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 5. PROMARK -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="promark" onclick="setCategoryFilter('data')">
+            <img src="assets/images/partex-promark.jpg" alt="ProMark Thermal Printers" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PROMARK®</span>
+              <h3 class="brand-card-title">T-1000 Thermal Printers</h3>
+              <p class="brand-card-subtitle">High-speed portable thermal transfer marking machine</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 6. TIES -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="ties" onclick="setCategoryFilter('data')">
+            <img src="assets/images/partex-ties.jpg" alt="Partex Cable Ties" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PARTEX®</span>
+              <h3 class="brand-card-title">Cable Ties &amp; Fasteners</h3>
+              <p class="brand-card-subtitle">Nylon 6.6 UV-resistant &amp; stainless steel cable ties</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENNEKES GERMANY - PRODUCT PORTFOLIO SECTION -->
+  <section class="brand-portfolio-section brand-mennekes" id="mennekesPortfolioSection">
+    <div class="container">
+      <div class="lapp-header-row">
+          <div class="brand-header-title-wrap">
+            <div class="brand-header-logo-box">
+              <img src="assets/images/logo-mennekes.png" alt="Mennekes" class="brand-header-logo-img">
+            </div>
+            <h2 class="section-title">Products</h2>
+          </div>
+          <p class="section-desc" style="text-align: left; margin: 6px 0 0; font-size: 13.5px; color: #64748b; max-width: none; width: 100%; white-space: nowrap;">Plugs for the world: Industrial CEE plugs, interlocked sockets, phase inverters, EverGUM boxes, and AMAXX units.</p>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="lapp-tabs-bar">
+        <button class="brand-tab-btn active" onclick="filterMennekesCards('all', this)">All Mennekes Products (6)</button>
+        <button class="brand-tab-btn" onclick="filterMennekesCards('plugs', this)">Industrial CEE Plugs</button>
+        <button class="brand-tab-btn" onclick="filterMennekesCards('duo', this)">Interlocked Sockets</button>
+        <button class="brand-tab-btn" onclick="filterMennekesCards('panel', this)">Panel Sockets</button>
+        <button class="brand-tab-btn" onclick="filterMennekesCards('phase', this)">Phase Inverters</button>
+        <button class="brand-tab-btn" onclick="filterMennekesCards('evergum', this)">EverGUM Combinations</button>
+        <button class="brand-tab-btn" onclick="filterMennekesCards('amaxx', this)">AMAXX Enclosures</button>
+      </div>
+
+      <!-- 6 Mennekes Product Cards -->
+      <div class="lapp-carousel-container">
+        <div class="lapp-cards-grid brand-cards-grid" id="mennekesCardsGrid">
+          <!-- 1. POWERTOP -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="plugs" onclick="setCategoryFilter('plugs')">
+            <img src="assets/images/menn-powertop.jpg" alt="PowerTOP Xtra Plugs" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">POWERTOP® XTRA</span>
+              <h3 class="brand-card-title">Industrial CEE Plugs IP44/67</h3>
+              <p class="brand-card-subtitle">Ergonomic rubberized grip plugs 16A to 125A</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 2. DUO -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="duo" onclick="setCategoryFilter('plugs')">
+            <img src="assets/images/menn-duo.jpg" alt="DUO Switched Interlocked Sockets" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">DUO®</span>
+              <h3 class="brand-card-title">Switched Interlocked Sockets</h3>
+              <p class="brand-card-subtitle">Mechanical interlock safety sockets 16A, 32A, 63A</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 3. PANEL -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="panel" onclick="setCategoryFilter('plugs')">
+            <img src="assets/images/menn-panel.jpg" alt="Mennekes Panel Sockets" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">MENNEKES®</span>
+              <h3 class="brand-card-title">Panel Mounted Sockets</h3>
+              <p class="brand-card-subtitle">Straight and angled flange sockets IP44 / IP67</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 4. PHASE INVERTER -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="phase" onclick="setCategoryFilter('plugs')">
+            <img src="assets/images/menn-phase.jpg" alt="Phase Inverter Plugs" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">PHASE INVERTER</span>
+              <h3 class="brand-card-title">Phase Inverter Reversal Plugs</h3>
+              <p class="brand-card-subtitle">Quick rotary motor direction change without rewire</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 5. EVERGUM -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="evergum" onclick="setCategoryFilter('plugs')">
+            <img src="assets/images/menn-evergum.jpg" alt="EverGUM Distribution Units" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">EVERGUM®</span>
+              <h3 class="brand-card-title">Solid Rubber Distro Units</h3>
+              <p class="brand-card-subtitle">Unbreakable mobile power distribution boxes IP44</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+
+          <!-- 6. AMAXX -->
+          <a href="#productsSection" class="brand-photo-card" data-cat="amaxx" onclick="setCategoryFilter('plugs')">
+            <img src="assets/images/menn-amaxx.jpg" alt="AMAXX Receptacle Combinations" class="lapp-photo-card-bg">
+            <div class="lapp-photo-card-overlay"></div>
+            <div class="brand-photo-card-content">
+              <span class="brand-card-brand-tag">AMAXX®</span>
+              <h3 class="brand-card-title">AMAXX Modular Combinations</h3>
+              <p class="brand-card-subtitle">Custom configured industrial power outlet assemblies</p>
+              <span class="brand-card-arrow">&rarr;</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT US SECTION -->
+  <section class="about-section" id="aboutSection">
+    <div class="container">
+      <div class="about-header-wrap">
+        <span class="about-badge">About Siddhi Kabel</span>
+        <h2 class="about-title">Dependable Industrial Electrical &amp; Automation Solutions</h2>
+        <p class="about-subtitle">Authorised Distributors for LAPP, EATON, PARTEX &amp; MENNEKES Since 2008</p>
+      </div>
+
+      <div class="about-grid">
+        <!-- Left Column: Story, Specialization, Industries & Metrics -->
+        <div class="about-col-left">
+          <p class="about-lead">
+            Siddhi Kabel was established in the year 2008 by professionals with experience of more than 15 years in providing solutions for various needs of high quality industrial electrical, automation, and safety products.
+          </p>
+
+          <p class="about-p">
+            Siddhi is one of the leading channel partners of world-class international manufacturers, offering a comprehensive range of genuine products across <strong>Lapp Kabel</strong> (ÖLFLEX® power and control cables, UNITRONIC® data cables, UNIPLUS® single cores, SKINTOP® cable glands, and SILVYN® conduits), <strong>Eaton Moeller</strong> (PKZM0® motor protection breakers, DILM® power contactors, NZM® &amp; FAZ® circuit breakers, and RMQ-Titan control &amp; signaling), <strong>Partex Sweden</strong> (PA® closed wire markers, PC® clip-on markers, PO/POZ® printable sleeves, stainless steel 316 markers, and ProMark printers), and <strong>Mennekes</strong> (PowerTOP® Xtra industrial CEE plugs, DUO® switched interlocked sockets, panel receptacles, and EverGUM &amp; AMAXX power distribution units).
+          </p>
+
+          <p class="about-p">
+            For many customers Siddhi Kabel is more than a supplier — we combine superior product offerings with unparalleled technical support and supply chain services. Whether it is providing products &amp; services for Machine Tool industries, Pharmaceutical, Process industry, Automotive, Oil &amp; Gas, Chemical &amp; Paint industries, infrastructure projects, or System Integrators, we know our customers are looking for more than a supply of parts and pieces; we focus on addressing our customers' larger business needs.
+          </p>
+
+          <!-- Key Metrics -->
+          <div class="about-metrics-row">
+            <div class="about-metric-card">
+              <div class="about-metric-val">2008</div>
+              <div class="about-metric-lbl">Established Year</div>
+            </div>
+            <div class="about-metric-card">
+              <div class="about-metric-val">15+</div>
+              <div class="about-metric-lbl">Years Experience</div>
+            </div>
+            <div class="about-metric-card">
+              <div class="about-metric-val">4 Brands</div>
+              <div class="about-metric-lbl">Authorized OEM</div>
+            </div>
+            <div class="about-metric-card">
+              <div class="about-metric-val">Pan-India</div>
+              <div class="about-metric-lbl">Express Dispatch</div>
+            </div>
+          </div>
+
+          <!-- Industries Served -->
+          <div class="about-industries-box">
+            <div class="about-industries-title">Key Industries Served</div>
+            <div class="about-industry-tags">
+              <span class="about-industry-tag">Machine Tool Industries</span>
+              <span class="about-industry-tag">Pharmaceutical</span>
+              <span class="about-industry-tag">Process Industries</span>
+              <span class="about-industry-tag">Automotive &amp; EV</span>
+              <span class="about-industry-tag">Oil &amp; Gas</span>
+              <span class="about-industry-tag">Chemical &amp; Paints</span>
+              <span class="about-industry-tag">System Integrators</span>
+              <span class="about-industry-tag">Turnkey Projects</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Authorized Partnerships & Techno-Commercial Expertise -->
+        <div class="about-col-right">
+          <div class="about-partners-card">
+            <div class="about-partners-header">
+              <h3 class="about-partners-title">Authorized Manufacturing Partners</h3>
+              <p class="about-partners-sub">Direct authorized distributor, dealer, channel partner &amp; importer</p>
+            </div>
+
+            <ul class="about-partner-list">
+              <!-- 1. LAPP -->
+              <li class="about-partner-item partner-lapp" style="cursor: pointer;" onclick="window.location.href='about-lapp.html'">
+                <img src="assets/images/logo-lapp.png" alt="Lapp India Pvt Ltd" class="about-partner-logo">
+                <div class="about-partner-info">
+                  <div class="about-partner-name" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>LAPP INDIA PVT LTD</span>
+                    <span style="font-size: 11px; color: #ff6600; font-weight: 700;">About Profile &rarr;</span>
+                  </div>
+                  <p class="about-partner-desc">ÖLFLEX® Cables, UNITRONIC®, SKINTOP® Glands &amp; SILVYN® Conduits</p>
+                </div>
+              </li>
+
+              <!-- 2. EATON -->
+              <li class="about-partner-item partner-eaton">
+                <img src="assets/images/logo-eaton.png" alt="Eaton Power Quality Pvt Ltd" class="about-partner-logo">
+                <div class="about-partner-info">
+                  <div class="about-partner-name">EATON Power Quality Pvt Ltd</div>
+                  <p class="about-partner-desc">Moeller Switchgear, PKZM0® Breakers, DILM® Contactors &amp; Automation</p>
+                </div>
+              </li>
+
+              <!-- 3. PARTEX -->
+              <li class="about-partner-item partner-partex">
+                <img src="assets/images/logo-partex.png" alt="Partex Marking Systems" class="about-partner-logo">
+                <div class="about-partner-info">
+                  <div class="about-partner-name">PARTEX Marking Systems</div>
+                  <p class="about-partner-desc">Swedish Wire &amp; Cable Markers, Printable Tubing &amp; ProMark Printers</p>
+                </div>
+              </li>
+
+              <!-- 4. MENNEKES -->
+              <li class="about-partner-item partner-mennekes">
+                <img src="assets/images/logo-mennekes.png" alt="Mennekes Electric India Pvt Ltd" class="about-partner-logo">
+                <div class="about-partner-info">
+                  <div class="about-partner-name">MENNEKES Electric India Pvt Ltd</div>
+                  <p class="about-partner-desc">PowerTOP® Xtra Industrial CEE Plugs, Interlocked Sockets &amp; AMAXX Units</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Techno-Commercial & Sourcing Commitment -->
+          <div class="about-service-card">
+            <div class="about-service-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span>Techno-Commercial Expertise &amp; Supply Assurance</span>
+            </div>
+            <p class="about-service-desc">
+              We constantly monitor and adjust each program so that when our customers' needs change, our solutions change with them. Our expertise lies in understanding customer requirements and careful analysis of applications to provide the best possible techno-commercial solutions. Our team strives hard in planning and managing best inventory apart from arranging and sourcing materials from our large and reliable network to offer uninterrupted services to our valued customers.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+
+
+
+
+  <!-- 10. AUTHORIZED BRANDS SHOWCASE -->
+  <!-- 10. AUTHORIZED BRANDS SHOWCASE -->
+  <section class="brands-section" id="brandsSection">
+    <div class="container">
+      <div class="section-title-wrap" style="margin-bottom: 28px;">
+        <span class="section-subtitle">Partnerships &amp; Distribution</span>
+        <h2 class="section-title" style="font-size: 26px;">Our Authorised Brand Partners</h2>
+      </div>
+
+      <div class="brands-grid">
+        <a href="#lappPortfolioSection" class="brand-partner-card brand-card-lapp">
+          <div class="brand-partner-logo-wrap">
+            <img src="assets/images/logo-lapp.png" alt="Lapp Kabel Germany" class="brand-partner-logo">
+          </div>
+          <div class="brand-title">LAPP KABEL</div>
+          <div class="brand-subtitle">Germany • Cables &amp; Connectors</div>
+        </a>
+
+        <a href="#eatonPortfolioSection" class="brand-partner-card brand-card-eaton">
+          <div class="brand-partner-logo-wrap">
+            <img src="assets/images/logo-eaton.png" alt="Eaton Moeller" class="brand-partner-logo">
+          </div>
+          <div class="brand-title">EATON - MOELLER</div>
+          <div class="brand-subtitle">USA • Switchgear &amp; Automation</div>
+        </a>
+
+        <a href="#partexPortfolioSection" class="brand-partner-card brand-card-partex">
+          <div class="brand-partner-logo-wrap">
+            <img src="assets/images/logo-partex.png" alt="Partex Marking Systems" class="brand-partner-logo">
+          </div>
+          <div class="brand-title">PARTEX SWEDEN</div>
+          <div class="brand-subtitle">Sweden • Cable Marking Systems</div>
+        </a>
+
+        <a href="#mennekesPortfolioSection" class="brand-partner-card brand-card-mennekes">
+          <div class="brand-partner-logo-wrap">
+            <img src="assets/images/logo-mennekes.png" alt="Mennekes Germany" class="brand-partner-logo">
+          </div>
+          <div class="brand-title">MENNEKES</div>
+          <div class="brand-subtitle">Germany • Industrial CEE Plugs</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. B2B RFQ & BULK QUOTATION SECTION -->
+  <section class="rfq-section" id="rfqSection">
+    <div class="container">
+      <div class="rfq-wrapper">
+        <div class="rfq-info-col">
+          <div>
+            <span style="font-size: 12px; font-weight: 800; color: #ff8589; text-transform: uppercase; letter-spacing: 1px;">Direct Procurement Portal</span>
+            <h3>Request a Bulk Quotation (RFQ)</h3>
+            <p>Send us your Bill of Materials (BOM), cable schedule, or switchgear project specifications. Our industrial sales engineers provide guaranteed pricing and delivery schedules within 2 to 4 business hours.</p>
+
+            <div class="rfq-highlights">
+              <div class="rfq-hl-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Direct OEM / Panel Builder Volume Tiered Discounts</span>
+              </div>
+              <div class="rfq-hl-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Manufacturer Test Certificates &amp; Mill Compliance Reports</span>
+              </div>
+              <div class="rfq-hl-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dedicated Bangalore Central Warehouse &amp; Logistics</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rfq-direct-help">
+            <span>Direct Sales &amp; RFQ Inquiries:</span>
+            <strong style="display: block; margin-top: 4px;">sales@siddhikabel.com</strong>
+            <strong>Enquiry@siddhikabel.com</strong>
+            <span style="margin-top: 8px;">Phone: 096200 00947 / 098860 58511</span>
+          </div>
+        </div>
+
+        <div class="rfq-form-col">
+          <form class="rfq-form" onsubmit="handleRfqSubmit(event)">
+            <div class="form-group">
+              <label for="rfqName">Full Name *</label>
+              <input type="text" id="rfqName" required placeholder="e.g. Ramesh Kumar">
+            </div>
+
+            <div class="form-group">
+              <label for="rfqCompany">Company / Enterprise Name</label>
+              <input type="text" id="rfqCompany" placeholder="e.g. Acme Automation Pvt Ltd">
+            </div>
+
+            <div class="form-group">
+              <label for="rfqEmail">Business Email *</label>
+              <input type="email" id="rfqEmail" required placeholder="name@company.com">
+            </div>
+
+            <div class="form-group">
+              <label for="rfqPhone">Phone / WhatsApp Number *</label>
+              <input type="tel" id="rfqPhone" required placeholder="+91 98765 43210">
+            </div>
+
+            <div class="form-group">
+              <label for="rfqCat">Primary Product of Interest</label>
+              <select id="rfqCat">
+                <option value="lapp">Lapp Kabel Cables &amp; Wires</option>
+                <option value="eaton">Eaton Moeller Switchgear</option>
+                <option value="partex">Partex Cable Marking Systems</option>
+                <option value="mennekes">Mennekes CEE Plugs &amp; Sockets</option>
+                <option value="multiple">Complete Project BOM / Mixed Schedule</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="rfqCity">Delivery City / Site Location</label>
+              <input type="text" id="rfqCity" placeholder="e.g. Bangalore, Chennai, Pune">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="rfqNotes">Requirement Details / Bill of Materials (BOM)</label>
+              <textarea id="rfqNotes" rows="4" placeholder="Mention part numbers, sizes (e.g. 4x1.5 sq mm), quantities in meters or units, and required dispatch dates..."></textarea>
+            </div>
+
+            <!-- File Attachment Option (Excel, PDF, Images, Any Format) -->
+            <div class="form-group full-width">
+              <label for="rfqAttachment" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                <span>Attach File / BOM / Drawing (Optional)</span>
+                <span style="font-size: 11px; color: #64748b; font-weight: normal;">Excel (.xlsx, .xls, .csv), PDF, Images, Docs, CAD, ZIP (Any Format)</span>
+              </label>
+              <div class="file-upload-box" id="fileUploadDropzone" onclick="document.getElementById('rfqAttachment').click()">
+                <input type="file" id="rfqAttachment" name="rfqAttachment" multiple accept="*/*" style="display: none;" onchange="handleFileSelect(event)">
+                <div class="file-upload-content">
+                  <div class="file-upload-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                  </div>
+                  <div class="file-upload-text">
+                    <span class="file-upload-main"><strong>Click to upload</strong> or drag and drop files here</span>
+                    <span class="file-upload-sub">Attach Excel BOM, PDF schedules, drawings, photos, or spec sheets (Up to 25MB each)</span>
+                  </div>
+                </div>
+                <div class="file-selected-list" id="fileSelectedList" style="display: none;"></div>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <button type="submit" class="btn btn-primary" style="width: 100%; height: 46px;">
+                Submit Request for Quotation
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. OFFICIAL HEAD OFFICE & CONTACT DETAILS SECTION -->
+  <section class="trust-bar" id="contactSection" style="padding: 50px 0; background: #ffffff;">
+    <div class="container">
+      <div class="section-title-wrap" style="margin-bottom: 30px;">
+        <span class="section-subtitle">Official Head Office</span>
+        <h2 class="section-title" style="font-size: 26px;">Get in Touch With Us</h2>
+        <p class="section-desc">Get in touch with us for any questions about our products or industrial electrical solutions.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 25px;">
+        <!-- Head Office Card -->
+        <div style="background: var(--bg-light); border: 1px solid var(--gray-200); border-radius: 8px; padding: 24px; border-left: 4px solid var(--primary);">
+          <div style="font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 6px;">Registered Office</div>
+          <h3 style="font-size: 17px; margin-bottom: 12px;">Head Office</h3>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary); flex-shrink: 0; margin-top: 3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <p style="font-size: 14px; line-height: 1.6; color: var(--gray-800); margin: 0;">
+              <strong>Siddhi Kabel Corporation Private Limited</strong><br>
+              No.3, 1st Main Road, 1st Block,<br>
+              Banashankari 3rd Stage,<br>
+              Bangalore 560 085, Karnataka, India.
+            </p>
+          </div>
+        </div>
+
+        <!-- Email Us Card -->
+        <div style="background: var(--bg-light); border: 1px solid var(--gray-200); border-radius: 8px; padding: 24px; border-left: 4px solid var(--secondary);">
+          <div style="font-size: 12px; font-weight: 800; color: var(--secondary); text-transform: uppercase; margin-bottom: 6px;">Direct Electronic Mail</div>
+          <h3 style="font-size: 17px; margin-bottom: 12px;">Email Us</h3>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+            <a href="mailto:sales@siddhikabel.com" style="color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              sales@siddhikabel.com
+            </a>
+            <a href="mailto:Enquiry@siddhikabel.com" style="color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Enquiry@siddhikabel.com
+            </a>
+            <a href="mailto:info@siddhikabel.com" style="color: var(--gray-700); font-weight: 500; display: flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              info@siddhikabel.com
+            </a>
+            <a href="mailto:guru@siddhikabel.com" style="color: var(--gray-700); font-weight: 500; display: flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              guru@siddhikabel.com
+            </a>
+          </div>
+        </div>
+
+        <!-- Call Support Card -->
+        <div style="background: var(--bg-light); border: 1px solid var(--gray-200); border-radius: 8px; padding: 24px; border-left: 4px solid var(--primary);">
+          <div style="font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 6px;">Customer Desk</div>
+          <h3 style="font-size: 17px; margin-bottom: 12px;">Call Support</h3>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px; font-weight: 700; color: var(--gray-900);">
+            <a href="tel:09620000947" style="color: var(--primary); display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>096200 00947</span>
+            </a>
+            <a href="tel:09886058511" style="color: var(--primary); display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>098860 58511</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13. SLIDE-OVER CART DRAWER -->
+  <div class="cart-drawer-overlay" id="cartOverlay" onclick="closeCartDrawer()"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-drawer-header">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        Quotation Cart
+      </h3>
+      <button class="btn-close-drawer" onclick="closeCartDrawer()" aria-label="Close Cart">&times;</button>
+    </div>
+
+    <div class="cart-drawer-items" id="cartItemsList">
+      <!-- Items dynamically populated via main.js -->
+    </div>
+
+    <div class="cart-drawer-footer">
+      <div class="cart-subtotal-row">
+        <span>Estimated Subtotal (excl. GST):</span>
+        <span id="cartDrawerSubtotal">₹0.00</span>
+      </div>
+      <div class="cart-checkout-actions">
+        <button class="btn btn-primary" onclick="checkoutRfq()">
+          Request Official GST Quotation
+        </button>
+        <button class="btn btn-outline-primary btn-sm" onclick="closeCartDrawer()">
+          Continue Browsing
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 14. QUICK VIEW MODAL -->
+  <div class="modal-overlay" id="quickViewModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeQuickView()" aria-label="Close">&times;</button>
+      <div class="modal-body" id="quickViewContent">
+        <!-- Injected via openQuickView() in main.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 14B. CUSTOMER SIGN IN & REGISTRATION MODAL -->
+  <div class="modal-overlay" id="authModal" onclick="if(event.target === this) closeAuthModal()">
+    <div class="modal-card auth-modal-card">
+      <button class="modal-close" onclick="closeAuthModal()" aria-label="Close">&times;</button>
+      
+      <div class="auth-modal-header">
+        <div class="auth-modal-badge">Siddhi Eshop Customer Portal</div>
+        <h3 class="auth-modal-title" id="authModalTitle">Sign In to Your Account</h3>
+        <p class="auth-modal-desc">Login or create an account to dispatch official commercial offers &amp; project RFQs</p>
+        
+        <!-- Auth Switch Tabs -->
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">Sign In (Login)</button>
+          <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Create Customer Account</button>
+        </div>
+      </div>
+
+      <div class="auth-modal-body">
+        <!-- 1. SIGN IN FORM -->
+        <form id="customerLoginForm" class="auth-form active" onsubmit="handleCustomerLogin(event)">
+          <div class="auth-alert error" id="loginAlert" style="display: none;"></div>
+
+          <div class="form-group">
+            <label for="loginIdentifier">Phone Number OR Business Email ID *</label>
+            <div class="input-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="loginIdentifier" required placeholder="e.g. 09620000947 or name@company.com">
+            </div>
+            <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;">Login using your registered Phone No. or Email ID</small>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Password *</label>
+            <div class="input-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="loginPassword" required placeholder="Enter your password">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; height: 44px;">
+              Sign In &amp; Continue
+            </button>
+          </div>
+
+          <div class="auth-form-switch">
+            <span>New customer or industrial enterprise?</span>
+            <a href="javascript:void(0)" onclick="switchAuthTab('register')">Create Account Now &rarr;</a>
+          </div>
+        </form>
+
+        <!-- 2. CREATE CUSTOMER ACCOUNT FORM -->
+        <form id="customerRegisterForm" class="auth-form" onsubmit="handleCustomerRegister(event)">
+          <div class="auth-alert error" id="registerAlert" style="display: none;"></div>
+
+          <!-- Section 1: Company Details -->
+          <div class="auth-section-divider">
+            <span class="auth-section-tag">1. Company Details &amp; Tax Information</span>
+          </div>
+          <!-- Row A: Company Name & Full Address -->
+          <div class="auth-grid-company-top">
+            <div class="form-group col-company">
+              <label for="regCompanyName">Company Name *</label>
+              <input type="text" id="regCompanyName" required placeholder="e.g. Acme Automation Pvt Ltd">
+            </div>
+
+            <div class="form-group col-address">
+              <label for="regAddress">Address * (Building, Street, Industrial Area)</label>
+              <input type="text" id="regAddress" required placeholder="e.g. Plot No. 42, Peenya Industrial Area 2nd Phase">
+            </div>
+          </div>
+
+          <!-- Row B: City, State & GST No -->
+          <div class="auth-grid-company-bottom">
+            <div class="form-group col-city">
+              <label for="regCity">City *</label>
+              <input type="text" id="regCity" required placeholder="e.g. Bangalore, Chennai, Pune">
+            </div>
+
+            <div class="form-group col-state">
+              <label for="regState">State *</label>
+              <select id="regState" required>
+                <option value="" disabled selected>-- Select State / UT --</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Sikkim">Sikkim</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Chandigarh">Chandigarh</option>
+                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                <option value="Ladakh">Ladakh</option>
+                <option value="Puducherry">Puducherry</option>
+              </select>
+            </div>
+
+            <div class="form-group col-gst">
+              <label for="regGstNo">GST No *</label>
+              <input type="text" id="regGstNo" required placeholder="e.g. 29ABCDE1234F1Z5" style="text-transform: uppercase;">
+            </div>
+          </div>
+
+          <!-- Section 2: Contact Person Details -->
+          <div class="auth-section-divider" style="margin-top: 12px;">
+            <span class="auth-section-tag">2. Authorized Contact Person &amp; Login Details</span>
+          </div>
+          <div class="auth-grid-3col">
+            <div class="form-group">
+              <label for="regContactPerson">Contact Person Name *</label>
+              <input type="text" id="regContactPerson" required placeholder="e.g. Ramesh Kumar">
+            </div>
+
+            <div class="form-group">
+              <label for="regPhone">Phone Number * (Login ID)</label>
+              <input type="tel" id="regPhone" required placeholder="e.g. 09620000947">
+            </div>
+
+            <div class="form-group">
+              <label for="regEmail">Email ID * (Login ID)</label>
+              <input type="email" id="regEmail" required placeholder="name@company.com">
+            </div>
+          </div>
+
+          <!-- Section 3: Separate Password Option -->
+          <div class="auth-section-divider" style="margin-top: 10px;">
+            <span class="auth-section-tag">3. Account Security Password</span>
+          </div>
+          <div class="auth-grid-password">
+            <div class="form-group" style="max-width: 460px;">
+              <label for="regPassword">Set Password *</label>
+              <input type="password" id="regPassword" required minlength="6" placeholder="Min. 6 characters with at least 1 special character (@#$%&*!)">
+            </div>
+            <div class="password-note-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <span>Requires <strong>min. 6 characters</strong> &amp; <strong>1 special character</strong>. Use Phone No or Email to login.</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; height: 38px; font-size: 13.5px; font-weight: 700; letter-spacing: 0.5px;">
+              CREATE ACCOUNT
+            </button>
+          </div>
+
+          <div class="auth-form-switch" style="margin-top: 8px;">
+            <span>Already registered?</span>
+            <a href="javascript:void(0)" onclick="switchAuthTab('login')">Sign In &rarr;</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14C. CUSTOMER ACCOUNT PROFILE & OFFERS MODAL -->
+  <div class="modal-overlay" id="customerAccountModal" onclick="if(event.target === this) closeCustomerAccountModal()">
+    <div class="modal-card account-modal-card">
+      <button class="modal-close" onclick="closeCustomerAccountModal()" aria-label="Close">&times;</button>
+      
+      <div class="account-modal-header">
+        <div class="account-avatar" id="accountAvatarText">SK</div>
+        <div class="account-header-info">
+          <h3 id="accountModalCompanyName" style="margin: 0 0 4px; font-size: 18px; color: #1e293b;">Company Name</h3>
+          <p style="margin: 0; font-size: 13px; color: #64748b;"><span id="accountModalContact">Contact Person</span> • GSTIN: <strong id="accountModalGst" style="color: #0f172a;"></strong></p>
+        </div>
+      </div>
+
+      <div class="account-modal-body">
+        <div class="account-info-grid">
+          <div class="account-info-card">
+            <span class="info-label">Contact Person</span>
+            <span class="info-value" id="accountInfoContact"></span>
+          </div>
+          <div class="account-info-card">
+            <span class="info-label">Registered Phone (Login ID)</span>
+            <span class="info-value" id="accountInfoPhone"></span>
+          </div>
+          <div class="account-info-card">
+            <span class="info-label">Email ID (Login ID)</span>
+            <span class="info-value" id="accountInfoEmail"></span>
+          </div>
+          <div class="account-info-card">
+            <span class="info-label">GST Number</span>
+            <span class="info-value" id="accountInfoGst"></span>
+          </div>
+          <div class="account-info-card full-width">
+            <span class="info-label">Registered Address &amp; State</span>
+            <span class="info-value" id="accountInfoAddress"></span>
+          </div>
+        </div>
+
+        <div class="account-offers-section">
+          <h4 style="font-size: 15px; margin-bottom: 12px; color: var(--gray-900);">Your Sent Commercial Offers &amp; RFQs</h4>
+          <div id="accountOffersList">
+            <!-- Dynamically populated from siddhi_offers -->
+          </div>
+        </div>
+
+        <div class="account-actions-row">
+          <button type="button" class="btn btn-primary btn-sm" onclick="closeCustomerAccountModal(); scrollToRFQ();">Send New Offer / RFQ</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="logoutCustomer()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15. INDUSTRIAL FOOTER -->
+  <footer class="main-footer" id="footerContact">
+    <div class="footer-top">
+      <div class="container">
+        <div class="footer-grid">
+          <!-- Company Info -->
+          <div class="footer-col">
+            <div class="footer-logo-wrap" style="align-items: center; gap: 12px; margin-bottom: 18px;">
+              <img src="assets/images/siddhi-kabel-lockup.png" alt="Siddhi Logo" class="footer-logo-img" style="height: 48px; background: #fff; padding: 4px 8px; border-radius: 4px;">
+            </div>
+            <h4 style="color: #fff; font-size: 15px; margin-bottom: 6px; padding-bottom: 0;">SIDDHI KABEL CORPORATION PRIVATE LIMITED</h4>
+            <p style="font-size: 11px; color: #ff8589; font-weight: 700; text-transform: uppercase; margin-bottom: 12px;">Dependable Electrical Solutions</p>
+            <p>Authorised Distributors, Dealers, Importers, Suppliers and Channel Partners of world class Industrial Electrical, Automation & Safety Products.</p>
+            <p style="font-size: 12px; color: #8892a0;">Authorized Channel Partner for Lapp Kabel Germany, Eaton Moeller, Partex Sweden, and Mennekes Germany.</p>
+          </div>
+
+          <!-- Quick Navigation -->
+          <div class="footer-col">
+            <h4>Quick Links</h4>
+            <ul class="footer-links">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="#aboutSection">About Us</a></li>
+              <li><a href="#lappPortfolioSection">Lapp Products</a></li>
+              <li><a href="#eatonPortfolioSection">Eaton Products</a></li>
+              <li><a href="#partexPortfolioSection">Partex Products</a></li>
+              <li><a href="#mennekesPortfolioSection">Mennekes Products</a></li>
+              <li><a href="#brandsSection">Authorized Partners</a></li>
+              <li><a href="#rfqSection">Request Bulk Quote</a></li>
+            </ul>
+          </div>
+
+          <!-- Product Lines -->
+          <div class="footer-col">
+            <h4>Product Lines</h4>
+            <ul class="footer-links">
+              <li><a href="#lappPortfolioSection" onclick="filterLappCards('cables')">Lapp ÖLFLEX® Cables</a></li>
+              <li><a href="#lappPortfolioSection" onclick="filterLappCards('data')">Lapp UNITRONIC® Cables</a></li>
+              <li><a href="#lappPortfolioSection" onclick="filterLappCards('glands')">Lapp SKINTOP® &amp; SILVYN®</a></li>
+              <li><a href="#eatonPortfolioSection" onclick="filterEatonCards('motor-protection')">Eaton PKZM0 Motor Breakers</a></li>
+              <li><a href="#partexPortfolioSection" onclick="filterPartexCards('pa')">Partex Marking Systems</a></li>
+              <li><a href="#mennekesPortfolioSection" onclick="filterMennekesCards('plugs')">Mennekes CEE Plugs &amp; Sockets</a></li>
+            </ul>
+          </div>
+
+          <!-- Bangalore Contact & Head Office -->
+          <div class="footer-col">
+            <h4>Bangalore Head Office</h4>
+            <ul class="footer-contact-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>No.3, 1st Main Road, 1st Block,<br>Banashankari 3rd Stage,<br>Bangalore 560 085, India</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span>096200 00947 / 098860 58511</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <span>sales@siddhikabel.com<br>Enquiry@siddhikabel.com</span>
+              </li>
+            </ul>
+
+            <div style="margin-top: 15px;">
+              <span style="font-size: 12px; color: #ced4da;">Stay updated on industrial offers:</span>
+              <form class="newsletter-form" onsubmit="event.preventDefault(); showToast('Subscribed to Siddhi Kabel notifications!'); this.reset();">
+                <input type="email" class="newsletter-input" required placeholder="Enter your business email">
+                <button type="submit" class="newsletter-btn">Join</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Copyright -->
+    <div class="footer-bottom">
+      <div class="container">
+        <div class="footer-bottom-inner">
+          <div>
+            &copy; 2026 Siddhi Kabel Corporation Private Limited. All Rights Reserved. Siddhi Eshop Industrial Portal.
+          </div>
+          <div class="partner-pills">
+            <span>Authorised Channel Partner: Lapp Kabel • Eaton Moeller • Partex Sweden • Mennekes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

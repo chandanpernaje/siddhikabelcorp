@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About LAPP India | Siddhi Eshop - Authorized Partner</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/siddhi-logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    :root {
+      --lapp-orange: #ff6600;
+      --lapp-orange-hover: #e65c00;
+      --lapp-orange-light: #fff7ed;
+      --lapp-orange-border: #fed7aa;
+      --lapp-dark: #0f172a;
+      --lapp-navy: #1e293b;
+    }
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Sleek White Header with Lapp Orange Top Accent */
+    .sheet-header {
+      background: #ffffff;
+      padding: 10px 0;
+      border-top: 4px solid var(--lapp-orange);
+      border-bottom: 2px solid #e2e8f0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .sheet-header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .sheet-logo-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sheet-partner-pill {
+      background: var(--lapp-orange-light);
+      border: 1px solid var(--lapp-orange-border);
+      color: #ea580c;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .sheet-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sheet-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffffff;
+      background: var(--lapp-orange);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .sheet-back-btn:hover {
+      background: var(--lapp-orange-hover);
+      box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+    }
+
+    /* Main Container */
+    .sheet-main {
+      flex: 1;
+      padding: 16px 0 32px;
+    }
+    .sheet-content-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Compact, High-Impact Executive Hero Card */
+    .sheet-hero-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+      margin-bottom: 16px;
+      border-left: 5px solid var(--lapp-orange);
+    }
+    .sheet-hero-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .sheet-brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .sheet-brand-logo-img {
+      height: 32px;
+      width: auto;
+      object-fit: contain;
+    }
+    .sheet-brand-tagline {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.3px;
+    }
+    .sheet-tag-capsule {
+      background: var(--lapp-orange-light);
+      border: 1px solid var(--lapp-orange-border);
+      color: #c2410c;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .sheet-hero-lead {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #475569;
+      margin: 0 0 12px;
+    }
+    .sheet-hero-lead strong {
+      color: #0f172a;
+    }
+
+    /* 4 High-Impact Stat Chips */
+    .sheet-stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .sheet-stats-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .sheet-stats-strip { grid-template-columns: 1fr; }
+    }
+    .sheet-stat-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sheet-stat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--lapp-orange-light);
+      color: var(--lapp-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .sheet-stat-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+    .sheet-stat-sub {
+      font-size: 10.5px;
+      color: #64748b;
+      line-height: 1.2;
+    }
+
+    /* Quick Product Navigation Tabs Bar */
+    .sheet-quick-nav-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      white-space: nowrap;
+    }
+    .quick-nav-pill {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .quick-nav-pill:hover, .quick-nav-pill.active {
+      background: var(--lapp-orange);
+      color: #ffffff;
+      border-color: var(--lapp-orange);
+      box-shadow: 0 2px 8px rgba(255, 102, 0, 0.25);
+    }
+
+    /* Products Header */
+    .sheet-products-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .sheet-products-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sheet-products-sub {
+      font-size: 11.5px;
+      color: #64748b;
+    }
+
+    /* Products Grid (6 Cards per Row) */
+    .sheet-products-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 1200px) {
+      .sheet-products-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .sheet-products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    }
+    @media (max-width: 440px) {
+      .sheet-products-grid { grid-template-columns: 1fr; }
+    }
+
+    .sheet-prod-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .sheet-prod-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(255, 102, 0, 0.16);
+      border-color: var(--lapp-orange);
+    }
+    .sheet-prod-img-wrap {
+      width: 100%;
+      height: 120px;
+      background: #f8fafc;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sheet-prod-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.25s ease;
+    }
+    .sheet-prod-card:hover .sheet-prod-img {
+      transform: scale(1.05);
+    }
+    
+    /* VIBRANT LAPP BRAND ORANGE BADGE */
+    .sheet-prod-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: var(--lapp-orange);
+      color: #ffffff;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.4px;
+      box-shadow: 0 2px 6px rgba(255, 102, 0, 0.4);
+    }
+    .sheet-prod-body {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .sheet-prod-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 4px;
+      line-height: 1.3;
+    }
+    .sheet-prod-desc {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.35;
+      margin: 0 0 10px;
+      flex: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .sheet-prod-btn {
+      background: var(--lapp-orange-light);
+      color: #c2410c;
+      border: 1px solid var(--lapp-orange-border);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      border-radius: 4px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    .sheet-prod-card:hover .sheet-prod-btn {
+      background: var(--lapp-orange);
+      color: #ffffff;
+      border-color: var(--lapp-orange);
+    }
+
+    /* Footer Banner */
+    .sheet-footer-bar {
+      margin-top: 22px;
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .sheet-footer-text {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .sheet-footer-text strong {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sheet-header">
+    <div class="sheet-header-inner">
+      <div class="sheet-logo-badge-wrap">
+        <a href="index.html" title="Siddhi Kabel Corporation Private Limited">
+          <img src="assets/images/siddhi-kabel-lockup.png" alt="Siddhi Kabel Corporation Private Limited" style="height: 42px; width: auto; object-fit: contain; display: block;">
+        </a>
+        <span class="sheet-partner-pill">Authorized Channel Partner</span>
+      </div>
+
+      <div class="sheet-header-actions">
+        <a href="index.html#lappPortfolioSection" class="sheet-back-btn">
+          &larr; Back to Catalog
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="sheet-main">
+    <div class="sheet-content-wrap">
+
+      <!-- 1. Compact Executive Hero Overview Card -->
+      <div class="sheet-hero-card">
+        <div class="sheet-hero-top-row">
+          <div class="sheet-brand-lockup">
+            <img src="assets/images/logo-lapp.png" alt="LAPP" class="sheet-brand-logo-img">
+            <span class="sheet-brand-tagline">Reliably Connecting the World &bull; Precision German Engineering</span>
+          </div>
+          <div class="sheet-tag-capsule">100% Subsidiary of LAPP Germany</div>
+        </div>
+
+        <p class="sheet-hero-lead">
+          <strong>LAPP India</strong> is a leading global supplier of integrated solutions in cable and connection technology. Producing <strong>130,000 km</strong> of control, instrumentation, power, and data cables annually from world-class manufacturing facilities in Bangalore and Bhopal, backed by a nationwide network of 130+ authorized channel partners.
+        </p>
+
+        <!-- 4 Key Stat Badges -->
+        <div class="sheet-stats-strip">
+          <div class="sheet-stat-box">
+            <div class="sheet-stat-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <div>
+              <div class="sheet-stat-title">130,000 km / yr</div>
+              <div class="sheet-stat-sub">Annual Cable Production</div>
+            </div>
+          </div>
+
+          <div class="sheet-stat-box">
+            <div class="sheet-stat-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            <div>
+              <div class="sheet-stat-title">Jigani &amp; Bhopal</div>
+              <div class="sheet-stat-sub">Dual Manufacturing Plants</div>
+            </div>
+          </div>
+
+          <div class="sheet-stat-box">
+            <div class="sheet-stat-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div>
+              <div class="sheet-stat-title">100% German Tech</div>
+              <div class="sheet-stat-sub">Direct Subsidiary</div>
+            </div>
+          </div>
+
+          <div class="sheet-stat-box">
+            <div class="sheet-stat-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="sheet-stat-title">130+ Partners</div>
+              <div class="sheet-stat-sub">Direct Bangalore Stock</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Easy Quick-Navigation Strip to Products -->
+      <div class="sheet-quick-nav-bar">
+        <span style="font-size: 11.5px; font-weight: 700; color: #0f172a; margin-right: 4px;">Jump to:</span>
+        <a href="olflex-cables.html" class="quick-nav-pill active">
+          <span>&bull;</span> ÖLFLEX® Cables
+        </a>
+        <a href="#cardUnitronic" class="quick-nav-pill">
+          <span>&bull;</span> UNITRONIC® Data
+        </a>
+        <a href="#cardUniplus" class="quick-nav-pill">
+          <span>&bull;</span> UNIPLUS® Single Cores
+        </a>
+        <a href="#cardSkintop" class="quick-nav-pill">
+          <span>&bull;</span> SKINTOP® Glands
+        </a>
+        <a href="#cardSilvyn" class="quick-nav-pill">
+          <span>&bull;</span> SILVYN® Conduits
+        </a>
+        <a href="#cardInfra" class="quick-nav-pill">
+          <span>&bull;</span> LAPP INFRA Wiring
+        </a>
+      </div>
+
+      <!-- 3. Lapp Products Showcase Header -->
+      <div class="sheet-products-header">
+        <h2 class="sheet-products-title">
+          <span style="color: var(--lapp-orange);">LAPP</span> Cable &amp; Connection Products at Siddhi Kabel
+        </h2>
+        <span class="sheet-products-sub">Official Distributor &bull; Ex-Stock Bangalore &bull; Cut Lengths Available</span>
+      </div>
+
+      <!-- 4. 6 Products Grid (Lapp Orange Badges & Compact) -->
+      <div class="sheet-products-grid">
+
+        <!-- 1. ÖLFLEX -->
+        <a href="olflex-cables.html" class="sheet-prod-card" title="Open ÖLFLEX® Power & Control Cables Sheet">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/card-olflex.jpg" alt="ÖLFLEX Power & Control Cables" class="sheet-prod-img">
+            <span class="sheet-prod-badge">ÖLFLEX®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Power &amp; Control Cables</h3>
+            <p class="sheet-prod-desc">Flexible CLASSIC 110, 110 SY, 110 CY, 100 I oil-resistant control cables.</p>
+            <div class="sheet-prod-btn">View Products (113) &rarr;</div>
+          </div>
+        </a>
+
+        <!-- 2. UNITRONIC -->
+        <a href="index.html#rfqSection" class="sheet-prod-card" id="cardUnitronic" onclick="sessionStorage.setItem('prefillRfq', 'Lapp UNITRONIC Data Cables')">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/card-unitronic.jpg" alt="UNITRONIC Data Communication Cables" class="sheet-prod-img">
+            <span class="sheet-prod-badge">UNITRONIC®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Data Communication</h3>
+            <p class="sheet-prod-desc">Shielded LiYY, LiYCY, and twisted pair LiYCY(TP) cables for clean signal transmission.</p>
+            <div class="sheet-prod-btn">Request Quote &rarr;</div>
+          </div>
+        </a>
+
+        <!-- 3. UNIPLUS -->
+        <a href="index.html#rfqSection" class="sheet-prod-card" id="cardUniplus" onclick="sessionStorage.setItem('prefillRfq', 'Lapp UNIPLUS Single Cores')">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/card-uniplus.jpg" alt="UNIPLUS Single Cores" class="sheet-prod-img">
+            <span class="sheet-prod-badge">UNIPLUS®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Cabinet Single Cores</h3>
+            <p class="sheet-prod-desc">UNIPLUS® FR &amp; FRLS single-core copper wires for panel boards and switchboards.</p>
+            <div class="sheet-prod-btn">Request Quote &rarr;</div>
+          </div>
+        </a>
+
+        <!-- 4. SKINTOP -->
+        <a href="index.html#rfqSection" class="sheet-prod-card" id="cardSkintop" onclick="sessionStorage.setItem('prefillRfq', 'Lapp SKINTOP Cable Glands')">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/card-skintop.jpg" alt="SKINTOP Cable Glands" class="sheet-prod-img">
+            <span class="sheet-prod-badge">SKINTOP®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Glands &amp; Counter Nuts</h3>
+            <p class="sheet-prod-desc">SKINTOP® polyamide/brass strain-relief cable glands with IP68 seal and counter nuts.</p>
+            <div class="sheet-prod-btn">Request Quote &rarr;</div>
+          </div>
+        </a>
+
+        <!-- 5. SILVYN -->
+        <a href="index.html#rfqSection" class="sheet-prod-card" id="cardSilvyn" onclick="sessionStorage.setItem('prefillRfq', 'Lapp SILVYN Conduits')">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/card-conduit.jpg" alt="SILVYN Conduit Systems" class="sheet-prod-img">
+            <span class="sheet-prod-badge">SILVYN®</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Rill, Conduit &amp; Klick</h3>
+            <p class="sheet-prod-desc">Corrugated flexible conduits and KLICK fittings for mechanical and chemical protection.</p>
+            <div class="sheet-prod-btn">Request Quote &rarr;</div>
+          </div>
+        </a>
+
+        <!-- 6. LAPP INFRA -->
+        <a href="index.html#rfqSection" class="sheet-prod-card" id="cardInfra" onclick="sessionStorage.setItem('prefillRfq', 'Lapp INFRA Building Wires')">
+          <div class="sheet-prod-img-wrap">
+            <img src="assets/images/card-infra.jpg" alt="LAPP INFRA Building Wires" class="sheet-prod-img">
+            <span class="sheet-prod-badge">LAPP INFRA</span>
+          </div>
+          <div class="sheet-prod-body">
+            <h3 class="sheet-prod-name">Domestic / House Wiring</h3>
+            <p class="sheet-prod-desc">ISI-marked Flame Retardant (FR-LSH) building wires for commercial and residential safety.</p>
+            <div class="sheet-prod-btn">Request Quote &rarr;</div>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Footer Bar -->
+      <div class="sheet-footer-bar">
+        <div class="sheet-footer-text">
+          Authorized Lapp Channel Partner: <strong>Siddhi Kabel Corporation Private Limited</strong> &bull; Banashankari 3rd Stage, Bangalore 560085 &bull; Phone: 09620000947
+        </div>
+        <div>
+          <a href="index.html#rfqSection" class="sheet-back-btn" style="padding: 7px 16px; font-size: 12px;">
+            Submit Official RFQ / BOM &rarr;
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>

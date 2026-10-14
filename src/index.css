@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+/* Override Tailwind v4's default transition duration & easing globally */
+@theme {
+  --default-transition-duration: 400ms;
+  --default-transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'Plus Jakarta Sans', sans-serif;
+  --font-serif: 'Plus Jakarta Sans', sans-serif;
+}
+
+@layer base {
+  :root {
+    --color-bg-light: #ffffff;
+    --color-surface-light: #f8fafc;
+    --color-surface-elevated: #ffffff;
+    --color-border-light: #e2e8f0;
+    --color-accent-blue: #2563eb;
+    --color-accent-indigo: #4f46e5;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    overflow-x: hidden;
+  }
+
+  /* Custom Tabular numbers */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Force smooth transitions on all interactive elements */
+a, button, [role="button"],
+input, select, textarea,
+[class*="transition"] {
+  transition-duration: 400ms !important;
+  transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* Ensure hand pointer (cursor: pointer) on all clickable elements across the application and admin portal */
+button,
+[role="button"],
+a,
+select,
+summary,
+label,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+button:disabled,
+[disabled],
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+/* But keep instant for transforms that should feel snappy (active press) */
+[class*="active:scale"] {
+  transition-duration: 120ms !important;
+}
+
+
+
+/* Custom Scrollbar for high-end feel */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Print Styles for Official GST Commercial Quotation */
+@media print {
+  /* Reset everything */
+  *, *::before, *::after {
+    box-shadow: none !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* Hide everything in body by default */
+  body > *:not(#rfq-print-overlay) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Hide the admin sidebar, header bar, mobile backdrop, background glows */
+  aside,
+  header,
+  nav,
+  footer,
+  .no-print,
+  .toast-container {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+  }
+
+  /* Remove sidebar margin from main content */
+  main {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* The modal overlay: make it static and transparent */
+  #rfq-print-overlay {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    z-index: auto !important;
+  }
+
+  /* The modal card itself: no constraints, full width */
+  #rfq-print-card {
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    display: block !important;
+  }
+
+  /* Hide the top toolbar (Back, Print, Close buttons) */
+  #rfq-print-toolbar {
+    display: none !important;
+  }
+
+  /* The scrollable document area: no constraints */
+  #rfq-print-content {
+    overflow: visible !important;
+    padding: 15px !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: none !important;
+    display: block !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .quotation-paper {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  @page {
+    margin: 10mm 12mm;
+    size: A4 portrait;
+  }
+}

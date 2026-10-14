@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 50" width="220" height="50">
+  <!-- Official LAPP Cable Cross-Section Conductor Emblem in Lapp Orange -->
+  <g transform="translate(0, 2)">
+    <circle cx="23" cy="23" r="22" fill="#ff6600"/>
+    <!-- 5 conductor cores (cable cross section) -->
+    <circle cx="23" cy="11" r="4.2" fill="#ffffff"/>
+    <circle cx="34" cy="19" r="4.2" fill="#ffffff"/>
+    <circle cx="30" cy="32" r="4.2" fill="#ffffff"/>
+    <circle cx="16" cy="32" r="4.2" fill="#ffffff"/>
+    <circle cx="12" cy="19" r="4.2" fill="#ffffff"/>
+    <circle cx="23" cy="23" r="3" fill="#ffffff"/>
+  </g>
+  <!-- LAPP Slanted Bold Wordmark -->
+  <text x="54" y="34" font-family="'Arial Black', 'Segoe UI Black', -apple-system, sans-serif" font-style="italic" font-weight="900" font-size="34" fill="#ff6600" letter-spacing="1">LAPP</text>
+  <text x="56" y="46" font-family="'Segoe UI', -apple-system, Arial, sans-serif" font-weight="800" font-size="9.5" fill="#334155" letter-spacing="0.8">KABEL • GERMANY</text>
+</svg>

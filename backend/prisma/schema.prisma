@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      Role     @default(SALES_EXECUTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rfqs      RFQ[]    @relation("AssignedTo")
+}
+
+enum Role {
+  ADMIN
+  SALES_MANAGER
+  SALES_EXECUTIVE
+}
+
+model Product {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  image           String?
+  datasheetUrl    String?
+  categoryId      String?  @db.ObjectId
+  category        Category? @relation(fields: [categoryId], references: [id])
+  brandId         String?  @db.ObjectId
+  brand           Brand?   @relation(fields: [brandId], references: [id])
+  price           Float?
+  
+  // Technical specs
+  core            String?
+  coreSize        String?
+  outerDiameter   String?
+  copperIndex     String?
+  weight          String?
+  testVoltage     String?
+  flameRetardancy String?
+  otherSpecs      String?  // JSON string
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  rfqItems        RFQItem[]
+}
+
+model Category {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  products    Product[]
+  createdAt   DateTime  @default(now())
+}
+
+model Brand {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  products    Product[]
+  createdAt   DateTime  @default(now())
+}
+
+model RFQ {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  rfqNumber        String    @unique
+  customerName     String
+  customerEmail    String
+  customerPhone    String?
+  customerCompany  String?
+  status           RFQStatus @default(PENDING)
+  
+  assignedToId     String?   @db.ObjectId
+  assignedTo       User?     @relation("AssignedTo", fields: [assignedToId], references: [id])
+  
+  items            RFQItem[]
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+enum RFQStatus {
+  PENDING
+  ASSIGNED
+  REVIEWING
+  QUOTED
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+model RFQItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  rfqId     String  @db.ObjectId
+  rfq       RFQ     @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  remarks   String?
+}
