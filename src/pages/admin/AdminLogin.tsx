@@ -73,7 +73,7 @@ export const AdminLogin: React.FC = () => {
                 type="email" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none text-sm transition-all"
                 placeholder="admin@example.com"
                 required
               />
@@ -87,7 +87,7 @@ export const AdminLogin: React.FC = () => {
                 type="password" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none text-sm transition-all"
                 placeholder="••••••••"
                 required
               />
@@ -96,7 +96,7 @@ export const AdminLogin: React.FC = () => {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-bold rounded-xl transition-all shadow-md shadow-amber-500/25 mt-3 cursor-pointer flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+            className="w-full py-3 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 active:scale-98 text-white font-bold rounded-xl transition-all shadow-md shadow-red-600/25 mt-3 cursor-pointer flex items-center justify-center gap-2 text-sm disabled:opacity-60"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -110,7 +110,7 @@ export const AdminLogin: React.FC = () => {
         </form>
 
         <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-amber-600 transition-colors cursor-pointer">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-red-600 transition-colors cursor-pointer">
             <ArrowLeft size={14} /> Back to Public Website
           </Link>
         </div>

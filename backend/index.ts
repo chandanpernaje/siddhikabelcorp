@@ -88,13 +88,24 @@ const rfqSchema = new mongoose.Schema({
     partNo: String,
     name: String,
     brand: String,
+    hsnCode: String,
+    unit: String,
     qty: Number,
     unitPrice: Number,
-    totalBeforeTax: Number
+    totalBeforeTax: Number,
+    gstRate: Number,
+    gstAmount: Number,
+    totalWithTax: Number
   }],
   subtotal: Number,
+  discountRate: { type: Number, default: 0 },
+  discountAmount: { type: Number, default: 0 },
   grandTotal: Number,
+  notes: { type: String, default: '' },
+  deliveryTerms: { type: String, default: '' },
+  paymentTerms: { type: String, default: '' },
   status: { type: String, default: "New" },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedToName: { type: String, default: null }
 }, { timestamps: true });
@@ -134,7 +145,7 @@ const verifyToken = (req: any, res: any, next: any) => {
 const verifyAdmin = (req: any, res: any, next: any) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) {
-    return next();
+    return res.status(401).json({ error: 'Require Admin Authentication Token' });
   }
   verifyToken(req, res, () => {
     const role = (req.userRole || '').toLowerCase().trim();
@@ -148,7 +159,7 @@ const verifyAdmin = (req: any, res: any, next: any) => {
 const verifyManagerOrAdmin = (req: any, res: any, next: any) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) {
-    return next();
+    return res.status(401).json({ error: 'Require Authentication Token' });
   }
   verifyToken(req, res, () => {
     const role = (req.userRole || '').toLowerCase().trim();
@@ -367,29 +378,41 @@ app.get('/api/admin/users', async (req, res) => {
       } catch (e) {}
     }
 
+    // Clean up unwanted dummy staff accounts
+    try {
+      await User.deleteMany({
+        email: { $in: ['admin@siddhikabel.com', 'sales@siddhikabel.com', 'manager@siddhikabel.com'] }
+      });
+    } catch (cleanErr) {}
+
+    // Ensure Ramesh, Prithvi, Sumanth exist as internal team members
+    try {
+      let ramesh = await User.findOne({ $or: [{ name: /ramesh/i }, { email: /ramesh/i }] });
+      if (!ramesh) {
+        await User.create({ name: 'Ramesh', email: 'ramesh@siddhicorp.com', password: 'password123', role: 'Sales Executive', status: 'Active' });
+      } else if (ramesh.name !== 'Ramesh') {
+        await User.findByIdAndUpdate(ramesh._id, { name: 'Ramesh', role: 'Sales Executive' });
+      }
+
+      let prithvi = await User.findOne({ $or: [{ name: /prithvi/i }, { name: /pruthwik/i }, { email: /pruthwik/i }, { email: /prithvi/i }] });
+      if (!prithvi) {
+        await User.create({ name: 'Prithvi', email: 'prithvi@siddhicorp.com', password: 'password123', role: 'Sales Executive', status: 'Active' });
+      } else if (prithvi.name !== 'Prithvi') {
+        await User.findByIdAndUpdate(prithvi._id, { name: 'Prithvi', role: 'Sales Executive' });
+      }
+
+      let sumanth = await User.findOne({ $or: [{ name: /sumanth/i }, { email: /sumanth/i }] });
+      if (!sumanth) {
+        await User.create({ name: 'Sumanth', email: 'sumanth@siddhicorp.com', password: 'password123', role: 'Sales Executive', status: 'Active' });
+      }
+    } catch (seedErr) {}
+
     let users = await User.find().select('-password');
-    // Ensure we have at least standard sales staff in DB
-    const hasSales = users.some(u => {
-      const r = (u.role || '').toLowerCase();
-      return r.includes('sales') || r.includes('manager');
+    // Filter out dummy accounts
+    users = users.filter(u => {
+      const em = (u.email || '').toLowerCase().trim();
+      return em !== 'admin@siddhikabel.com' && em !== 'sales@siddhikabel.com' && em !== 'manager@siddhikabel.com';
     });
-
-    if (!hasSales) {
-      try {
-        const salesEmail = (process.env.SALES_EMAIL || '').trim().toLowerCase();
-        const salesPassword = process.env.SALES_PASSWORD;
-        const managerEmail = (process.env.MANAGER_EMAIL || '').trim().toLowerCase();
-        const managerPassword = process.env.MANAGER_PASSWORD;
-
-        if (salesEmail && salesPassword) {
-          await User.create({ name: 'Sales Executive', email: salesEmail, password: salesPassword, role: 'Sales Executive' });
-        }
-        if (managerEmail && managerPassword) {
-          await User.create({ name: 'Sales Manager', email: managerEmail, password: managerPassword, role: 'Sales Manager' });
-        }
-        users = await User.find().select('-password');
-      } catch (seedErr) {}
-    }
 
     // Also include corporate customers who submitted RFQs
     const rfqs = await RFQ.find();
@@ -425,15 +448,115 @@ app.get('/api/admin/users', async (req, res) => {
   } catch (error) {
     console.error('DB fetch users failed, using fallback');
     res.json([
-      { _id: 'mock1', name: 'Ramesh Sales', role: 'Sales Executive' },
-      { _id: 'mock2', name: 'Suresh Manager', role: 'Sales Manager' },
-      { _id: 'mock3', name: 'Super Admin', role: 'Admin' }
+      { _id: 'mock-ramesh', name: 'Ramesh', role: 'Sales Executive', email: 'ramesh@siddhicorp.com', status: 'Active' },
+      { _id: 'mock-prithvi', name: 'Prithvi', role: 'Sales Executive', email: 'prithvi@siddhicorp.com', status: 'Active' },
+      { _id: 'mock-sumanth', name: 'Sumanth', role: 'Sales Executive', email: 'sumanth@siddhicorp.com', status: 'Active' },
     ]);
   }
 });
 
-// Update User Status API (Activate/Deactivate User/Customer)
-app.patch('/api/admin/users/:id/status', async (req, res) => {
+// Delete User API (Admin only)
+app.delete('/api/admin/users/:id', verifyAdmin, async (req, res) => {
+  try {
+    const deleted = await User.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// Dedicated Assign Staff API (Strictly returns Ramesh, Prithvi, Sumanth)
+app.get('/api/admin/assign-staff', async (req, res) => {
+  try {
+    // 1. Ensure Ramesh exists in DB
+    let ramesh = await User.findOne({
+      $or: [
+        { name: /ramesh/i },
+        { email: /ramesh/i }
+      ]
+    });
+    if (!ramesh) {
+      try {
+        ramesh = await User.create({
+          name: 'Ramesh',
+          email: 'ramesh@siddhicorp.com',
+          password: 'password123',
+          role: 'Sales Executive'
+        });
+      } catch (e) {}
+    }
+
+    // 2. Ensure Prithvi exists in DB
+    let prithvi = await User.findOne({
+      $or: [
+        { name: /prithvi/i },
+        { name: /pruthwik/i },
+        { email: /pruthwik/i },
+        { email: /prithvi/i }
+      ]
+    });
+    if (!prithvi) {
+      try {
+        prithvi = await User.create({
+          name: 'Prithvi',
+          email: 'prithvi@siddhicorp.com',
+          password: 'password123',
+          role: 'Sales Executive'
+        });
+      } catch (e) {}
+    }
+
+    // 3. Ensure Sumanth exists in DB
+    let sumanth = await User.findOne({
+      $or: [
+        { name: /sumanth/i },
+        { email: /sumanth/i }
+      ]
+    });
+    if (!sumanth) {
+      try {
+        sumanth = await User.create({
+          name: 'Sumanth',
+          email: 'sumanth@siddhicorp.com',
+          password: 'password123',
+          role: 'Sales Executive'
+        });
+      } catch (e) {}
+    }
+
+    // Return strictly the 3 designated sales staff: Ramesh, Prithvi, Sumanth
+    const assignStaff = [
+      { 
+        _id: ramesh?._id ? ramesh._id.toString() : 'sales-ramesh-id', 
+        name: 'Ramesh', 
+        role: 'Sales Executive' 
+      },
+      { 
+        _id: prithvi?._id ? prithvi._id.toString() : 'sales-prithvi-id', 
+        name: 'Prithvi', 
+        role: 'Sales Executive' 
+      },
+      { 
+        _id: sumanth?._id ? sumanth._id.toString() : 'sales-sumanth-id', 
+        name: 'Sumanth', 
+        role: 'Sales Executive' 
+      }
+    ];
+
+    res.json(assignStaff);
+  } catch (error) {
+    console.error('Failed to get assign-staff, using fallback');
+    res.json([
+      { _id: 'sales-ramesh-id', name: 'Ramesh', role: 'Sales Executive' },
+      { _id: 'sales-prithvi-id', name: 'Prithvi', role: 'Sales Executive' },
+      { _id: 'sales-sumanth-id', name: 'Sumanth', role: 'Sales Executive' }
+    ]);
+  }
+});
+
+// Update User Status API (Activate/Deactivate User/Customer - Super Admin/Admin only)
+app.patch('/api/admin/users/:id/status', verifyAdmin, async (req, res) => {
   try {
     const { status } = req.body;
     const user = await User.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' }).select('-password');
@@ -444,8 +567,8 @@ app.patch('/api/admin/users/:id/status', async (req, res) => {
   }
 });
 
-// Create User API
-app.post('/api/admin/users', async (req, res) => {
+// Create User API (Super Admin/Admin only)
+app.post('/api/admin/users', verifyAdmin, async (req, res) => {
   try {
     const newUser = await User.create(req.body);
     res.status(201).json(newUser);
@@ -455,10 +578,42 @@ app.post('/api/admin/users', async (req, res) => {
   }
 });
 
-// Submit RFQ API
+// Submit RFQ API (Requires authentication)
 app.post('/api/rfqs', async (req, res) => {
   try {
-    const newRfq = await RFQ.create(req.body);
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication required. Please log in or create an account to submit an RFQ.' });
+    }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr) {
+      return res.status(401).json({ error: 'Session expired or invalid. Please sign in again.' });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ error: 'User account not found. Please register or sign in.' });
+    }
+    if (user.status === 'Inactive') {
+      return res.status(403).json({ error: 'Your account is deactivated. Please contact support.' });
+    }
+
+    const rfqPayload = {
+      ...req.body,
+      customerId: user._id,
+      customerName: req.body.customerName || user.name,
+      companyName: req.body.companyName || user.company || user.name,
+      email: req.body.email || user.email,
+      phone: req.body.phone || user.phone,
+      address: req.body.address || user.address,
+      city: req.body.city || user.city,
+      state: req.body.state || user.state,
+    };
+
+    const newRfq = await RFQ.create(rfqPayload);
     
     // Create admin notification
     try {
@@ -636,6 +791,31 @@ app.get('/api/rfqs', async (req, res) => {
 // Update RFQ Status API (Phase 1 Statuses: New, Assigned, Under Review, Process by Sales, Closed)
 app.patch('/api/rfqs/:id/status', async (req, res) => {
   try {
+    const token = req.headers['authorization']?.split(' ')[1];
+    let userRole = '';
+    let userId = '';
+    if (token) {
+      try {
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        userRole = (decoded.role || '').toLowerCase().trim();
+        userId = decoded.id || '';
+      } catch (e) {}
+    }
+
+    if (userRole && isCustomerRole(userRole)) {
+      return res.status(403).json({ error: 'Customer accounts cannot update RFQ status.' });
+    }
+
+    // Role Matrix: Sales Executive has limited access - can only update status of assigned RFQs
+    const isSalesExec = (userRole.includes('executive') || userRole.includes('salesman')) && !userRole.includes('admin') && !userRole.includes('manager');
+    if (isSalesExec && userId) {
+      const existingRfq = await RFQ.findById(req.params.id);
+      if (!existingRfq) return res.status(404).json({ error: 'RFQ not found' });
+      if (existingRfq.assignedTo?.toString() !== userId) {
+        return res.status(403).json({ error: 'Sales Executives can only update status for RFQs assigned to them.' });
+      }
+    }
+
     const { status } = req.body;
     const updatedRfq = await RFQ.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' });
     if (!updatedRfq) return res.status(404).json({ error: 'RFQ not found' });
@@ -645,8 +825,8 @@ app.patch('/api/rfqs/:id/status', async (req, res) => {
   }
 });
 
-// Assign RFQ API (Allowed for Admin, Super Admin, and Sales Manager as per Phase 1 Matrix)
-app.patch('/api/rfqs/:id/assign', async (req, res) => {
+// Assign RFQ API (Allowed for Super Admin, Admin, and Sales Manager as per Phase 1 Matrix)
+app.patch('/api/rfqs/:id/assign', verifyManagerOrAdmin, async (req, res) => {
   try {
     const { assignedTo, assignedToName } = req.body;
     let updateData: any = {};
@@ -681,6 +861,51 @@ app.patch('/api/rfqs/:id/assign', async (req, res) => {
     res.json(obj);
   } catch (error) {
     res.status(500).json({ error: 'Failed to assign RFQ' });
+  }
+});
+
+// Update RFQ Pricing & Special Discount API
+app.patch('/api/rfqs/:id/price', async (req, res) => {
+  try {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        const userRole = (decoded?.role || '').toLowerCase().trim();
+        if (isCustomerRole(userRole)) {
+          return res.status(403).json({ error: 'Customer accounts cannot modify quotation pricing.' });
+        }
+      } catch (e) {}
+    }
+
+    const { items, discountRate, discountAmount, subtotal, grandTotal, notes, deliveryTerms, paymentTerms } = req.body;
+    const updateData: any = {};
+    if (items !== undefined) updateData.items = items;
+    if (discountRate !== undefined) updateData.discountRate = Number(discountRate);
+    if (discountAmount !== undefined) updateData.discountAmount = Number(discountAmount);
+    if (subtotal !== undefined) updateData.subtotal = Number(subtotal);
+    if (grandTotal !== undefined) updateData.grandTotal = Number(grandTotal);
+    if (notes !== undefined) updateData.notes = String(notes);
+    if (deliveryTerms !== undefined) updateData.deliveryTerms = String(deliveryTerms);
+    if (paymentTerms !== undefined) updateData.paymentTerms = String(paymentTerms);
+
+    const updatedRfq = await RFQ.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { returnDocument: 'after' }
+    ).populate('assignedTo', 'name email role');
+    
+    if (!updatedRfq) return res.status(404).json({ error: 'RFQ not found' });
+    
+    const obj: any = updatedRfq.toObject ? updatedRfq.toObject() : { ...updatedRfq };
+    if (obj.assignedTo && typeof obj.assignedTo === 'object') {
+      obj.assignedToName = obj.assignedTo.name || obj.assignedToName;
+      obj.assignedTo = obj.assignedTo._id?.toString() || obj.assignedTo;
+    }
+    res.json(obj);
+  } catch (error) {
+    console.error('Update price error:', error);
+    res.status(500).json({ error: 'Failed to update quotation pricing' });
   }
 });
 

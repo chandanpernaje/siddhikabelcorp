@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Printer,
@@ -8,6 +8,7 @@ import {
   FileSpreadsheet,
   Building,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -29,20 +30,33 @@ export const QuotationPage: React.FC = () => {
     grandTotal,
     addCustomItem,
   } = useCart();
-  const { user, saveQuote } = useAuth();
+  const { user, isAuthenticated, openAuthModal, saveQuote } = useAuth();
   const { showToast } = useToast();
 
   // Quotation Document Metadata
   const [quoteNo, setQuoteNo] = useState(() => `RFQ-${Date.now().toString().slice(-6)}`);
   const [quoteDate, setQuoteDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [buyerCompany, setBuyerCompany] = useState(user?.company || "Apex Automation & Switchgear Pvt Ltd");
-  const [buyerName, setBuyerName] = useState(user?.name || "Purchasing Manager");
-  const [buyerEmail, setBuyerEmail] = useState(user?.email || "procurement@apex-automation.in");
-  const [buyerPhone, setBuyerPhone] = useState(user?.phone || "+91 98450 12345");
-  const [buyerGstin, setBuyerGstin] = useState(user?.gstin || "29AABCU9603R1ZM");
-  const [buyerAddress, setBuyerAddress] = useState(user?.address || "Plot 42, Peenya Industrial Area, 2nd Stage");
-  const [buyerCity, setBuyerCity] = useState(user?.city || "Bangalore");
+  const [buyerCompany, setBuyerCompany] = useState(user?.company || "");
+  const [buyerName, setBuyerName] = useState(user?.name || "");
+  const [buyerEmail, setBuyerEmail] = useState(user?.email || "");
+  const [buyerPhone, setBuyerPhone] = useState(user?.phone || "");
+  const [buyerGstin, setBuyerGstin] = useState(user?.gstin || "");
+  const [buyerAddress, setBuyerAddress] = useState(user?.address || "");
+  const [buyerCity, setBuyerCity] = useState(user?.city || "");
   const [buyerState, setBuyerState] = useState(user?.state || "Karnataka");
+
+  useEffect(() => {
+    if (user) {
+      if (user.company) setBuyerCompany(user.company);
+      if (user.name) setBuyerName(user.name);
+      if (user.email) setBuyerEmail(user.email);
+      if (user.phone) setBuyerPhone(user.phone);
+      if (user.gstin) setBuyerGstin(user.gstin);
+      if (user.address) setBuyerAddress(user.address);
+      if (user.city) setBuyerCity(user.city);
+      if (user.state) setBuyerState(user.state);
+    }
+  }, [user]);
   const [isInterstate, setIsInterstate] = useState(false);
   const [poReference, setPoReference] = useState("");
   const [deliveryTerms, setDeliveryTerms] = useState("Ex-Stock Bangalore Warehouse (Dispatched in 24-48 Hours)");
@@ -104,7 +118,13 @@ export const QuotationPage: React.FC = () => {
     showToast("Downloaded quotation schedule in CSV format", "success");
   };
 
-  const handleSaveToPortal = () => {
+  const handleSaveToPortal = async () => {
+    if (!isAuthenticated || !user) {
+      showToast("Please log in or create an account to submit your RFQ to Admin.", "error");
+      openAuthModal("signin");
+      return;
+    }
+
     const items: QuotationItem[] = cart.map((i) => {
       const discountedPrice = i.price * (1 - discountRate);
       return {
@@ -150,9 +170,10 @@ export const QuotationPage: React.FC = () => {
       status: "RFQ Submitted",
     };
 
-    saveQuote(doc);
-    clearCart();
-    showToast(`RFQ ${quoteNo} submitted successfully! Our team will review and send you a formal quotation.`, "success");
+    const success = await saveQuote(doc);
+    if (success) {
+      clearCart();
+    }
   };
 
   return (
@@ -165,6 +186,30 @@ export const QuotationPage: React.FC = () => {
       </div>
 
       <div className="relative z-10 w-[95%] max-w-[1920px] mx-auto space-y-8">
+        {!isAuthenticated && (
+          <div className="no-print bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border border-amber-500/50 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-amber-200">
+                  Login Required to Submit Quotation
+                </h4>
+                <p className="text-xs text-amber-300/80">
+                  Cart details and RFQ cannot be submitted to admin without logging in. Please sign in or register your corporate account.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => openAuthModal("signin")}
+              className="shrink-0 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer active:scale-95"
+            >
+              Sign In / Register
+            </button>
+          </div>
+        )}
+
         {/* Breadcrumb & Navigation */}
         <div className="no-print flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -206,14 +251,29 @@ export const QuotationPage: React.FC = () => {
               <span>Print RFQ</span>
             </button>
 
-            <button
-              onClick={handleSaveToPortal}
-              disabled={cart.length === 0}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-amber-500/25 disabled:opacity-40"
-            >
-              <Building className="w-4 h-4" />
-              <span>Submit to Admin</span>
-            </button>
+            {!isAuthenticated ? (
+              <button
+                onClick={() => {
+                  showToast("Please log in or create an account to submit this quotation.", "info");
+                  openAuthModal("signin");
+                }}
+                disabled={cart.length === 0}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg disabled:opacity-40 cursor-pointer"
+                title="Login required to submit RFQ"
+              >
+                <Lock className="w-4 h-4" />
+                <span>Login to Submit RFQ</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSaveToPortal}
+                disabled={cart.length === 0}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-amber-500/25 disabled:opacity-40 cursor-pointer"
+              >
+                <Building className="w-4 h-4" />
+                <span>Submit to Admin</span>
+              </button>
+            )}
           </div>
         </div>
 

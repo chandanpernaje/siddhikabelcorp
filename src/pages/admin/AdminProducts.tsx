@@ -485,7 +485,7 @@ export const AdminProducts: React.FC = () => {
 
               <button 
                 onClick={openAddModal}
-                className="flex items-center px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors shadow-sm text-xs"
+                className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
               >
                 <Plus size={14} className="mr-1" />
                 Add Product
@@ -496,7 +496,7 @@ export const AdminProducts: React.FC = () => {
           {isAdmin && activeTab === 'Categories' && (
             <button 
               onClick={() => { setCurrentCat(null); setCatFormData({ name: '', description: '' }); setIsCatModalOpen(true); }}
-              className="flex items-center px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-sm text-xs"
+              className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
             >
               <Plus size={14} className="mr-1" />
               Add Category
@@ -506,7 +506,7 @@ export const AdminProducts: React.FC = () => {
           {isAdmin && activeTab === 'Brands' && (
             <button 
               onClick={() => { setCurrentBrand(null); setBrandFormData({ name: '', description: '' }); setIsBrandModalOpen(true); }}
-              className="flex items-center px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors shadow-sm text-xs"
+              className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
             >
               <Plus size={14} className="mr-1" />
               Add Brand
@@ -519,8 +519,8 @@ export const AdminProducts: React.FC = () => {
       <div className="flex border-b border-slate-200 overflow-x-auto text-sm font-bold no-scrollbar">
         <button
           onClick={() => setActiveTab('Products')}
-          className={`px-5 py-2.5 border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-            activeTab === 'Products' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-800'
+          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+            activeTab === 'Products' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <ShoppingBag size={16} />
@@ -528,8 +528,8 @@ export const AdminProducts: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('Categories')}
-          className={`px-5 py-2.5 border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-            activeTab === 'Categories' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-800'
+          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+            activeTab === 'Categories' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <Layers size={16} />
@@ -537,8 +537,8 @@ export const AdminProducts: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('Brands')}
-          className={`px-5 py-2.5 border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-            activeTab === 'Brands' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-800'
+          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+            activeTab === 'Brands' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <Tag size={16} />
@@ -558,7 +558,7 @@ export const AdminProducts: React.FC = () => {
                 placeholder="Search products by name, part no, category, or brand..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full pl-9 pr-4 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
             
@@ -582,7 +582,7 @@ export const AdminProducts: React.FC = () => {
               {isAdmin && selectedIds.length > 0 && (
                 <button
                   onClick={handleBulkDelete}
-                  className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-semibold flex items-center gap-1"
+                  className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <Trash2 size={13} /> Delete ({selectedIds.length})
                 </button>
@@ -602,7 +602,7 @@ export const AdminProducts: React.FC = () => {
                           type="checkbox" 
                           checked={filteredProducts.length > 0 && selectedIds.length === filteredProducts.length}
                           onChange={handleSelectAll}
-                          className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer w-3.5 h-3.5"
+                          className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
                         />
                       </th>
                     )}
@@ -619,7 +619,7 @@ export const AdminProducts: React.FC = () => {
                   {loading ? (
                     <tr>
                       <td colSpan={isAdmin ? 8 : 7} className="px-4 py-12 text-center text-slate-500">
-                        <RefreshCw className="w-6 h-6 text-amber-500 animate-spin mx-auto mb-2" />
+                        <RefreshCw className="w-6 h-6 text-red-600 animate-spin mx-auto mb-2" />
                         Loading products...
                       </td>
                     </tr>
@@ -632,14 +632,14 @@ export const AdminProducts: React.FC = () => {
                     </tr>
                   ) : (
                     filteredProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
                         {isAdmin && (
                           <td className="py-2.5 px-3 text-center">
                             <input 
                               type="checkbox" 
                               checked={selectedIds.includes(p.id)}
                               onChange={() => handleSelectOne(p.id)}
-                              className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer w-3.5 h-3.5"
+                              className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
                             />
                           </td>
                         )}
@@ -660,7 +660,7 @@ export const AdminProducts: React.FC = () => {
                             <div>
                               <p 
                                 onClick={() => setViewProduct(p)}
-                                className="font-semibold text-slate-800 hover:text-blue-600 line-clamp-1 cursor-pointer transition-colors"
+                                className="font-semibold text-slate-800 hover:text-red-700 line-clamp-1 cursor-pointer transition-colors"
                                 title="Click to view full details"
                               >
                                 {p.name}
@@ -672,7 +672,7 @@ export const AdminProducts: React.FC = () => {
                           {p.partNo ? (
                             <span 
                               onClick={() => setViewProduct(p)}
-                              className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 hover:border-blue-400 cursor-pointer"
+                              className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 hover:border-red-400 cursor-pointer"
                               title="Click to view details"
                             >
                               {p.partNo}
@@ -685,7 +685,7 @@ export const AdminProducts: React.FC = () => {
                               {p.category?.name || 'Uncategorized'}
                             </span>
                             {p.brand?.name && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200 rounded">
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 bg-red-50 text-red-700 border border-red-200 rounded">
                                 {p.brand.name}
                               </span>
                             )}
@@ -721,7 +721,7 @@ export const AdminProducts: React.FC = () => {
                           <div className="flex items-center justify-end gap-1">
                             <button 
                               onClick={() => setViewProduct(p)}
-                              className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" 
+                              className="p-1.5 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
                               title="View Full Product Information"
                             >
                               <Eye size={15} />
@@ -730,14 +730,14 @@ export const AdminProducts: React.FC = () => {
                               <>
                                 <button 
                                   onClick={() => openEditModal(p)}
-                                  className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer" 
+                                  className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
                                   title="Edit Product"
                                 >
                                   <Edit2 size={15} />
                                 </button>
                                 <button 
                                   onClick={() => handleDelete(p.id)}
-                                  className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
+                                  className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
                                   title="Delete Product"
                                 >
                                   <Trash2 size={15} />
@@ -782,13 +782,13 @@ export const AdminProducts: React.FC = () => {
                         <td className="py-3 px-6 text-right">
                           <button
                             onClick={() => { setCurrentCat(c); setCatFormData({ name: c.name, description: c.description || '' }); setIsCatModalOpen(true); }}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded mr-1"
+                            className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded mr-1 cursor-pointer"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => handleDeleteCategory(c._id)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -822,20 +822,20 @@ export const AdminProducts: React.FC = () => {
                   </tr>
                 ) : (
                   brands.map((b) => (
-                    <tr key={b._id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={b._id} className="hover:bg-red-50/20 transition-colors">
                       <td className="py-3 px-6 font-bold text-slate-900">{b.name}</td>
                       <td className="py-3 px-6 text-slate-500">{b.description || 'Manufacturer Brand'}</td>
                       {isAdmin && (
                         <td className="py-3 px-6 text-right">
                           <button
                             onClick={() => { setCurrentBrand(b); setBrandFormData({ name: b.name, description: b.description || '' }); setIsBrandModalOpen(true); }}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded mr-1"
+                            className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded mr-1 cursor-pointer"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => handleDeleteBrand(b._id)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -884,7 +884,7 @@ export const AdminProducts: React.FC = () => {
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <ImageIcon size={14} className="text-amber-500" /> Product Image
+                      <ImageIcon size={14} className="text-red-600" /> Product Image
                     </label>
                     <div className="flex gap-1 text-xs">
                       <button
@@ -912,14 +912,14 @@ export const AdminProducts: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setModalImage(null)}
-                          className="text-red-500 hover:text-red-700 font-semibold mt-1"
+                          className="text-red-500 hover:text-red-700 font-semibold mt-1 cursor-pointer"
                         >
                           Remove Image
                         </button>
                       </div>
                     </div>
                   ) : imageInputMode === 'upload' ? (
-                    <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-lg bg-white cursor-pointer transition-colors text-center">
+                    <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-red-500 rounded-lg bg-white cursor-pointer transition-colors text-center">
                       <Upload size={18} className="text-slate-400 mb-1" />
                       <span className="text-xs font-semibold text-slate-700">Upload Product Image (PNG, JPG, WEBP)</span>
                       <input type="file" accept="image/*" onChange={handleModalImageFileChange} className="hidden" />
@@ -1004,7 +1004,7 @@ export const AdminProducts: React.FC = () => {
                       defaultValue={currentProduct?.name || ''} 
                       required 
                       placeholder="e.g. ÖLFLEX® CLASSIC 110"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1014,7 +1014,7 @@ export const AdminProducts: React.FC = () => {
                       name="categoryName" 
                       defaultValue={currentProduct?.category?.name || currentProduct?.categoryName || ''} 
                       required 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
                     >
                       <option value="">Select Category...</option>
                       {dropdownCategories.map((catName) => (
@@ -1030,7 +1030,7 @@ export const AdminProducts: React.FC = () => {
                       name="brandName" 
                       defaultValue={currentProduct?.brand?.name || currentProduct?.brandName || ''} 
                       placeholder="e.g. LAPP, EATON"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                     <datalist id="brand-list">
                       {brands.map((b) => (
@@ -1046,7 +1046,7 @@ export const AdminProducts: React.FC = () => {
                       name="partNo" 
                       defaultValue={currentProduct?.partNo || ''} 
                       placeholder="e.g. 1119003"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1058,7 +1058,7 @@ export const AdminProducts: React.FC = () => {
                       name="price" 
                       defaultValue={currentProduct?.price || ''} 
                       placeholder="e.g. 150.00"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1069,7 +1069,7 @@ export const AdminProducts: React.FC = () => {
                       name="core" 
                       defaultValue={currentProduct?.core || ''} 
                       placeholder="e.g. 3G, 4G, 2"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1080,7 +1080,7 @@ export const AdminProducts: React.FC = () => {
                       name="coreSize" 
                       defaultValue={currentProduct?.coreSize || currentProduct?.size || ''} 
                       placeholder="e.g. 1.5, 2.5 mm²"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1092,7 +1092,7 @@ export const AdminProducts: React.FC = () => {
                       name="mrp" 
                       defaultValue={currentProduct?.mrp || ''} 
                       placeholder="e.g. 200.00"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1104,7 +1104,7 @@ export const AdminProducts: React.FC = () => {
                       name="gst" 
                       defaultValue={currentProduct?.gst || 18} 
                       placeholder="18"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1115,7 +1115,7 @@ export const AdminProducts: React.FC = () => {
                       name="outerDiameter" 
                       defaultValue={currentProduct?.outerDiameter || ''} 
                       placeholder="e.g. 6.3 mm"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1126,7 +1126,7 @@ export const AdminProducts: React.FC = () => {
                       name="weight" 
                       defaultValue={currentProduct?.weight || ''} 
                       placeholder="e.g. 75 kg/km"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
 
@@ -1137,7 +1137,7 @@ export const AdminProducts: React.FC = () => {
                       rows={2}
                       defaultValue={currentProduct?.description || currentProduct?.application || ''} 
                       placeholder="Technical application, specifications, standards..."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
                   </div>
                 </div>
@@ -1155,7 +1155,7 @@ export const AdminProducts: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-60"
+                  className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 active:scale-98 text-white font-bold rounded-xl text-xs shadow-md shadow-red-600/20 transition-all cursor-pointer disabled:opacity-60"
                 >
                   {isSaving ? 'Saving...' : 'Save Product'}
                 </button>
@@ -1178,7 +1178,7 @@ export const AdminProducts: React.FC = () => {
             {/* Modal Header - Permanently Pinned at Top with Close (X) */}
             <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 border-b border-slate-200 bg-slate-50 shrink-0 z-10">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0">
                   <ShoppingBag size={18} />
                 </div>
                 <div>
@@ -1208,11 +1208,11 @@ export const AdminProducts: React.FC = () => {
                 </div>
                 <div className="flex-1 space-y-1.5 w-full text-center sm:text-left">
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-800 border border-red-200">
                       {viewProduct.category?.name || viewProduct.categoryName || 'Catalog Item'}
                     </span>
                     {viewProduct.brand?.name && (
-                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
                         {viewProduct.brand.name}
                       </span>
                     )}
@@ -1239,7 +1239,7 @@ export const AdminProducts: React.FC = () => {
                     </tr>
                     <tr>
                       <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Price (Ex-GST)</td>
-                      <td className="px-4 py-2.5 font-mono font-bold text-blue-700">
+                      <td className="px-4 py-2.5 font-mono font-bold text-red-700">
                         {viewProduct.price ? `₹${Number(viewProduct.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'On Request / Quotation'}
                       </td>
                     </tr>
@@ -1299,7 +1299,7 @@ export const AdminProducts: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => { const prod = viewProduct; setViewProduct(null); openEditModal(prod); }}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-red-600/20 cursor-pointer"
                 >
                   <Edit2 size={13} /> Edit Product Information
                 </button>
@@ -1333,7 +1333,7 @@ export const AdminProducts: React.FC = () => {
                   required 
                   value={catFormData.name} 
                   onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div>
@@ -1342,12 +1342,12 @@ export const AdminProducts: React.FC = () => {
                   type="text" 
                   value={catFormData.description} 
                   onChange={(e) => setCatFormData({ ...catFormData, description: e.target.value })} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onClick={() => setIsCatModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold rounded-lg cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-sm cursor-pointer">Save</button>
+                <button type="submit" className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer">Save</button>
               </div>
             </form>
           </div>
@@ -1378,7 +1378,7 @@ export const AdminProducts: React.FC = () => {
                   required 
                   value={brandFormData.name} 
                   onChange={(e) => setBrandFormData({ ...brandFormData, name: e.target.value })} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div>
@@ -1387,12 +1387,12 @@ export const AdminProducts: React.FC = () => {
                   type="text" 
                   value={brandFormData.description} 
                   onChange={(e) => setBrandFormData({ ...brandFormData, description: e.target.value })} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onClick={() => setIsBrandModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold rounded-lg cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-sm cursor-pointer">Save</button>
+                <button type="submit" className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer">Save</button>
               </div>
             </form>
           </div>

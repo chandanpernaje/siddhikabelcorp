@@ -10,6 +10,7 @@ import {
   Mail,
   Phone,
   MapPin,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -30,17 +31,17 @@ export const RFQModal: React.FC<RFQModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { user, saveQuote } = useAuth();
+  const { user, isAuthenticated, openAuthModal, saveQuote } = useAuth();
   const { showToast } = useToast();
   const { cart, clearCart, subtotal: cartSubtotal, gstAmount: cartGstAmount, grandTotal: cartGrandTotal, discountRate } = useCart();
   const navigate = useNavigate();
 
-  const [company, setCompany] = useState(user?.company || "Apex Automation & Switchgear");
-  const [name, setName] = useState(user?.name || "Procurement Manager");
-  const [email, setEmail] = useState(user?.email || "procurement@apex-automation.in");
-  const [phone, setPhone] = useState(user?.phone || "+91 98450 12345");
-  const [gstin, setGstin] = useState(user?.gstin || "29AABCU9603R1ZM");
-  const [city, setCity] = useState(user?.city || "Bangalore");
+  const [company, setCompany] = useState(user?.company || "");
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [gstin, setGstin] = useState(user?.gstin || "");
+  const [city, setCity] = useState(user?.city || "");
   const [quantity, setQuantity] = useState("As per BOM/Cart");
   const [unit, setUnit] = useState("lots");
   const [notes, setNotes] = useState("");
@@ -51,6 +52,17 @@ export const RFQModal: React.FC<RFQModalProps> = ({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isCartRequest = cart.length > 0 || productName === "Bulk Project Bill of Materials";
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.company) setCompany(user.company);
+      if (user.name) setName(user.name);
+      if (user.email) setEmail(user.email);
+      if (user.phone) setPhone(user.phone);
+      if (user.gstin) setGstin(user.gstin);
+      if (user.city) setCity(user.city);
+    }
+  }, [user]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -80,9 +92,15 @@ export const RFQModal: React.FC<RFQModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
+
+    if (!isAuthenticated || !user) {
+      showToast("Please log in or create an account to submit an RFQ to our team.", "error");
+      openAuthModal("signin");
+      return;
+    }
 
     const validation = validateRFQForm({
       company,
@@ -183,16 +201,15 @@ export const RFQModal: React.FC<RFQModalProps> = ({
       notes: notes,
     };
 
-    saveQuote(doc);
-    if (isCartRequest) {
-      clearCart();
-    }
-
-    setTimeout(() => {
-      setIsSubmitting(false);
+    const success = await saveQuote(doc);
+    setIsSubmitting(false);
+    if (success) {
+      if (isCartRequest) {
+        clearCart();
+      }
       setIsSuccess(true);
       showToast("Quotation request submitted successfully.", "success");
-    }, 600);
+    }
   };
 
   const handleViewQuotation = () => {
@@ -263,6 +280,30 @@ export const RFQModal: React.FC<RFQModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs overflow-y-auto relative z-10">
+            {!isAuthenticated && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0 mt-0.5 sm:mt-0">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                      Account Required to Submit RFQ
+                    </h4>
+                    <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                      RFQ cannot be sent to admin without an account. Please sign in or register to submit.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openAuthModal("signin")}
+                  className="shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+                >
+                  Sign In / Register
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-slate-700 font-bold mb-1">
@@ -425,13 +466,27 @@ export const RFQModal: React.FC<RFQModalProps> = ({
             </div>
 
             <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all disabled:opacity-50"
-              >
-                {isSubmitting ? "Submitting Request..." : "Submit Quotation Request"}
-              </button>
+              {!isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    showToast("Please log in or create an account to submit your RFQ.", "info");
+                    openAuthModal("signin");
+                  }}
+                  className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Login or Register to Submit RFQ</span>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmitting ? "Submitting Request..." : "Submit Quotation Request"}
+                </button>
+              )}
             </div>
           </form>
         )}

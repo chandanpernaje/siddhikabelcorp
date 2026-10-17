@@ -18,7 +18,7 @@ interface AuthContextType {
   logout: () => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
   savedQuotes: QuotationDocument[];
-  saveQuote: (quote: QuotationDocument) => void;
+  saveQuote: (quote: QuotationDocument) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,7 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
+      const token = localStorage.getItem('token');
       const stored = localStorage.getItem(USER_STORAGE_KEY);
+      if (!token) return null;
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -208,24 +210,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast("Profile details updated successfully", "success");
   };
 
-  const saveQuote = async (quote: QuotationDocument) => {
+  const saveQuote = async (quote: QuotationDocument): Promise<boolean> => {
+    const token = localStorage.getItem('token');
+    if (!user || !token) {
+      showToast("Please log in or create an account to submit an RFQ.", "error");
+      openAuthModal("signin");
+      return false;
+    }
+
     // Send to backend
     try {
       const res = await fetch(`${API_BASE_URL}/api/rfqs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(quote),
       });
-      if (!res.ok) throw new Error("Backend save failed");
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          showToast(errData.error || "Session expired. Please log in again.", "error");
+          openAuthModal("signin");
+          return false;
+        }
+        throw new Error(errData.error || "Backend save failed");
+      }
       
       // Save locally for UI immediately
       setSavedQuotes((prev) => [quote, ...prev.filter((q) => q.id !== quote.id)]);
       showToast(`Quotation ${quote.quoteNo} submitted to our team and archived in your portal`, "success");
-    } catch (err) {
+      return true;
+    } catch (err: any) {
       console.error("Failed to send RFQ to backend:", err);
-      showToast("Error submitting RFQ to Admin Panel. Please try again.", "error");
+      showToast(err.message || "Error submitting RFQ to Admin Panel. Please try again.", "error");
+      return false;
     }
   };
 

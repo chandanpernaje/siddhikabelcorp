@@ -38,16 +38,70 @@ export const AdminDashboard: React.FC = () => {
   }, []);
 
   const stats = [
-    { title: 'Total Customers', value: data.totalCustomers, icon: Building, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', trend: '+12%', up: true, link: '/admin/users' },
-    { title: 'Total Products', value: data.totalProducts, icon: ShoppingBag, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', trend: '+4%', up: true, link: '/admin/products' },
-    { title: 'Total RFQs', value: data.totalRFQs, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', trend: '+24%', up: true, link: '/admin/rfqs' },
-    { title: 'Pending Actions', value: data.pendingRFQs, icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', trend: '+6', up: true, link: '/admin/rfqs?filter=pending' },
+    { 
+      title: 'Total Customers', 
+      value: data.totalCustomers, 
+      icon: Building, 
+      color: 'text-sky-600', 
+      bg: 'bg-sky-50', 
+      cardBg: 'from-white via-white to-sky-50/50',
+      border: 'border-sky-200/90', 
+      trend: '+12%', 
+      trendColor: 'text-sky-700 bg-sky-50 border-sky-200',
+      up: true, 
+      link: '/admin/users' 
+    },
+    { 
+      title: 'Total Products', 
+      value: data.totalProducts, 
+      icon: ShoppingBag, 
+      color: 'text-slate-700', 
+      bg: 'bg-slate-100', 
+      cardBg: 'from-white via-white to-slate-100/60',
+      border: 'border-slate-200', 
+      trend: '+4%', 
+      trendColor: 'text-slate-700 bg-slate-100 border-slate-200',
+      up: true, 
+      link: '/admin/products' 
+    },
+    { 
+      title: 'Total RFQs (Quotes)', 
+      value: data.totalRFQs, 
+      icon: FileText, 
+      color: 'text-red-600', 
+      bg: 'bg-red-50', 
+      cardBg: 'from-white via-white to-red-50/50',
+      border: 'border-red-200/90', 
+      trend: '+24%', 
+      trendColor: 'text-red-700 bg-red-50 border-red-200',
+      up: true, 
+      link: '/admin/rfqs' 
+    },
+    { 
+      title: 'Pending Actions', 
+      value: data.pendingRFQs, 
+      icon: AlertCircle, 
+      color: 'text-orange-600', 
+      bg: 'bg-orange-50', 
+      cardBg: 'from-white via-white to-orange-50/50',
+      border: 'border-orange-200/90', 
+      trend: '+6', 
+      trendColor: 'text-orange-700 bg-orange-50 border-orange-200',
+      up: true, 
+      link: '/admin/rfqs?filter=pending' 
+    },
   ];
+
+  const currentAdminStr = localStorage.getItem('siddhi_admin_user');
+  const currentAdmin = currentAdminStr ? JSON.parse(currentAdminStr) : null;
+  const userName = currentAdmin?.name || 'Executive';
+  const userRole = currentAdmin?.role || 'Admin';
+  const isSales = userRole.toLowerCase().includes('sales');
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
-        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-red-100 border-t-red-600 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -55,28 +109,36 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Colorful Welcome Banner */}
-      <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 rounded-2xl p-8 sm:p-10 shadow-[0_8px_30px_rgba(249,115,22,0.2)] flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden group gap-6 border border-orange-400/30">
-        {/* Subtle mesh background */}
+      {/* Signature Siddhi Kabel Brand Red Hero Banner with Warm Ambient Glow */}
+      <div className="bg-gradient-to-br from-[#800f14] via-[#b81d22] to-[#c52328] rounded-2xl p-8 sm:p-10 shadow-[0_12px_35px_rgba(197,35,40,0.22)] flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden group gap-6 border border-red-500/40">
+        {/* Subtle mesh & glow backgrounds */}
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-white/20 to-transparent pointer-events-none"></div>
-        <div className="absolute -right-20 -top-20 w-64 h-64 bg-yellow-300 rounded-full blur-[80px] opacity-40 pointer-events-none group-hover:opacity-60 transition-opacity duration-700"></div>
+        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-white/15 to-transparent pointer-events-none"></div>
+        <div className="absolute -right-20 -top-20 w-72 h-72 bg-orange-400 rounded-full blur-[90px] opacity-25 pointer-events-none group-hover:opacity-40 transition-opacity duration-700"></div>
+        <div className="absolute -left-10 -bottom-10 w-60 h-60 bg-sky-400 rounded-full blur-[90px] opacity-20 pointer-events-none"></div>
 
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-xs font-bold mb-4 backdrop-blur-md shadow-sm">
-            <BarChart3 size={14} /> Executive Overview
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            {userRole} Workspace
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight drop-shadow-sm">Dashboard & Analytics</h2>
-          <p className="text-orange-50 font-medium mt-2 text-sm sm:text-base max-w-xl drop-shadow-sm">Monitor your enterprise operations, customer quotations, and product catalog performance in real-time.</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight drop-shadow-sm">
+            Welcome, {userName}!
+          </h2>
+          <p className="text-red-100/90 font-medium mt-2 text-sm sm:text-base max-w-xl drop-shadow-sm leading-relaxed">
+            {isSales 
+              ? 'Review your assigned RFQs, update customer pipeline stages, grant special project discounts, and generate official proforma quotations.' 
+              : 'Monitor enterprise operations, assign RFQs to your sales team, track quotations, and manage catalog performance in real-time.'}
+          </p>
         </div>
         
         <div className="w-full md:w-auto relative z-10 flex shrink-0">
-           <div className="w-full sm:w-auto bg-white/20 border border-white/40 rounded-xl p-4 shadow-lg backdrop-blur-md flex items-center gap-4">
-             <div className="w-12 h-12 bg-white/30 rounded-lg flex items-center justify-center text-white shrink-0 border border-white/50 shadow-sm">
+           <div className="w-full sm:w-auto bg-white/15 border border-white/25 rounded-xl p-4 shadow-xl backdrop-blur-md flex items-center gap-4">
+             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0 border border-white/30 shadow-sm">
                <Activity size={24} />
              </div>
              <div>
-               <p className="text-[11px] font-bold text-orange-100 uppercase tracking-wider">System Status</p>
+               <p className="text-[11px] font-bold text-red-200 uppercase tracking-wider">System Status</p>
                <p className="text-base font-bold text-white flex items-center gap-2">
                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
                  Operational
@@ -86,48 +148,48 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards in 4 Harmonious Light Colors: Light Sky Blue, Light Grey, Light Red, Light Orange */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <Link key={i} to={stat.link} className="group relative bg-white rounded-2xl p-6 shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-2 hover:border-slate-300 transition-all duration-500 block">
+            <Link key={i} to={stat.link} className={`group relative bg-gradient-to-br ${stat.cardBg} rounded-2xl p-6 shadow-sm border ${stat.border} overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 block`}>
               {/* Expanding Background Blob */}
-              <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full ${stat.bg} opacity-0 group-hover:opacity-100 group-hover:scale-[4] transition-all duration-700 ease-out z-0`} />
+              <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full ${stat.bg} opacity-40 group-hover:opacity-100 group-hover:scale-[3] transition-all duration-700 ease-out z-0`} />
               
               <div className="relative z-10 flex justify-between items-start mb-6">
-                <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center border ${stat.border} group-hover:bg-white group-hover:shadow-sm transition-all duration-300`}>
-                  <Icon size={24} strokeWidth={2} />
+                <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center border ${stat.border} group-hover:scale-105 group-hover:shadow-xs transition-all duration-300`}>
+                  <Icon size={24} strokeWidth={2.2} />
                 </div>
-                <div className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md bg-white border border-slate-100 shadow-sm ${stat.up ? 'text-emerald-600' : 'text-red-600'}`}>
+                <div className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md border shadow-2xs ${stat.trendColor}`}>
                   {stat.up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                   {stat.trend}
                 </div>
               </div>
               
               <div className="relative z-10 pb-2">
-                <h3 className="text-3xl font-bold text-slate-800 tracking-tight group-hover:text-slate-900 transition-colors">{stat.value.toLocaleString()}</h3>
-                <p className="text-sm font-medium text-slate-500 mt-1 group-hover:text-slate-700 transition-colors">{stat.title}</p>
+                <h3 className="text-3xl font-extrabold text-slate-800 tracking-tight group-hover:text-slate-900 transition-colors">{stat.value.toLocaleString()}</h3>
+                <p className="text-sm font-semibold text-slate-500 mt-1 group-hover:text-slate-700 transition-colors">{stat.title}</p>
               </div>
               
               {/* Slide Up Reveal Footer */}
-              <div className="absolute inset-x-0 bottom-0 p-4 bg-white/60 backdrop-blur-md border-t border-slate-100/50 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out z-20 flex items-center justify-between">
-                <span className={`text-sm font-bold ${stat.color}`}>View full list</span>
-                <ArrowUpRight size={16} className={`${stat.color}`} />
+              <div className="absolute inset-x-0 bottom-0 p-3.5 bg-white/90 backdrop-blur-md border-t border-slate-100 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out z-20 flex items-center justify-between">
+                <span className={`text-xs font-bold ${stat.color}`}>View records →</span>
+                <ArrowUpRight size={15} className={`${stat.color}`} />
               </div>
             </Link>
           );
         })}
       </div>
 
-      {/* Recent RFQs Table - Corporate Styling */}
+      {/* Recent RFQs Table - Corporate Styling with Light Colors */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
-        <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+        <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/70">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Recent Quotations</h2>
-            <p className="text-sm text-slate-500 mt-1">Latest RFQs generated by corporate clients</p>
+            <p className="text-sm text-slate-500 mt-0.5">Latest RFQs generated by corporate clients</p>
           </div>
-          <Link to="/admin/rfqs" className="px-4 py-2 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-700 text-slate-600 text-sm font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 group/link">
+          <Link to="/admin/rfqs" className="px-4 py-2 bg-white border border-slate-200 hover:border-red-500 hover:text-red-700 text-slate-600 text-sm font-semibold rounded-lg shadow-2xs transition-all flex items-center justify-center gap-2 group/link cursor-pointer">
             View All Records
             <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform opacity-70" />
           </Link>
@@ -135,7 +197,7 @@ export const AdminDashboard: React.FC = () => {
         
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50/90 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Quote Reference</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client Details</th>
@@ -158,27 +220,27 @@ export const AdminDashboard: React.FC = () => {
                   <tr 
                     key={rfq._id} 
                     onClick={() => navigate(`/admin/rfqs?id=${rfq._id}`)}
-                    className="hover:bg-blue-50/50 transition-colors group/row cursor-pointer"
+                    className="hover:bg-red-50/20 transition-colors group/row cursor-pointer"
                   >
                     <td className="px-6 py-4">
                       <Link 
                         to={`/admin/rfqs?id=${rfq._id}`}
                         onClick={e => e.stopPropagation()}
-                        className="text-sm font-semibold text-blue-700 hover:text-blue-900 bg-white shadow-xs border border-blue-200 px-2.5 py-1 rounded-md group-hover/row:border-blue-400 transition-colors whitespace-nowrap font-mono inline-flex items-center gap-1.5 cursor-pointer"
+                        className="text-xs font-bold text-sky-700 hover:text-sky-900 bg-sky-50/80 shadow-2xs border border-sky-200 px-2.5 py-1 rounded-md group-hover/row:border-sky-400 transition-colors whitespace-nowrap font-mono inline-flex items-center gap-1.5 cursor-pointer"
                       >
-                        <FileText size={13} className="text-blue-500" />
+                        <FileText size={13} className="text-sky-600" />
                         {rfq.quoteNo}
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-semibold text-slate-800 group-hover/row:text-blue-700 transition-colors">{rfq.customerName}</div>
+                      <div className="text-sm font-semibold text-slate-800 group-hover/row:text-red-700 transition-colors">{rfq.customerName}</div>
                       <div className="text-xs text-slate-500 mt-0.5">{rfq.companyName}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border whitespace-nowrap ${
-                        (rfq.status === 'New' || rfq.status === 'Open' || rfq.status === 'Pending') ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        (rfq.status === 'Assigned') ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                        (rfq.status === 'Under Review') ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border whitespace-nowrap shadow-2xs ${
+                        (rfq.status === 'New' || rfq.status === 'Open' || rfq.status === 'Pending') ? 'bg-red-50 text-red-700 border-red-200' :
+                        (rfq.status === 'Assigned') ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                        (rfq.status === 'Under Review') ? 'bg-orange-50 text-orange-700 border-orange-200' :
                         (rfq.status === 'Process by Sales' || rfq.status === 'Processing') ? 'bg-purple-50 text-purple-700 border-purple-200' :
                         'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
@@ -191,8 +253,8 @@ export const AdminDashboard: React.FC = () => {
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap ${
                         rfq.assignedToName 
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                          : 'bg-slate-100 text-slate-500'
+                          ? 'bg-gradient-to-r from-red-50 to-orange-50 text-red-800 border border-orange-200 font-semibold shadow-2xs' 
+                          : 'bg-slate-100 text-slate-500 border border-slate-200'
                       }`}>
                         {rfq.assignedToName || 'Unassigned'}
                       </span>
@@ -202,7 +264,7 @@ export const AdminDashboard: React.FC = () => {
                       <Link 
                         to={`/admin/rfqs?id=${rfq._id}`} 
                         onClick={e => e.stopPropagation()}
-                        className="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        className="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                         title="View Full RFQ Detail"
                       >
                         <TrendingUp size={18} strokeWidth={2} />

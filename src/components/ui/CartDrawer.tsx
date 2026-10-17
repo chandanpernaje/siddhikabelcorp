@@ -9,8 +9,11 @@ import {
   ArrowRight,
   ShieldCheck,
   Percent,
+  Lock,
 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { RFQModal } from "./RFQModal";
 
 export const CartDrawer: React.FC = () => {
@@ -30,12 +33,19 @@ export const CartDrawer: React.FC = () => {
     discountRate,
     discountAmount,
   } = useCart();
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [isRfqModalOpen, setIsRfqModalOpen] = useState(false);
 
   if (!isOpen && !isRfqModalOpen) return null;
 
   const handleProceedToQuotation = () => {
+    if (!isAuthenticated) {
+      showToast("Please log in or create an account to submit your RFQ.", "info");
+      openAuthModal("signin");
+      return;
+    }
     setIsRfqModalOpen(true);
   };
 
@@ -209,13 +219,37 @@ export const CartDrawer: React.FC = () => {
               </div>
 
               <div className="space-y-2 pt-2">
-                <button
-                  onClick={handleProceedToQuotation}
-                  className="w-full py-3.5 px-4 rounded-xl bg-[#c52328] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-red-600/20 active:scale-98 transition-all"
-                >
-                  <span>Proceed to RFQ Form</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                {!isAuthenticated && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+                    <div className="p-1 bg-amber-100 rounded-lg text-amber-700 shrink-0 mt-0.5">
+                      <Lock className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-amber-950 text-xs">Login Required to Submit RFQ</div>
+                      <div className="text-[11px] text-amber-800 leading-tight mt-0.5">
+                        Cart RFQ can only be sent to admin after signing in. Please login or register your corporate account.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!isAuthenticated ? (
+                  <button
+                    onClick={handleProceedToQuotation}
+                    className="w-full py-3.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-amber-600/20 active:scale-98 transition-all"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Login / Register to Submit RFQ</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleProceedToQuotation}
+                    className="w-full py-3.5 px-4 rounded-xl bg-[#c52328] hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-red-600/20 active:scale-98 transition-all"
+                  >
+                    <span>Proceed to RFQ Form</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
 
                 <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
                   <div className="flex items-center gap-1.5 text-emerald-700">

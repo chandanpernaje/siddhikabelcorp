@@ -20,6 +20,7 @@ import {
   Truck,
   Users,
   X,
+  Lock,
 } from "lucide-react";
 import { PRODUCTS_DATA, CATEGORIES, BRANDS } from "../data/products";
 import { ProductCard } from "../components/products/ProductCard";
@@ -33,7 +34,7 @@ import type { Product, QuotationDocument, QuotationItem } from "../types";
 export const Home: React.FC = () => {
   const location = useLocation();
   const { addToCart } = useCart();
-  const { user, saveQuote } = useAuth();
+  const { user, isAuthenticated, openAuthModal, saveQuote } = useAuth();
   const { showToast } = useToast();
 
   // Carousel State
@@ -322,12 +323,17 @@ export const Home: React.FC = () => {
     }
   };
 
-  const handleRfqSubmit = (e: React.FormEvent) => {
+  const handleRfqSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthenticated || !user) {
+      showToast("Please log in or create an account to submit an RFQ to our team.", "error");
+      openAuthModal("signin");
+      return;
+    }
+
     setRfqSubmitting(true);
 
     const refNo = `SE-BOM-${Date.now().toString().slice(-6)}`;
-    setRfqSuccessRef(refNo);
 
     const qty = parseFloat(rfqQuantity) || 100;
     const estRate = 85.0;
@@ -377,12 +383,12 @@ export const Home: React.FC = () => {
       notes: rfqNotes,
     };
 
-    saveQuote(doc);
-
-    setTimeout(() => {
-      setRfqSubmitting(false);
+    const success = await saveQuote(doc);
+    setRfqSubmitting(false);
+    if (success) {
+      setRfqSuccessRef(refNo);
       showToast("Quotation request registered! Reference generated.", "success");
-    }, 600);
+    }
   };
 
   const brandCardStyles: Record<string, { bg: string; border: string; strip: string; badge: string; text: string }> = {
@@ -1063,14 +1069,42 @@ export const Home: React.FC = () => {
                 )}
               </div>
 
+              {!isAuthenticated && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+                  <div className="p-1 bg-amber-100 rounded-lg text-amber-700 shrink-0 mt-0.5">
+                    <Lock className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-amber-950 text-xs">Login Required to Submit RFQ</div>
+                    <div className="text-[11px] text-amber-800 leading-tight mt-0.5">
+                      RFQs cannot be dispatched to admin without logging in. Please sign in or register your corporate account.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={rfqSubmitting}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-98 disabled:opacity-50"
-                >
-                  {rfqSubmitting ? "Submitting Request..." : "Submit Request for Quotation"}
-                </button>
+                {!isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      showToast("Please log in or create an account to submit your RFQ.", "info");
+                      openAuthModal("signin");
+                    }}
+                    className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Login or Register to Submit RFQ</span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={rfqSubmitting}
+                    className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
+                  >
+                    {rfqSubmitting ? "Submitting Request..." : "Submit Request for Quotation"}
+                  </button>
+                )}
               </div>
             </form>
           )}

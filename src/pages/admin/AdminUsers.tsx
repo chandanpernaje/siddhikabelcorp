@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 
 interface User {
@@ -80,6 +80,24 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to delete this staff member?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u._id !== userId));
+      }
+    } catch (e) {
+      console.error('Failed to delete user', e);
+    }
+  };
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -111,7 +129,15 @@ export const AdminUsers: React.FC = () => {
   };
 
   const customers = users.filter(u => isCustomerRole(u.role));
-  const internalUsers = users.filter(u => !isCustomerRole(u.role));
+  const internalUsers = users.filter(u => {
+    if (isCustomerRole(u.role)) return false;
+    const em = (u.email || '').toLowerCase().trim();
+    // Filter out the 3 unwanted dummy placeholder accounts
+    if (em === 'admin@siddhikabel.com' || em === 'sales@siddhikabel.com' || em === 'manager@siddhikabel.com') {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -137,7 +163,7 @@ export const AdminUsers: React.FC = () => {
           {isAdmin && (
             <button 
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white rounded-lg transition-all font-bold text-sm shadow-md shadow-red-600/20 cursor-pointer"
             >
               <Plus size={16} />
               Add Internal User
@@ -146,17 +172,25 @@ export const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 overflow-x-auto">
+      {/* Tabs - Light Colorful Themes */}
+      <div className="flex border-b border-slate-200 overflow-x-auto gap-2">
         <button 
           onClick={() => setActiveTab('Customers')}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'Customers' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-5 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-lg ${
+            activeTab === 'Customers' 
+              ? 'border-sky-500 text-sky-700 bg-sky-50/70 shadow-2xs' 
+              : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          }`}
         >
           Registered Corporate Customers ({customers.length})
         </button>
         <button 
           onClick={() => setActiveTab('Internal')}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'Internal' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-5 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-lg ${
+            activeTab === 'Internal' 
+              ? 'border-red-600 text-red-600 bg-red-50/70 shadow-2xs' 
+              : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          }`}
         >
           Internal Staff & Sales Team ({internalUsers.length})
         </button>
@@ -182,7 +216,7 @@ export const AdminUsers: React.FC = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-slate-500">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-500" />
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-red-600" />
                       Loading customers...
                     </td>
                   </tr>
@@ -196,10 +230,10 @@ export const AdminUsers: React.FC = () => {
                   </tr>
                 ) : (
                   customers.map((user) => (
-                    <tr key={user._id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={user._id} className="hover:bg-red-50/20 transition-colors">
                       <td className="py-4 px-6">
                         <div className="font-bold text-slate-900 flex items-center gap-2">
-                          <Building size={16} className="text-amber-500" />
+                          <Building size={16} className="text-red-600" />
                           {user.company || user.name}
                         </div>
                         {user.company && (
@@ -248,7 +282,7 @@ export const AdminUsers: React.FC = () => {
                       <td className="py-4 px-6 text-center">
                         <button
                           onClick={() => setSelectedCustomer(user)}
-                          className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-lg transition-colors border border-blue-200 shadow-sm"
+                          className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs rounded-lg transition-colors border border-red-200 shadow-xs cursor-pointer"
                         >
                           View Profile
                         </button>
@@ -267,28 +301,35 @@ export const AdminUsers: React.FC = () => {
                   <th className="py-3 px-6 font-semibold">Email Contact</th>
                   <th className="py-3 px-6 font-semibold">Role Designation</th>
                   <th className="py-3 px-6 font-semibold">Status</th>
+                  <th className="py-3 px-6 font-semibold text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-500" />
+                    <td colSpan={5} className="py-8 text-center text-slate-500">
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-red-600" />
                       Loading users...
                     </td>
                   </tr>
                 ) : internalUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center">
+                    <td colSpan={5} className="py-12 text-center">
                       <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                       <h3 className="text-lg font-medium text-slate-900">No Internal Staff Found</h3>
                     </td>
                   </tr>
                 ) : (
                   internalUsers.map((user) => (
-                    <tr key={user._id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={user._id} className="hover:bg-red-50/20 transition-colors">
                       <td className="py-4 px-6 font-medium text-slate-900 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200">
+                        <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center border text-xs shadow-2xs ${
+                          user.role === 'Admin' || user.role === 'Super Admin'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : user.role === 'Sales Manager'
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                            : 'bg-sky-50 text-sky-700 border-sky-200'
+                        }`}>
                           {user.name ? user.name.charAt(0).toUpperCase() : '?'}
                         </div>
                         <div>
@@ -303,12 +344,12 @@ export const AdminUsers: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border ${
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border shadow-2xs ${
                           user.role === 'Admin' || user.role === 'Super Admin'
-                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            ? 'bg-red-50 text-red-700 border-red-200'
                             : user.role === 'Sales Manager'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                            : 'bg-sky-50 text-sky-700 border-sky-200'
                         }`}>
                           <Shield size={12} className="mr-1.5" />
                           {user.role}
@@ -323,6 +364,17 @@ export const AdminUsers: React.FC = () => {
                           <UserCheck size={14} className="mr-1" /> {user.status || 'Active'}
                         </span>
                       </td>
+                      <td className="py-4 px-6 text-center">
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteUser(user._id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete staff member"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -336,15 +388,15 @@ export const AdminUsers: React.FC = () => {
       {selectedCustomer && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-white flex justify-between items-start">
+            <div className="bg-slate-50 border-b border-slate-200 p-6 flex justify-between items-start">
               <div>
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Customer Profile</span>
-                <h3 className="text-xl font-bold mt-1">{selectedCustomer.company || selectedCustomer.name}</h3>
-                <p className="text-slate-300 text-xs mt-0.5">Contact: {selectedCustomer.name}</p>
+                <span className="text-xs font-bold text-red-600 uppercase tracking-widest">Customer Profile</span>
+                <h3 className="text-xl font-bold text-slate-900 mt-1">{selectedCustomer.company || selectedCustomer.name}</h3>
+                <p className="text-slate-500 text-xs mt-0.5">Contact: {selectedCustomer.name}</p>
               </div>
               <button 
                 onClick={() => setSelectedCustomer(null)}
-                className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -400,7 +452,7 @@ export const AdminUsers: React.FC = () => {
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-xl transition-colors"
+                className="px-5 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-2xs transition-colors cursor-pointer"
               >
                 Close Profile
               </button>
@@ -415,7 +467,7 @@ export const AdminUsers: React.FC = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-slate-100">
               <h3 className="text-xl font-bold text-slate-800">Add Staff Member</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X size={24} />
               </button>
             </div>
@@ -427,7 +479,7 @@ export const AdminUsers: React.FC = () => {
                   required 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all" 
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" 
                 />
               </div>
               <div>
@@ -437,7 +489,7 @@ export const AdminUsers: React.FC = () => {
                   required 
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all" 
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" 
                 />
               </div>
               <div>
@@ -447,7 +499,7 @@ export const AdminUsers: React.FC = () => {
                   required 
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all" 
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" 
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -456,8 +508,9 @@ export const AdminUsers: React.FC = () => {
                   <select 
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
                   >
+                    <option value="Super Admin">Super Admin</option>
                     <option value="Admin">Admin</option>
                     <option value="Sales Manager">Sales Manager</option>
                     <option value="Sales Executive">Sales Executive</option>
@@ -468,7 +521,7 @@ export const AdminUsers: React.FC = () => {
                   <select 
                     value={formData.status}
                     onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -479,14 +532,14 @@ export const AdminUsers: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors text-sm"
+                  className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors text-sm cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-70 text-sm"
+                  className="px-6 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg hover:opacity-95 shadow-md shadow-red-600/25 transition-all disabled:opacity-70 text-sm cursor-pointer"
                 >
                   {isSubmitting ? 'Saving...' : 'Save User'}
                 </button>

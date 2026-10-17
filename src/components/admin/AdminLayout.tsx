@@ -227,10 +227,42 @@ export const AdminLayout: React.FC = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    ...(!isSalesExecutive ? [{ name: 'Products', path: '/admin/products', icon: ShoppingBag }] : []),
-    { name: 'RFQs (Quotations)', path: '/admin/rfqs', icon: FileText },
-    ...(isAdmin || isSalesManager ? [{ name: 'Customers & Users', path: '/admin/users', icon: Users }] : []),
+    { 
+      name: 'Dashboard', 
+      path: '/admin', 
+      icon: LayoutDashboard,
+      activeGradient: 'bg-gradient-to-r from-red-600 via-red-600 to-rose-600 text-white shadow-md shadow-red-500/25 font-bold',
+      inactiveHover: 'text-slate-600 hover:text-red-700 hover:bg-red-50/80 font-semibold',
+      iconInactive: 'text-red-500 group-hover:scale-110',
+      badge: 'Red'
+    },
+    ...(!isSalesExecutive ? [{ 
+      name: 'Products', 
+      path: '/admin/products', 
+      icon: ShoppingBag,
+      activeGradient: 'bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 text-white shadow-md shadow-sky-500/25 font-bold',
+      inactiveHover: 'text-slate-600 hover:text-sky-700 hover:bg-sky-50/80 font-semibold',
+      iconInactive: 'text-sky-500 group-hover:scale-110',
+      badge: 'Sky Blue'
+    }] : []),
+    { 
+      name: 'RFQs (Quotations)', 
+      path: '/admin/rfqs', 
+      icon: FileText,
+      activeGradient: 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/25 font-bold',
+      inactiveHover: 'text-slate-600 hover:text-orange-700 hover:bg-orange-50/80 font-semibold',
+      iconInactive: 'text-orange-500 group-hover:scale-110',
+      badge: 'Orange'
+    },
+    ...(isAdmin || isSalesManager ? [{ 
+      name: 'Customers & Users', 
+      path: '/admin/users', 
+      icon: Users,
+      activeGradient: 'bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 text-white shadow-md shadow-slate-500/25 font-bold',
+      inactiveHover: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold',
+      iconInactive: 'text-slate-500 group-hover:scale-110',
+      badge: 'Slate Grey'
+    }] : []),
   ];
 
   const sidebarWidth = isMobile ? 'w-72 max-w-[85vw]' : (sidebarOpen ? 'w-72' : 'w-20');
@@ -238,7 +270,7 @@ export const AdminLayout: React.FC = () => {
   const mainMargin = isMobile ? 'ml-0' : (sidebarOpen ? 'ml-72' : 'ml-20');
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 flex font-sans overflow-hidden selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen w-full bg-slate-50/90 flex font-sans overflow-hidden selection:bg-red-600 selection:text-white">
       
       {/* Mobile Backdrop */}
       {isMobile && sidebarOpen && (
@@ -248,17 +280,18 @@ export const AdminLayout: React.FC = () => {
         />
       )}
 
-      {/* Corporate Sidebar - Deep Slate */}
-      <aside className={`bg-slate-900 border-r border-slate-800 transition-all duration-300 ease-in-out ${sidebarWidth} ${sidebarTranslate} flex flex-col fixed inset-y-0 left-0 h-full z-50 shadow-2xl overflow-hidden`}>
-        {/* Subtle mesh background for sidebar */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none"></div>
+      {/* Corporate Sidebar - Colorful Light Aesthetic */}
+      <aside className={`bg-white border-r border-slate-200/80 transition-all duration-300 ease-in-out ${sidebarWidth} ${sidebarTranslate} flex flex-col fixed inset-y-0 left-0 h-full z-50 shadow-sm overflow-hidden`}>
+        {/* Harmonious Light Tint Auras in Sidebar: Sky Blue, Red, Orange */}
+        <div className="absolute top-0 right-0 w-36 h-36 bg-sky-100/40 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute top-44 left-0 w-36 h-36 bg-red-100/35 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute bottom-8 right-0 w-36 h-36 bg-amber-100/40 rounded-full blur-2xl pointer-events-none"></div>
 
         {/* Top-Left Logo: Enlarged & High Visibility */}
-        <div className="h-24 flex items-center justify-between px-4 border-b border-slate-800/80 relative z-10 shrink-0">
+        <div className="h-24 flex items-center justify-between px-4 border-b border-slate-100 relative z-10 shrink-0 bg-white">
           {sidebarOpen ? (
             <Link to="/admin" className="flex items-center cursor-pointer group flex-1 mr-2 min-w-0">
-              <div className="bg-white rounded-xl p-2 shadow-md border border-slate-700/50 w-full flex items-center justify-center transition-all group-hover:scale-[1.02]">
+              <div className="bg-slate-50/80 hover:bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 w-full flex items-center justify-center transition-all group-hover:border-red-200 group-hover:shadow-2xs">
                 <img 
                   src="/images/siddhi-kabel-lockup.png" 
                   alt="Siddhi Kabel Corporation Private Limited" 
@@ -269,11 +302,11 @@ export const AdminLayout: React.FC = () => {
             </Link>
           ) : (
             <Link to="/admin" className="cursor-pointer mx-auto group">
-              <div className="bg-white rounded-xl p-1.5 shadow-md border border-slate-700/50 flex items-center justify-center transition-all group-hover:scale-105">
+              <div className="bg-slate-50/80 hover:bg-slate-50 rounded-xl p-2 border border-slate-200/80 flex items-center justify-center transition-all group-hover:scale-105 group-hover:border-red-200">
                 <img 
                   src="/images/siddhi-kabel-logo.png" 
                   alt="S" 
-                  className="w-11 h-11 object-contain" 
+                  className="w-10 h-10 object-contain" 
                   onError={(e) => { e.currentTarget.src = '/images/siddhi-kabel-lockup.png'; }}
                 />
               </div>
@@ -282,16 +315,21 @@ export const AdminLayout: React.FC = () => {
           
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)} 
-            className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
             title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
           >
             {isMobile ? <X size={20} /> : (sidebarOpen ? <X size={20} /> : <Menu size={20} className="mx-auto" />)}
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto py-8 px-4 space-y-2 relative z-10 custom-scrollbar">
-          <div className={`mb-6 px-3 text-xs font-semibold tracking-wider text-slate-500 uppercase ${!sidebarOpen && 'hidden'}`}>
-            Main Menu
+        <div className="flex-1 overflow-y-auto py-6 px-3.5 space-y-1.5 relative z-10 custom-scrollbar">
+          <div className={`mb-3 px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase flex items-center justify-between ${!sidebarOpen && 'hidden'}`}>
+            <span>Main Menu</span>
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            </div>
           </div>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/admin');
@@ -300,13 +338,17 @@ export const AdminLayout: React.FC = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`relative flex items-center px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}
+                className={`relative flex items-center px-3.5 py-3 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer ${
+                  isActive 
+                    ? item.activeGradient
+                    : item.inactiveHover
+                }`}
               >
-                <Icon size={20} className={`relative z-10 transition-transform duration-200 ${isActive ? 'text-white' : 'group-hover:scale-110'}`} />
+                <Icon size={20} className={`relative z-10 transition-transform duration-200 ${isActive ? 'text-white' : item.iconInactive}`} />
                 {sidebarOpen && (
                   <>
-                    <span className="ml-4 font-medium text-sm relative z-10 tracking-wide">{item.name}</span>
-                    {isActive && <ChevronRight size={16} className="ml-auto opacity-70" />}
+                    <span className="ml-3.5 font-semibold text-sm relative z-10 tracking-wide">{item.name}</span>
+                    {isActive && <ChevronRight size={16} className="ml-auto text-white/90" />}
                   </>
                 )}
               </Link>
@@ -314,23 +356,25 @@ export const AdminLayout: React.FC = () => {
           })}
         </div>
         
-        <div className="p-4 border-t border-slate-800/80 relative z-10 shrink-0">
-          <div className={`flex items-center gap-3 mb-4 px-2 ${!sidebarOpen && 'hidden'}`}>
-            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 font-bold border border-slate-700 shadow-sm shrink-0">
+        <div className="p-3.5 border-t border-slate-200/80 bg-slate-50/70 relative z-10 shrink-0">
+          <div className={`flex items-center gap-3 mb-3 px-2 ${!sidebarOpen && 'hidden'}`}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-100 via-orange-100 to-sky-100 border border-orange-200 text-red-700 flex items-center justify-center font-bold text-sm shadow-2xs shrink-0">
               {currentAdmin.name?.charAt(0) || 'A'}
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-semibold text-white truncate">{currentAdmin.name}</span>
-              <span className="text-xs text-amber-400 font-medium truncate">{currentAdmin.role}</span>
+              <span className="text-sm font-bold text-slate-800 truncate">{currentAdmin.name}</span>
+              <span className="text-[11px] font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.2 rounded w-fit mt-0.5 truncate">
+                {currentAdmin.role}
+              </span>
             </div>
           </div>
           <button 
             onClick={handleLogout} 
-            className={`flex items-center w-full px-4 py-2.5 rounded-xl transition-all duration-200 group hover:bg-red-500/15 hover:text-red-400 text-slate-400 cursor-pointer overflow-hidden ${isMobile || sidebarOpen ? 'justify-start' : 'justify-center'}`}
+            className={`flex items-center w-full px-3.5 py-2.5 rounded-xl transition-all duration-200 group hover:bg-red-50 hover:text-red-700 text-slate-600 cursor-pointer overflow-hidden ${isMobile || sidebarOpen ? 'justify-start' : 'justify-center'}`}
             title="Sign out of Admin Portal"
           >
-            <LogOut size={20} className="group-hover:scale-110 transition-transform duration-200" />
-            {sidebarOpen && <span className="ml-4 font-medium text-sm tracking-wide">Logout</span>}
+            <LogOut size={18} className="group-hover:scale-110 transition-transform duration-200 text-slate-500 group-hover:text-red-600" />
+            {sidebarOpen && <span className="ml-3 font-semibold text-xs tracking-wide">Logout</span>}
           </button>
         </div>
       </aside>
@@ -338,15 +382,19 @@ export const AdminLayout: React.FC = () => {
       {/* Main Content Area */}
       <main className={`flex-1 min-w-0 flex flex-col h-screen transition-all duration-300 ease-in-out relative ${mainMargin}`}>
         
-        {/* Warm & Bright Background */}
-        <div className="fixed inset-0 bg-amber-50/30 z-0 overflow-hidden pointer-events-none">
-           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-200/40 rounded-full blur-[120px] mix-blend-multiply pointer-events-none animate-pulse duration-[8000ms]" />
-           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-yellow-200/40 rounded-full blur-[100px] mix-blend-multiply pointer-events-none" />
-           <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-amber-300/20 rounded-full blur-[120px] mix-blend-multiply pointer-events-none" />
+        {/* Colorful Light Ambient Brand Background: Sky Blue, Orange, Light Red, Light Grey */}
+        <div className="fixed inset-0 bg-slate-50/90 z-0 overflow-hidden pointer-events-none">
+           <div className="absolute top-0 right-10 w-[600px] h-[600px] bg-sky-200/25 rounded-full blur-[140px] mix-blend-multiply pointer-events-none" />
+           <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-amber-200/20 rounded-full blur-[130px] mix-blend-multiply pointer-events-none" />
+           <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-red-200/20 rounded-full blur-[150px] mix-blend-multiply pointer-events-none" />
+           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-slate-200/40 rounded-full blur-[120px] mix-blend-multiply pointer-events-none" />
         </div>
 
-        {/* Corporate Top Header */}
-        <header className="h-14 sm:h-16 bg-white/80 backdrop-blur-xl border-b border-orange-100 flex items-center justify-between px-4 sm:px-6 z-20 sticky top-0 shadow-[0_4px_30px_rgba(249,115,22,0.03)] shrink-0 transition-all">
+        {/* Corporate Top Header with Signature Multi-Color Brand Accent */}
+        <header className="h-14 sm:h-16 bg-white/90 backdrop-blur-xl border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-20 sticky top-0 shadow-sm shrink-0 transition-all relative">
+          {/* Multi-color Signature Brand Accent Line: Light Sky Blue -> Light Orange -> Light Red -> Light Grey */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-sky-400 via-amber-400 via-red-500 to-slate-400 pointer-events-none" />
+
           <div className="flex items-center gap-3">
             {isMobile && (
               <button 
@@ -360,13 +408,15 @@ export const AdminLayout: React.FC = () => {
               <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">
                 {navItems.find(i => i.path === location.pathname)?.name || 'Admin Portal'}
               </h1>
-              <p className="text-[11px] font-medium text-slate-500 hidden sm:block">Manage your enterprise resources and analytics</p>
+              <p className="text-[11px] font-medium text-slate-500 hidden sm:block">
+                Welcome, <span className="font-semibold text-slate-700">{currentAdmin?.name || 'User'}</span> <span className="text-slate-400">({currentAdmin?.role || 'Staff'})</span>
+              </p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3 sm:space-x-4">
             {/* Functional Search Bar */}
-            <form onSubmit={handleGlobalSearch} className="hidden md:flex items-center bg-slate-100/90 rounded-xl px-3 py-1.5 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all w-60">
+            <form onSubmit={handleGlobalSearch} className="hidden md:flex items-center bg-slate-100/90 rounded-xl px-3 py-1.5 border border-slate-200 focus-within:ring-2 focus-within:ring-red-500/20 focus-within:border-red-500 transition-all w-60">
               <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <input 
                 type="text" 
@@ -405,10 +455,10 @@ export const AdminLayout: React.FC = () => {
                 <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
                     <div className="flex items-center gap-2">
-                      <Bell size={16} className="text-blue-600" />
+                      <Bell size={16} className="text-red-600" />
                       <span className="text-sm font-bold text-slate-800">Notifications</span>
                       {unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
                           {unreadCount} new
                         </span>
                       )}
@@ -416,7 +466,7 @@ export const AdminLayout: React.FC = () => {
                     {unreadCount > 0 && (
                       <button
                         onClick={handleMarkAllRead}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                        className="text-xs text-red-600 hover:text-red-800 font-semibold cursor-pointer"
                       >
                         Mark all read
                       </button>
@@ -434,14 +484,14 @@ export const AdminLayout: React.FC = () => {
                         <div
                           key={n._id}
                           onClick={() => handleNotificationClick(n)}
-                          className={`p-3.5 hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-3 ${!n.read ? 'bg-blue-50/40' : ''}`}
+                          className={`p-3.5 hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-3 ${!n.read ? 'bg-red-50/40' : ''}`}
                         >
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                             n.type === 'rfq' 
-                              ? 'bg-amber-100 text-amber-700' 
+                              ? 'bg-red-100 text-red-700' 
                               : n.type === 'customer' 
-                              ? 'bg-purple-100 text-purple-700' 
-                              : 'bg-blue-100 text-blue-700'
+                              ? 'bg-slate-100 text-slate-700' 
+                              : 'bg-red-100 text-red-700'
                           }`}>
                             {n.type === 'rfq' ? <FileText size={16} /> : <UserCheck size={16} />}
                           </div>
@@ -450,7 +500,7 @@ export const AdminLayout: React.FC = () => {
                               <p className={`text-xs font-bold line-clamp-1 ${!n.read ? 'text-slate-900' : 'text-slate-700'}`}>
                                 {n.title}
                               </p>
-                              {!n.read && <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />}
+                              {!n.read && <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" />}
                             </div>
                             <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
                             <span className="text-[10px] text-slate-400 mt-1 inline-block font-mono">
@@ -466,7 +516,7 @@ export const AdminLayout: React.FC = () => {
                     <Link
                       to="/admin/rfqs"
                       onClick={() => setNotifsOpen(false)}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                      className="text-xs font-bold text-red-600 hover:text-red-800 cursor-pointer"
                     >
                       View All RFQ Records →
                     </Link>
@@ -477,7 +527,7 @@ export const AdminLayout: React.FC = () => {
 
             {/* Profile Avatar & Dropdown */}
             <div className="flex items-center space-x-2.5 cursor-pointer group relative">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:bg-blue-600 transition-colors">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center justify-center font-bold text-sm shadow-2xs group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 transition-colors">
                 {currentAdmin.name?.charAt(0) || 'A'}
               </div>
               
@@ -486,14 +536,14 @@ export const AdminLayout: React.FC = () => {
                 <div className="p-3.5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                   <p className="text-xs font-bold text-slate-800 line-clamp-1">{currentAdmin.name}</p>
                   <p className="text-[11px] font-medium text-slate-500 mt-0.5 line-clamp-1">{currentAdmin.email}</p>
-                  <span className="inline-block px-2 py-0.5 mt-1.5 text-[10px] font-bold rounded-md bg-amber-100 text-amber-800">
+                  <span className="inline-block px-2 py-0.5 mt-1.5 text-[10px] font-bold rounded-md bg-red-50 text-red-800 border border-red-200">
                     {currentAdmin.role}
                   </span>
                 </div>
                 <div className="p-1.5">
                   <button 
                     onClick={handleOpenSettings}
-                    className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer"
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer"
                   >
                     <Settings size={15} /> Account Settings
                   </button>
@@ -527,7 +577,7 @@ export const AdminLayout: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
                   <Settings size={18} />
                 </div>
                 <div>
@@ -564,7 +614,7 @@ export const AdminLayout: React.FC = () => {
                   value={settingsForm.name}
                   onChange={e => setSettingsForm({ ...settingsForm, name: e.target.value })}
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all"
                 />
               </div>
 
@@ -575,7 +625,7 @@ export const AdminLayout: React.FC = () => {
                   value={settingsForm.email}
                   onChange={e => setSettingsForm({ ...settingsForm, email: e.target.value })}
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all"
                 />
               </div>
 
@@ -589,7 +639,7 @@ export const AdminLayout: React.FC = () => {
                       value={settingsForm.password}
                       onChange={e => setSettingsForm({ ...settingsForm, password: e.target.value })}
                       placeholder="••••••••"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all"
                     />
                   </div>
                   <div>
@@ -599,7 +649,7 @@ export const AdminLayout: React.FC = () => {
                       value={settingsForm.confirmPassword}
                       onChange={e => setSettingsForm({ ...settingsForm, confirmPassword: e.target.value })}
                       placeholder="••••••••"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -616,7 +666,7 @@ export const AdminLayout: React.FC = () => {
                 <button
                   type="submit"
                   disabled={settingsLoading}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-xl shadow-md shadow-red-600/25 cursor-pointer disabled:opacity-50 transition-all"
                 >
                   {settingsLoading ? 'Saving...' : 'Save Changes'}
                 </button>
