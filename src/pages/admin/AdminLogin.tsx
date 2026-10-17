@@ -45,8 +45,12 @@ export const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 relative overflow-hidden px-4">
-      <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden px-4">
+      {/* Colorful light ambient blobs: Sky Blue, Orange, Light Red */}
+      <div className="absolute -top-20 -right-20 w-80 h-80 bg-sky-200/35 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-orange-200/35 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-red-100/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-slate-200/90 relative z-10">
         <div className="flex justify-center mb-6">
           <img 
             src="/images/siddhi-kabel-lockup.png" 

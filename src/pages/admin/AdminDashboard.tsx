@@ -109,23 +109,22 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Signature Siddhi Kabel Brand Red Hero Banner with Warm Ambient Glow */}
-      <div className="bg-gradient-to-br from-[#800f14] via-[#b81d22] to-[#c52328] rounded-2xl p-8 sm:p-10 shadow-[0_12px_35px_rgba(197,35,40,0.22)] flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden group gap-6 border border-red-500/40">
-        {/* Subtle mesh & glow backgrounds */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-        <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-white/15 to-transparent pointer-events-none"></div>
-        <div className="absolute -right-20 -top-20 w-72 h-72 bg-orange-400 rounded-full blur-[90px] opacity-25 pointer-events-none group-hover:opacity-40 transition-opacity duration-700"></div>
-        <div className="absolute -left-10 -bottom-10 w-60 h-60 bg-sky-400 rounded-full blur-[90px] opacity-20 pointer-events-none"></div>
+      {/* Corporate Light Hero Banner with Signature Red Accent */}
+      <div className="bg-gradient-to-br from-white via-red-50/30 to-orange-50/20 rounded-2xl p-7 sm:p-9 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden group gap-6 border border-slate-200/90">
+        {/* Subtle pastel ambient background auras */}
+        <div className="absolute -right-16 -top-16 w-64 h-64 bg-red-100/50 rounded-full blur-3xl pointer-events-none group-hover:opacity-75 transition-opacity duration-700"></div>
+        <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-sky-100/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-amber-100/35 rounded-full blur-2xl pointer-events-none"></div>
 
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-xs font-bold mb-4 backdrop-blur-md shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold mb-3 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             {userRole} Workspace
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight drop-shadow-sm">
-            Welcome, {userName}!
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+            Welcome, <span className="bg-gradient-to-r from-red-600 via-red-700 to-orange-600 bg-clip-text text-transparent">{userName}</span>!
           </h2>
-          <p className="text-red-100/90 font-medium mt-2 text-sm sm:text-base max-w-xl drop-shadow-sm leading-relaxed">
+          <p className="text-slate-600 font-medium mt-2 text-xs sm:text-sm max-w-xl leading-relaxed">
             {isSales 
               ? 'Review your assigned RFQs, update customer pipeline stages, grant special project discounts, and generate official proforma quotations.' 
               : 'Monitor enterprise operations, assign RFQs to your sales team, track quotations, and manage catalog performance in real-time.'}
@@ -133,14 +132,14 @@ export const AdminDashboard: React.FC = () => {
         </div>
         
         <div className="w-full md:w-auto relative z-10 flex shrink-0">
-           <div className="w-full sm:w-auto bg-white/15 border border-white/25 rounded-xl p-4 shadow-xl backdrop-blur-md flex items-center gap-4">
-             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0 border border-white/30 shadow-sm">
+           <div className="w-full sm:w-auto bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex items-center gap-4 hover:border-slate-300 transition-all">
+             <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shrink-0 border border-red-100 shadow-2xs">
                <Activity size={24} />
              </div>
              <div>
-               <p className="text-[11px] font-bold text-red-200 uppercase tracking-wider">System Status</p>
-               <p className="text-base font-bold text-white flex items-center gap-2">
-                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">System Status</p>
+               <p className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
                  Operational
                </p>
              </div>
