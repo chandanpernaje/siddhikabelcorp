@@ -833,21 +833,27 @@ export const AdminRFQs: React.FC = () => {
                       {isAdmin ? (
                         renderStatusBadge(rfq.status)
                       ) : (
-                        rfq.status === 'Closed' || rfq.status === 'Completed' ? (
-                          renderStatusBadge('Closed')
-                        ) : (
-                          <select 
-                            value={rfq.status}
-                            onChange={(e) => handleStatusChange(rfq._id, e.target.value)}
-                            className="text-xs font-bold rounded-lg px-2.5 py-1.5 border border-slate-300 bg-white text-slate-800 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none cursor-pointer shadow-2xs"
-                          >
-                            {rfq.status === 'New' && <option value="New">New</option>}
-                            {rfq.status === 'Assigned' && <option value="Assigned">Assigned</option>}
-                            <option value="Under Review">Under Review</option>
-                            <option value="Process by Sales">Process by Sales</option>
-                            <option value="Closed">Closed</option>
-                          </select>
-                        )
+                        <select 
+                          value={rfq.status}
+                          onChange={(e) => handleStatusChange(rfq._id, e.target.value)}
+                          className={`text-xs font-bold rounded-lg px-2.5 py-1.5 border outline-none cursor-pointer shadow-2xs transition-all ${
+                            rfq.status === 'Closed' || rfq.status === 'Completed'
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800' 
+                              : rfq.status === 'Process by Sales' || rfq.status === 'Processing'
+                              ? 'border-purple-300 bg-purple-50 text-purple-800'
+                              : rfq.status === 'Under Review'
+                              ? 'border-orange-300 bg-orange-50 text-orange-800'
+                              : rfq.status === 'Assigned'
+                              ? 'border-sky-300 bg-sky-50 text-sky-800'
+                              : 'border-slate-300 bg-white text-slate-800'
+                          } focus:ring-2 focus:ring-red-500`}
+                        >
+                          {rfq.status === 'New' && <option value="New">New</option>}
+                          <option value="Assigned">Assigned</option>
+                          <option value="Under Review">Under Review</option>
+                          <option value="Process by Sales">Process by Sales</option>
+                          <option value="Closed">Closed</option>
+                        </select>
                       )}
                     </td>
 
@@ -945,26 +951,26 @@ export const AdminRFQs: React.FC = () => {
                     {renderStatusBadge(selectedRfq.status)}
                   </div>
                 ) : (
-                  selectedRfq.status === 'Closed' || selectedRfq.status === 'Completed' ? (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
-                      <CheckCircle size={13} className="text-emerald-600 shrink-0" />
-                      <span className="text-xs font-bold text-emerald-700">Closed</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                      <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">Update Status:</span>
-                      <select
-                        value={selectedRfq.status}
-                        onChange={(e) => handleStatusChange(selectedRfq._id, e.target.value)}
-                        className="text-xs font-bold bg-transparent text-amber-700 outline-none cursor-pointer"
-                      >
-                        {selectedRfq.status === 'Assigned' && <option value="Assigned" className="bg-white text-slate-900">Assigned</option>}
-                        <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
-                        <option value="Process by Sales" className="bg-white text-slate-900">Process by Sales</option>
-                        <option value="Closed" className="bg-white text-slate-900">Closed</option>
-                      </select>
-                    </div>
-                  )
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border shadow-2xs ${
+                    selectedRfq.status === 'Closed' || selectedRfq.status === 'Completed'
+                      ? 'bg-emerald-50 border-emerald-300' 
+                      : 'bg-white border-slate-200'
+                  }`}>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">Update Status:</span>
+                    <select
+                      value={selectedRfq.status}
+                      onChange={(e) => handleStatusChange(selectedRfq._id, e.target.value)}
+                      className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${
+                        selectedRfq.status === 'Closed' || selectedRfq.status === 'Completed' ? 'text-emerald-800 font-extrabold' : 'text-amber-700'
+                      }`}
+                    >
+                      {selectedRfq.status === 'New' && <option value="New" className="bg-white text-slate-900">New</option>}
+                      <option value="Assigned" className="bg-white text-slate-900">Assigned</option>
+                      <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
+                      <option value="Process by Sales" className="bg-white text-slate-900">Process by Sales</option>
+                      <option value="Closed" className="bg-white text-slate-900">Closed</option>
+                    </select>
+                  </div>
                 )}
 
                 {/* Assignment: Admin assigns salesperson. Sales views assigned name */}
