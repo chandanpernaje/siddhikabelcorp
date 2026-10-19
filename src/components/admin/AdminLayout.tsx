@@ -440,30 +440,30 @@ export const AdminLayout: React.FC = () => {
                   {/* Submenu Dropdown in Sidebar (When sidebarOpen is true & open) */}
                   {sidebarOpen && isSubmenuVisible && (
                     <div className="mt-1.5 ml-3 pl-3 border-l-2 border-slate-200/90 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      {/* Sub-item 1: Registered Corporate Customers (Website Customers) */}
+                      {/* Sub-item 1: Registered Customer (Website Customers) */}
                       <Link
                         to="/admin/users?tab=customers"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (isMobile) setSidebarOpen(false);
                         }}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 group/sub border ${
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all duration-150 group/sub border ${
                           isUsersRoute && currentTab !== 'internal'
                             ? 'bg-sky-50 text-sky-800 font-bold border-sky-300/80 shadow-2xs'
-                            : 'border-transparent text-slate-600 hover:text-sky-700 hover:bg-sky-50/60 font-semibold'
+                            : 'border-transparent text-slate-700 hover:text-sky-700 hover:bg-sky-50/60 font-semibold'
                         }`}
-                        title="Registered Corporate Customers (9)"
+                        title="Registered Customer"
                       >
-                        <div className="flex items-center gap-2 min-w-0 mr-1.5">
-                          <Building size={14} className={`shrink-0 ${
-                            isUsersRoute && currentTab !== 'internal' ? 'text-sky-600' : 'text-slate-400 group-hover/sub:text-sky-600'
+                        <div className="flex items-center gap-2.5 min-w-0 mr-1.5">
+                          <Building size={17} className={`shrink-0 ${
+                            isUsersRoute && currentTab !== 'internal' ? 'text-sky-600' : 'text-slate-500 group-hover/sub:text-sky-600'
                           }`} />
-                          <span className="truncate">Registered Corporate</span>
+                          <span className="truncate">Registered Customer</span>
                         </div>
-                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 border ${
+                        <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0 border ${
                           isUsersRoute && currentTab !== 'internal'
                             ? 'bg-sky-200/80 text-sky-900 border-sky-300'
-                            : 'bg-slate-100 text-slate-500 border-slate-200 group-hover/sub:bg-sky-100 group-hover/sub:text-sky-700'
+                            : 'bg-slate-100 text-slate-600 border-slate-200 group-hover/sub:bg-sky-100 group-hover/sub:text-sky-700'
                         }`}>
                           {userCounts.customers}
                         </span>
@@ -476,23 +476,23 @@ export const AdminLayout: React.FC = () => {
                           e.stopPropagation();
                           if (isMobile) setSidebarOpen(false);
                         }}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 group/sub border ${
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all duration-150 group/sub border ${
                           isUsersRoute && currentTab === 'internal'
                             ? 'bg-red-50 text-red-800 font-bold border-red-300/80 shadow-2xs'
-                            : 'border-transparent text-slate-600 hover:text-red-700 hover:bg-red-50/60 font-semibold'
+                            : 'border-transparent text-slate-700 hover:text-red-700 hover:bg-red-50/60 font-semibold'
                         }`}
-                        title="Internal Staff & Sales Team (4)"
+                        title="Internal Staff & Sales"
                       >
-                        <div className="flex items-center gap-2 min-w-0 mr-1.5">
-                          <Shield size={14} className={`shrink-0 ${
-                            isUsersRoute && currentTab === 'internal' ? 'text-red-600' : 'text-slate-400 group-hover/sub:text-red-600'
+                        <div className="flex items-center gap-2.5 min-w-0 mr-1.5">
+                          <Shield size={17} className={`shrink-0 ${
+                            isUsersRoute && currentTab === 'internal' ? 'text-red-600' : 'text-slate-500 group-hover/sub:text-red-600'
                           }`} />
                           <span className="truncate">Internal Staff & Sales</span>
                         </div>
-                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 border ${
+                        <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0 border ${
                           isUsersRoute && currentTab === 'internal'
                             ? 'bg-red-200/80 text-red-900 border-red-300'
-                            : 'bg-slate-100 text-slate-500 border-slate-200 group-hover/sub:bg-red-100 group-hover/sub:text-red-700'
+                            : 'bg-slate-100 text-slate-600 border-slate-200 group-hover/sub:bg-red-100 group-hover/sub:text-red-700'
                         }`}>
                           {userCounts.internal}
                         </span>
@@ -512,17 +512,17 @@ export const AdminLayout: React.FC = () => {
                           e.stopPropagation();
                           setCustomersMenuOpen(false);
                         }}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                           isUsersRoute && currentTab !== 'internal'
                             ? 'bg-sky-50 text-sky-800 font-bold border border-sky-200'
-                            : 'text-slate-600 hover:bg-sky-50 hover:text-sky-700'
+                            : 'text-slate-700 hover:bg-sky-50 hover:text-sky-700'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <Building size={14} className="text-sky-600" />
-                          <span>Registered Corporate Customers</span>
+                        <div className="flex items-center gap-2.5">
+                          <Building size={17} className="text-sky-600" />
+                          <span>Registered Customer</span>
                         </div>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
                           {userCounts.customers}
                         </span>
                       </Link>
@@ -532,17 +532,17 @@ export const AdminLayout: React.FC = () => {
                           e.stopPropagation();
                           setCustomersMenuOpen(false);
                         }}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all mt-1 ${
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all mt-1 ${
                           isUsersRoute && currentTab === 'internal'
                             ? 'bg-red-50 text-red-800 font-bold border border-red-200'
-                            : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
+                            : 'text-slate-700 hover:bg-red-50 hover:text-red-700'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <Shield size={14} className="text-red-600" />
-                          <span>Internal Staff & Sales Team</span>
+                        <div className="flex items-center gap-2.5">
+                          <Shield size={17} className="text-red-600" />
+                          <span>Internal Staff & Sales</span>
                         </div>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800">
                           {userCounts.internal}
                         </span>
                       </Link>

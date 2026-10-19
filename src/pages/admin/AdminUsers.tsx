@@ -165,12 +165,12 @@ export const AdminUsers: React.FC = () => {
                 ? 'bg-sky-50 text-sky-700 border-sky-200' 
                 : 'bg-red-50 text-red-700 border-red-200'
             }`}>
-              {activeTab === 'Customers' ? `${customers.length} Corporate Accounts` : `${internalUsers.length} Staff Members`}
+              {activeTab === 'Customers' ? `${customers.length} Registered Customers` : `${internalUsers.length} Staff Members`}
             </span>
           </h2>
           <p className="text-sm text-slate-500 mt-1">
             {activeTab === 'Customers' 
-              ? 'View and manage registered B2B corporate customers, GSTIN, and company details.' 
+              ? 'View and manage registered customers, GSTIN, and company details.' 
               : 'Manage internal administrators, sales managers, and executives.'}
           </p>
         </div>
