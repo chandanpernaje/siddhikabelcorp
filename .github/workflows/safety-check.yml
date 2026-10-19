@@ -1,0 +1,44 @@
+name: Repository Safety & Build Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  safety-check:
+    name: Security & Safety Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Run Repository Safety Scanner
+        run: npm run check:safety
+
+      - name: Typecheck Frontend
+        run: npm run lint
+
+      - name: Build Frontend Application
+        run: npm run build
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build Backend Service
+        working-directory: ./backend
+        run: npm run build

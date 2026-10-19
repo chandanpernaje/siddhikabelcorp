@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 
@@ -18,13 +19,25 @@ interface User {
 }
 
 export const AdminUsers: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'Customers' | 'Internal'>('Customers');
+  const [activeTab, setActiveTab] = useState<'Customers' | 'Internal'>(() => {
+    return tabParam === 'internal' ? 'Internal' : 'Customers';
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Sales Executive', status: 'Active' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (tabParam === 'internal') {
+      setActiveTab('Internal');
+    } else if (tabParam === 'customers') {
+      setActiveTab('Customers');
+    }
+  }, [tabParam]);
 
   // Current logged in user info
   const currentAdminStr = localStorage.getItem('siddhi_admin_user');
@@ -43,7 +56,9 @@ export const AdminUsers: React.FC = () => {
         }
       });
       if (res.ok) {
-        setUsers(await res.json());
+        const data = await res.json();
+        setUsers(data);
+        window.dispatchEvent(new Event('users_updated'));
       }
     } catch (error) {
       console.error('Failed to fetch users', error);
@@ -143,10 +158,17 @@ export const AdminUsers: React.FC = () => {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
             {activeTab === 'Customers' ? 'Customer Management' : 'Team & Staff Management'}
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+              activeTab === 'Customers' 
+                ? 'bg-sky-50 text-sky-700 border-sky-200' 
+                : 'bg-red-50 text-red-700 border-red-200'
+            }`}>
+              {activeTab === 'Customers' ? `${customers.length} Corporate Accounts` : `${internalUsers.length} Staff Members`}
+            </span>
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 mt-1">
             {activeTab === 'Customers' 
               ? 'View and manage registered B2B corporate customers, GSTIN, and company details.' 
               : 'Manage internal administrators, sales managers, and executives.'}
@@ -170,30 +192,6 @@ export const AdminUsers: React.FC = () => {
             </button>
           )}
         </div>
-      </div>
-
-      {/* Tabs - Light Colorful Themes */}
-      <div className="flex border-b border-slate-200 overflow-x-auto gap-2">
-        <button 
-          onClick={() => setActiveTab('Customers')}
-          className={`px-5 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-lg ${
-            activeTab === 'Customers' 
-              ? 'border-sky-500 text-sky-700 bg-sky-50/70 shadow-2xs' 
-              : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-          }`}
-        >
-          Registered Corporate Customers ({customers.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('Internal')}
-          className={`px-5 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap cursor-pointer rounded-t-lg ${
-            activeTab === 'Internal' 
-              ? 'border-red-600 text-red-600 bg-red-50/70 shadow-2xs' 
-              : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-          }`}
-        >
-          Internal Staff & Sales Team ({internalUsers.length})
-        </button>
       </div>
 
       {/* Content Table */}

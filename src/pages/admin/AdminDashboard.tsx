@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, ShoppingBag, FileText, AlertCircle, CheckCircle, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, Activity, BarChart3, Building } from 'lucide-react';
+import { Users, ShoppingBag, FileText, AlertCircle, CheckCircle, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, Building } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../../config/api';
 
@@ -92,12 +92,6 @@ export const AdminDashboard: React.FC = () => {
     },
   ];
 
-  const currentAdminStr = localStorage.getItem('siddhi_admin_user');
-  const currentAdmin = currentAdminStr ? JSON.parse(currentAdminStr) : null;
-  const userName = currentAdmin?.name || 'Executive';
-  const userRole = currentAdmin?.role || 'Admin';
-  const isSales = userRole.toLowerCase().includes('sales');
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
@@ -108,44 +102,6 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* Corporate Light Hero Banner with Signature Red Accent */}
-      <div className="bg-gradient-to-br from-white via-red-50/30 to-orange-50/20 rounded-2xl p-7 sm:p-9 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden group gap-6 border border-slate-200/90">
-        {/* Subtle pastel ambient background auras */}
-        <div className="absolute -right-16 -top-16 w-64 h-64 bg-red-100/50 rounded-full blur-3xl pointer-events-none group-hover:opacity-75 transition-opacity duration-700"></div>
-        <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-sky-100/40 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-amber-100/35 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold mb-3 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            {userRole} Workspace
-          </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-            Welcome, <span className="bg-gradient-to-r from-red-600 via-red-700 to-orange-600 bg-clip-text text-transparent">{userName}</span>!
-          </h2>
-          <p className="text-slate-600 font-medium mt-2 text-xs sm:text-sm max-w-xl leading-relaxed">
-            {isSales 
-              ? 'Review your assigned RFQs, update customer pipeline stages, grant special project discounts, and generate official proforma quotations.' 
-              : 'Monitor enterprise operations, assign RFQs to your sales team, track quotations, and manage catalog performance in real-time.'}
-          </p>
-        </div>
-        
-        <div className="w-full md:w-auto relative z-10 flex shrink-0">
-           <div className="w-full sm:w-auto bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex items-center gap-4 hover:border-slate-300 transition-all">
-             <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shrink-0 border border-red-100 shadow-2xs">
-               <Activity size={24} />
-             </div>
-             <div>
-               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">System Status</p>
-               <p className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
-                 Operational
-               </p>
-             </div>
-           </div>
-        </div>
-      </div>
 
       {/* KPI Cards in 4 Harmonious Light Colors: Light Sky Blue, Light Grey, Light Red, Light Orange */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">

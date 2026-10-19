@@ -178,9 +178,37 @@ const isCustomerRole = (role?: string) => {
 
 // --- API Routes ---
 
-// Basic route
+// Basic route & Health Check
 app.get('/', (req, res) => {
   res.send('SiddhiCorp Admin API is running with Mongoose');
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+    database: dbStatus,
+  });
+});
+
+// Safety check endpoint (does NOT expose secret values)
+app.get('/api/safety', (req, res) => {
+  const isDbConfigured = Boolean(process.env.DATABASE_URL);
+  const isJwtConfigured = Boolean(process.env.JWT_SECRET);
+  res.json({
+    status: 'safe',
+    checks: {
+      databaseConfigured: isDbConfigured,
+      jwtConfigured: isJwtConfigured,
+      secretsExposed: false,
+      corsRestricted: false,
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Customer Register API

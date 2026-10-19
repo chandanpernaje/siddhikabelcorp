@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingBag, Users, FileText, Settings, Menu, X, LogOut, 
-  Search, ChevronRight, Bell, Check, Clock, UserCheck, ShieldCheck, KeyRound, AlertCircle
+  Search, ChevronRight, ChevronDown, Bell, Check, Clock, UserCheck, ShieldCheck, KeyRound, AlertCircle, Building, Shield
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 
@@ -28,6 +28,56 @@ export const AdminLayout: React.FC = () => {
     const str = localStorage.getItem('siddhi_admin_user');
     return str ? JSON.parse(str) : null;
   });
+
+  // User counts and dropdown state for sidebar sub-menu
+  const [userCounts, setUserCounts] = useState({ customers: 9, internal: 4 });
+  const [customersMenuOpen, setCustomersMenuOpen] = useState(location.pathname.startsWith('/admin/users'));
+  const [customersMenuHover, setCustomersMenuHover] = useState(false);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/users')) {
+      setCustomersMenuOpen(true);
+    }
+  }, [location.pathname]);
+
+  const fetchUserCounts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const usersList = await res.json();
+        if (Array.isArray(usersList)) {
+          const isCustomerRole = (role?: string) => {
+            const r = (role || '').toLowerCase().trim();
+            return r === 'customer' || r === 'website customer' || r === 'corporate customer' || r === 'client';
+          };
+          const custCount = usersList.filter((u: any) => isCustomerRole(u.role)).length;
+          const intCount = usersList.filter((u: any) => {
+            if (isCustomerRole(u.role)) return false;
+            const em = (u.email || '').toLowerCase().trim();
+            if (em === 'admin@siddhikabel.com' || em === 'sales@siddhikabel.com' || em === 'manager@siddhikabel.com') {
+              return false;
+            }
+            return true;
+          }).length;
+          setUserCounts({ customers: custCount, internal: intCount });
+        }
+      }
+    } catch (err) {
+      // quiet fail
+    }
+  };
+
+  useEffect(() => {
+    fetchUserCounts();
+    const handleUsersUpdated = () => fetchUserCounts();
+    window.addEventListener('users_updated', handleUsersUpdated);
+    return () => window.removeEventListener('users_updated', handleUsersUpdated);
+  }, []);
 
   // Notifications State
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -332,8 +382,157 @@ export const AdminLayout: React.FC = () => {
             </div>
           </div>
           {navItems.map((item) => {
+            const isUsers = item.path === '/admin/users';
             const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/admin');
             const Icon = item.icon;
+            const queryParams = new URLSearchParams(location.search);
+            const currentTab = queryParams.get('tab') || 'customers';
+            const isUsersRoute = location.pathname.startsWith('/admin/users');
+
+            if (isUsers) {
+              const isSubmenuVisible = customersMenuOpen || customersMenuHover;
+              return (
+                <div 
+                  key={item.name}
+                  className="relative group/userMenu"
+                  onMouseEnter={() => setCustomersMenuHover(true)}
+                  onMouseLeave={() => setCustomersMenuHover(false)}
+                >
+                  {/* Customers & Users Button */}
+                  <div
+                    onClick={() => {
+                      setCustomersMenuOpen(prev => !prev);
+                      if (!isUsersRoute) {
+                        navigate('/admin/users');
+                      }
+                    }}
+                    className={`relative flex items-center px-3.5 py-3 rounded-xl transition-all duration-200 cursor-pointer select-none group ${
+                      isActive 
+                        ? item.activeGradient
+                        : item.inactiveHover
+                    }`}
+                  >
+                    <Icon size={20} className={`relative z-10 transition-transform duration-200 ${isActive ? 'text-white' : item.iconInactive}`} />
+                    {sidebarOpen && (
+                      <>
+                        <span className="ml-3.5 font-semibold text-sm relative z-10 tracking-wide flex-1 text-left truncate">{item.name}</span>
+                        <ChevronDown 
+                          size={16} 
+                          className={`ml-auto relative z-10 transition-transform duration-200 ${
+                            isSubmenuVisible ? 'rotate-180' : 'rotate-0'
+                          } ${isActive ? 'text-white/90' : 'text-slate-400 group-hover:text-slate-600'}`} 
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  {/* Submenu Dropdown in Sidebar (When sidebarOpen is true) */}
+                  {sidebarOpen && isSubmenuVisible && (
+                    <div className="mt-1.5 ml-3 pl-3 border-l-2 border-slate-200/90 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {/* Sub-item 1: Registered Corporate Customers (Website Customers) */}
+                      <Link
+                        to="/admin/users?tab=customers"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 group/sub border ${
+                          isUsersRoute && currentTab !== 'internal'
+                            ? 'bg-sky-50 text-sky-800 font-bold border-sky-300/80 shadow-2xs'
+                            : 'border-transparent text-slate-600 hover:text-sky-700 hover:bg-sky-50/60 font-semibold'
+                        }`}
+                        title="Registered Corporate Customers (9)"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 mr-1.5">
+                          <Building size={14} className={`shrink-0 ${
+                            isUsersRoute && currentTab !== 'internal' ? 'text-sky-600' : 'text-slate-400 group-hover/sub:text-sky-600'
+                          }`} />
+                          <span className="truncate">Registered Corporate</span>
+                        </div>
+                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 border ${
+                          isUsersRoute && currentTab !== 'internal'
+                            ? 'bg-sky-200/80 text-sky-900 border-sky-300'
+                            : 'bg-slate-100 text-slate-500 border-slate-200 group-hover/sub:bg-sky-100 group-hover/sub:text-sky-700'
+                        }`}>
+                          {userCounts.customers}
+                        </span>
+                      </Link>
+
+                      {/* Sub-item 2: Internal Staff & Sales Team */}
+                      <Link
+                        to="/admin/users?tab=internal"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 group/sub border ${
+                          isUsersRoute && currentTab === 'internal'
+                            ? 'bg-red-50 text-red-800 font-bold border-red-300/80 shadow-2xs'
+                            : 'border-transparent text-slate-600 hover:text-red-700 hover:bg-red-50/60 font-semibold'
+                        }`}
+                        title="Internal Staff & Sales Team (4)"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 mr-1.5">
+                          <Shield size={14} className={`shrink-0 ${
+                            isUsersRoute && currentTab === 'internal' ? 'text-red-600' : 'text-slate-400 group-hover/sub:text-red-600'
+                          }`} />
+                          <span className="truncate">Internal Staff & Sales</span>
+                        </div>
+                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 border ${
+                          isUsersRoute && currentTab === 'internal'
+                            ? 'bg-red-200/80 text-red-900 border-red-300'
+                            : 'bg-slate-100 text-slate-500 border-slate-200 group-hover/sub:bg-red-100 group-hover/sub:text-red-700'
+                        }`}>
+                          {userCounts.internal}
+                        </span>
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Flyout Submenu for Collapsed Sidebar */}
+                  {!sidebarOpen && customersMenuHover && (
+                    <div className="fixed left-20 ml-2 py-2 px-2 bg-white border border-slate-200 rounded-xl shadow-xl w-64 z-[100] animate-in fade-in duration-150">
+                      <div className="px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1.5">
+                        Customers & Users
+                      </div>
+                      <Link
+                        to="/admin/users?tab=customers"
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                          isUsersRoute && currentTab !== 'internal'
+                            ? 'bg-sky-50 text-sky-800 font-bold border border-sky-200'
+                            : 'text-slate-600 hover:bg-sky-50 hover:text-sky-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Building size={14} className="text-sky-600" />
+                          <span>Registered Corporate Customers</span>
+                        </div>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                          {userCounts.customers}
+                        </span>
+                      </Link>
+                      <Link
+                        to="/admin/users?tab=internal"
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all mt-1 ${
+                          isUsersRoute && currentTab === 'internal'
+                            ? 'bg-red-50 text-red-800 font-bold border border-red-200'
+                            : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Shield size={14} className="text-red-600" />
+                          <span>Internal Staff & Sales Team</span>
+                        </div>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
+                          {userCounts.internal}
+                        </span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.name}

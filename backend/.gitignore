@@ -1,4 +1,7 @@
-node_modules
+node_modules/
+dist/
+build/
+
 # Keep environment variables out of version control
 .env
 .env.*
@@ -6,6 +9,16 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+*.env
 !.env.example
 
+# Certificates & keys
+*.pem
+*.key
+*.cert
+
+# Prisma generated
 /generated/prisma
+
+# Logs
+*.log
