@@ -928,35 +928,34 @@ export const AdminRFQs: React.FC = () => {
             if (e.target === e.currentTarget && !isEditingPrice) handleCloseModal();
           }}
         >
-          <div id="rfq-print-card" className="bg-white shadow-2xl w-full max-w-4xl max-h-[96vh] sm:max-h-[92vh] flex flex-col relative my-0 animate-in zoom-in-95 duration-150 print:w-full print:h-auto print:max-h-none print:shadow-none print:m-0 print:p-0 rounded-2xl overflow-hidden border border-slate-200">
+          <div id="rfq-print-card" className="bg-white shadow-2xl w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col relative my-0 animate-in zoom-in-95 duration-150 print:w-full print:h-auto print:max-h-none print:shadow-none print:m-0 print:p-0 rounded-2xl overflow-hidden border border-slate-200">
             
-            {/* Top Toolbar (Hidden on Print) */}
-            <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2.5 print:hidden shrink-0 z-30 shadow-2xs">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+            {/* Top Toolbar: Fitted on a Single Line with X pinned at the far end (Hidden on Print) */}
+            <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2 sm:gap-3 print:hidden shrink-0 z-30 shadow-2xs overflow-x-auto custom-scrollbar">
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
                 {/* Back Button */}
                 <button
                   onClick={handleCloseModal}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
                   title="Return to RFQ List"
                 >
-                  <ArrowLeft size={15} />
-                  <span className="hidden sm:inline">Back to RFQs</span>
-                  <span className="sm:hidden">Back</span>
+                  <ArrowLeft size={14} />
+                  <span>Back</span>
                 </button>
 
                 {/* Status: Admin views status badge ONLY. Sales updates status */}
                 {isAdmin ? (
-                  <div className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">Current Status:</span>
+                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
                     {renderStatusBadge(selectedRfq.status)}
                   </div>
                 ) : (
-                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border shadow-2xs ${
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${
                     selectedRfq.status === 'Closed' || selectedRfq.status === 'Completed'
                       ? 'bg-emerald-50 border-emerald-300' 
                       : 'bg-white border-slate-200'
                   }`}>
-                    <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">Update Status:</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
                     <select
                       value={selectedRfq.status}
                       onChange={(e) => handleStatusChange(selectedRfq._id, e.target.value)}
@@ -975,74 +974,76 @@ export const AdminRFQs: React.FC = () => {
 
                 {/* Assignment: Admin assigns salesperson. Sales views assigned name */}
                 {canAssign ? (
-                  <div className="hidden md:flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Assign:</span>
+                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Assign:</span>
                     <select
                       value={getAssignedUserId(selectedRfq.assignedTo, selectedRfq.assignedToName)}
                       onChange={(e) => handleAssign(selectedRfq._id, e.target.value)}
-                      className="text-xs font-bold bg-transparent text-red-600 outline-none cursor-pointer max-w-[170px]"
+                      className="text-xs font-bold bg-transparent text-red-600 outline-none cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
                     >
-                      <option value="" className="bg-white text-slate-900">-- Select Staff --</option>
+                      <option value="" className="bg-white text-slate-900">-- Assign --</option>
                       {users.map(u => (
                         <option key={u._id} value={u._id} className="bg-white text-slate-900">
-                          {u.name} ({u.role})
+                          {u.name} ({u.role?.replace('Sales ', '')})
                         </option>
                       ))}
                     </select>
                   </div>
                 ) : (
-                  <div className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs hidden md:block">
-                    Processed by: <span className="font-bold text-slate-900">{selectedRfq.assignedToName || 'Sales Team'}</span>
+                  <div className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs shrink-0 flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Staff:</span>
+                    <span className="font-bold text-slate-900 truncate max-w-[110px]">{selectedRfq.assignedToName || 'Sales Team'}</span>
                   </div>
                 )}
               </div>
 
               {/* Action Buttons: Edit Price & Discount, Download Excel, Print, Close */}
-              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
                 {/* Special Discount & Price Edit Toggle */}
                 <button
                   onClick={() => setIsEditingPrice(!isEditingPrice)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer shrink-0 ${
                     isEditingPrice 
                       ? 'bg-amber-500 text-white border-amber-600 shadow-sm' 
                       : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
                   }`}
                   title="Edit quotation item rates and special customer discount"
                 >
-                  <Tag size={14} />
-                  <span className="hidden sm:inline">{isEditingPrice ? 'Close Editor' : 'Edit Price / Discount'}</span>
-                  <span className="sm:hidden">{isEditingPrice ? 'Done' : 'Price'}</span>
+                  <Tag size={13} />
+                  <span>{isEditingPrice ? 'Close Editor' : 'Price / Discount'}</span>
                 </button>
 
                 {/* Individual Excel Download */}
                 <button 
                   onClick={() => handleExportSingleRfqExcel(selectedRfq)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
                   title="Download this quotation as Microsoft Excel (.xlsx)"
                 >
-                  <FileSpreadsheet size={15} />
-                  <span className="hidden sm:inline">Download Excel</span>
-                  <span className="sm:hidden">Excel</span>
+                  <FileSpreadsheet size={14} />
+                  <span>Excel</span>
                 </button>
 
                 {/* Print Button */}
                 <button 
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 via-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-red-600 via-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
                   title="Print Quotation"
                 >
-                  <Printer size={15} />
-                  <span className="hidden sm:inline">Print</span>
+                  <Printer size={14} />
+                  <span>Print</span>
                 </button>
 
-                {/* Close Button */}
+                {/* Divider before Close */}
+                <div className="h-5 w-px bg-slate-200 mx-0.5 sm:mx-1 shrink-0" />
+
+                {/* Close Button - At the far right end */}
                 <button 
                   onClick={handleCloseModal} 
-                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-white hover:bg-red-50 hover:text-red-600 text-slate-500 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs"
-                  title="Close (Esc)"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-red-600 hover:text-white text-slate-600 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs hover:border-red-600"
+                  title="Close Quotation View (Esc)"
                   aria-label="Close Modal"
                 >
-                  <X size={18} />
+                  <X size={18} strokeWidth={2.5} />
                 </button>
               </div>
             </div>
