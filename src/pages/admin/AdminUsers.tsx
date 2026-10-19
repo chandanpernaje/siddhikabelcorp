@@ -182,7 +182,7 @@ export const AdminUsers: React.FC = () => {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
-          {isAdmin && (
+          {isAdmin && activeTab === 'Internal' && (
             <button 
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white rounded-lg transition-all font-bold text-sm shadow-md shadow-red-600/20 cursor-pointer"
