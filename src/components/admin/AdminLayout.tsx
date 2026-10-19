@@ -29,16 +29,21 @@ export const AdminLayout: React.FC = () => {
     return str ? JSON.parse(str) : null;
   });
 
-  // User counts and dropdown state for sidebar sub-menu
+  // User counts and dropdown state for sidebar sub-menu (closed by default, click only)
   const [userCounts, setUserCounts] = useState({ customers: 9, internal: 4 });
-  const [customersMenuOpen, setCustomersMenuOpen] = useState(location.pathname.startsWith('/admin/users'));
-  const [customersMenuHover, setCustomersMenuHover] = useState(false);
+  const [customersMenuOpen, setCustomersMenuOpen] = useState(false);
+  const usersMenuRef = useRef<HTMLDivElement>(null);
 
+  // Close Customers & Users dropdown on click outside
   useEffect(() => {
-    if (location.pathname.startsWith('/admin/users')) {
-      setCustomersMenuOpen(true);
-    }
-  }, [location.pathname]);
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (usersMenuRef.current && !usersMenuRef.current.contains(e.target as Node)) {
+        setCustomersMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const fetchUserCounts = async () => {
     try {
@@ -390,21 +395,18 @@ export const AdminLayout: React.FC = () => {
             const isUsersRoute = location.pathname.startsWith('/admin/users');
 
             if (isUsers) {
-              const isSubmenuVisible = customersMenuOpen || customersMenuHover;
+              const isSubmenuVisible = customersMenuOpen;
               return (
                 <div 
                   key={item.name}
+                  ref={usersMenuRef}
                   className="relative group/userMenu"
-                  onMouseEnter={() => setCustomersMenuHover(true)}
-                  onMouseLeave={() => setCustomersMenuHover(false)}
                 >
-                  {/* Customers & Users Button */}
+                  {/* Customers & Users Button - Clicking purely toggles dropdown */}
                   <div
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setCustomersMenuOpen(prev => !prev);
-                      if (!isUsersRoute) {
-                        navigate('/admin/users');
-                      }
                     }}
                     className={`relative flex items-center px-3.5 py-3 rounded-xl transition-all duration-200 cursor-pointer select-none group ${
                       isActive 
@@ -426,7 +428,7 @@ export const AdminLayout: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Submenu Dropdown in Sidebar (When sidebarOpen is true) */}
+                  {/* Submenu Dropdown in Sidebar (When sidebarOpen is true & open) */}
                   {sidebarOpen && isSubmenuVisible && (
                     <div className="mt-1.5 ml-3 pl-3 border-l-2 border-slate-200/90 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
                       {/* Sub-item 1: Registered Corporate Customers (Website Customers) */}
@@ -489,14 +491,18 @@ export const AdminLayout: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Flyout Submenu for Collapsed Sidebar */}
-                  {!sidebarOpen && customersMenuHover && (
+                  {/* Flyout Submenu for Collapsed Sidebar (Only on click when collapsed) */}
+                  {!sidebarOpen && isSubmenuVisible && (
                     <div className="fixed left-20 ml-2 py-2 px-2 bg-white border border-slate-200 rounded-xl shadow-xl w-64 z-[100] animate-in fade-in duration-150">
                       <div className="px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1.5">
                         Customers & Users
                       </div>
                       <Link
                         to="/admin/users?tab=customers"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCustomersMenuOpen(false);
+                        }}
                         className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                           isUsersRoute && currentTab !== 'internal'
                             ? 'bg-sky-50 text-sky-800 font-bold border border-sky-200'
@@ -513,6 +519,10 @@ export const AdminLayout: React.FC = () => {
                       </Link>
                       <Link
                         to="/admin/users?tab=internal"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCustomersMenuOpen(false);
+                        }}
                         className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all mt-1 ${
                           isUsersRoute && currentTab === 'internal'
                             ? 'bg-red-50 text-red-800 font-bold border border-red-200'
