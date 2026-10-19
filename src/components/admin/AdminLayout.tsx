@@ -90,6 +90,10 @@ export const AdminLayout: React.FC = () => {
   const [notifsOpen, setNotifsOpen] = useState(false);
   const notifsRef = useRef<HTMLDivElement>(null);
 
+  // Profile Dropdown State (Click to open on Mobile & Desktop)
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
   // Profile / Account Settings Modal State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState({
@@ -121,6 +125,8 @@ export const AdminLayout: React.FC = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
+    setProfileOpen(false);
+    setNotifsOpen(false);
   }, [location.pathname, isMobile]);
 
   // Fetch Notifications
@@ -143,11 +149,14 @@ export const AdminLayout: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Close notifications dropdown on click outside
+  // Close notifications & profile dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifsRef.current && !notifsRef.current.contains(e.target as Node)) {
         setNotifsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -735,36 +744,53 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             {/* Profile Avatar & Dropdown */}
-            <div className="flex items-center space-x-2.5 cursor-pointer group relative">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center justify-center font-bold text-sm shadow-2xs group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 transition-colors">
+            <div className="relative" ref={profileRef}>
+              <button 
+                type="button"
+                onClick={() => setProfileOpen(prev => !prev)}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center justify-center font-bold text-sm shadow-2xs hover:bg-red-600 hover:text-white hover:border-red-600 active:scale-95 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400/40 select-none"
+                title="Super Admin Profile Menu"
+                aria-label="Super Admin Profile Menu"
+              >
                 {currentAdmin.name?.charAt(0) || 'A'}
-              </div>
+              </button>
               
-              {/* Profile Dropdown Menu */}
-              <div className="absolute top-11 right-0 mt-1 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
-                <div className="p-3.5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
-                  <p className="text-xs font-bold text-slate-800 line-clamp-1">{currentAdmin.name}</p>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5 line-clamp-1">{currentAdmin.email}</p>
-                  <span className="inline-block px-2 py-0.5 mt-1.5 text-[10px] font-bold rounded-md bg-red-50 text-red-800 border border-red-200">
-                    {currentAdmin.role}
-                  </span>
+              {/* Profile Dropdown Menu - Mobile and Desktop Optimized */}
+              {profileOpen && (
+                <div className="absolute top-11 sm:top-12 right-0 mt-1 w-64 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+                  <div className="p-3.5 border-b border-slate-100 bg-slate-50/70">
+                    <p className="text-xs font-bold text-slate-800 line-clamp-1">{currentAdmin.name}</p>
+                    <p className="text-[11px] font-medium text-slate-500 mt-0.5 line-clamp-1">{currentAdmin.email}</p>
+                    <span className="inline-block px-2 py-0.5 mt-1.5 text-[10px] font-bold rounded-md bg-red-50 text-red-800 border border-red-200">
+                      {currentAdmin.role}
+                    </span>
+                  </div>
+                  <div className="p-1.5 space-y-1">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        handleOpenSettings();
+                      }}
+                      className="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700 active:bg-red-100 rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Settings size={16} className="text-slate-500 shrink-0" />
+                      <span>Account Settings</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full text-left flex items-center px-3 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl transition-colors cursor-pointer"
+                    >
+                      <LogOut size={16} className="mr-2.5 text-red-600 shrink-0" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="p-1.5">
-                  <button 
-                    onClick={handleOpenSettings}
-                    className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer"
-                  >
-                    <Settings size={15} /> Account Settings
-                  </button>
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full text-left flex items-center px-3 py-2 mt-0.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                  >
-                    <LogOut size={15} className="mr-2.5" />
-                    Sign Out
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </header>
@@ -775,29 +801,29 @@ export const AdminLayout: React.FC = () => {
         </div>
       </main>
 
-      {/* Account Settings Modal - Portal-Mounted */}
+      {/* Account Settings Modal - Portal-Mounted (Mobile & Desktop Responsive) */}
       {isSettingsOpen && createPortal(
         <div 
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4 overflow-hidden"
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-3 sm:p-4 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsSettingsOpen(false);
           }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-auto max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0">
                   <Settings size={18} />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">Account Settings</h3>
-                  <p className="text-xs text-slate-500">Update Super Admin name, email, and password</p>
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-slate-800 truncate">Account Settings</h3>
+                  <p className="text-xs text-slate-500 truncate">Update Super Admin credentials</p>
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsSettingsOpen(false)}
-                className="w-8 h-8 rounded-lg bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-lg bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center cursor-pointer transition-colors shrink-0 ml-2"
                 title="Close"
               >
                 <X size={18} />
