@@ -440,7 +440,7 @@ export const AdminLayout: React.FC = () => {
                   {/* Submenu Dropdown in Sidebar (When sidebarOpen is true & open) */}
                   {sidebarOpen && isSubmenuVisible && (
                     <div className="mt-1.5 ml-3 pl-3 border-l-2 border-slate-200/90 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      {/* Sub-item 1: Registered Customer (Website Customers) */}
+                      {/* Sub-item 1: Registered Customers (Website Customers) */}
                       <Link
                         to="/admin/users?tab=customers"
                         onClick={(e) => {
@@ -452,13 +452,13 @@ export const AdminLayout: React.FC = () => {
                             ? 'bg-sky-50 text-sky-800 font-bold border-sky-300/80 shadow-2xs'
                             : 'border-transparent text-slate-700 hover:text-sky-700 hover:bg-sky-50/60 font-semibold'
                         }`}
-                        title="Registered Customer"
+                        title="Registered Customers"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 mr-1.5">
                           <Building size={17} className={`shrink-0 ${
                             isUsersRoute && currentTab !== 'internal' ? 'text-sky-600' : 'text-slate-500 group-hover/sub:text-sky-600'
                           }`} />
-                          <span className="truncate">Registered Customer</span>
+                          <span className="truncate">Registered Customers</span>
                         </div>
                         <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full shrink-0 border ${
                           isUsersRoute && currentTab !== 'internal'
@@ -520,7 +520,7 @@ export const AdminLayout: React.FC = () => {
                       >
                         <div className="flex items-center gap-2.5">
                           <Building size={17} className="text-sky-600" />
-                          <span>Registered Customer</span>
+                          <span>Registered Customers</span>
                         </div>
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
                           {userCounts.customers}
