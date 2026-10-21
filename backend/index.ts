@@ -5,6 +5,7 @@ import multer from 'multer';
 import * as xlsx from 'xlsx';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
@@ -37,6 +38,8 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, default: null },
   mrp: { type: Number, default: null },
   gst: { type: Number, default: null },
+  uom: { type: String, default: 'Meter' },
+  colour: { type: String, default: null },
   core: { type: String, default: null },
   coreSize: { type: String, default: null },
   pe: { type: String, default: null },
@@ -125,6 +128,30 @@ const notificationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Notification = mongoose.model('Notification', notificationSchema);
+
+const customCuttingSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  companyName: { type: String, required: true },
+  phone: { type: String, required: true },
+  email: { type: String, required: true },
+  requirement: { type: String, required: true },
+  productName: { type: String, default: null },
+  partNo: { type: String, default: null },
+  status: { type: String, default: 'Pending' }
+}, { timestamps: true });
+
+const CustomCutting = mongoose.model('CustomCutting', customCuttingSchema);
+
+// Configure Email Transporter
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: (process.env.SMTP_USER && process.env.SMTP_PASS) ? {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  } : undefined,
+});
 
 
 // --- Auth Middleware ---
@@ -435,7 +462,7 @@ app.get('/api/admin/users', async (req, res) => {
       }
     } catch (seedErr) {}
 
-    let users = await User.find().select('-password');
+    let users = await User.find().sort({ createdAt: -1 }).select('-password');
     // Filter out dummy accounts
     users = users.filter(u => {
       const em = (u.email || '').toLowerCase().trim();
@@ -443,7 +470,7 @@ app.get('/api/admin/users', async (req, res) => {
     });
 
     // Also include corporate customers who submitted RFQs
-    const rfqs = await RFQ.find();
+    const rfqs = await RFQ.find().sort({ createdAt: -1 });
     const existingKeys = new Set(users.map(u => (u.email || u.phone || u.company || u.name || '').toLowerCase().trim()).filter(Boolean));
     const rfqCustomers: any[] = [];
     
@@ -472,7 +499,14 @@ app.get('/api/admin/users', async (req, res) => {
       }
     }
     
-    res.json([...users, ...rfqCustomers]);
+    // Sort combined list: newest records first
+    const combined = [...users, ...rfqCustomers].sort((a: any, b: any) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    res.json(combined);
   } catch (error) {
     console.error('DB fetch users failed, using fallback');
     res.json([
@@ -603,6 +637,135 @@ app.post('/api/admin/users', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Submit Custom Product Cutting Request API
+app.post('/api/custom-cutting', async (req, res) => {
+  try {
+    const { name, companyName, phone, email, requirement, productName, partNo } = req.body;
+
+    if (!name || !companyName || !phone || !email || !requirement) {
+      return res.status(400).json({ 
+        error: 'All fields (Name, Company Name, Phone, Email, Specific Requirement) are required.' 
+      });
+    }
+
+    // 1. Save to Database
+    const cuttingRequest = await CustomCutting.create({
+      name: String(name).trim(),
+      companyName: String(companyName).trim(),
+      phone: String(phone).trim(),
+      email: String(email).trim(),
+      requirement: String(requirement).trim(),
+      productName: productName ? String(productName).trim() : null,
+      partNo: partNo ? String(partNo).trim() : null,
+      status: 'Pending'
+    });
+
+    // 2. Create in-app notification for admin/sales
+    try {
+      await Notification.create({
+        title: 'New Custom Product Cutting Inquiry',
+        message: `${name} from ${companyName} requested custom cutting: ${requirement.slice(0, 100)}...`,
+        type: 'rfq',
+        referenceId: cuttingRequest._id.toString()
+      });
+    } catch (notifErr) {
+      console.error('Failed to create in-app notification', notifErr);
+    }
+
+    // 3. Dispatch Email Notification
+    const recipientEmail = process.env.SALES_EMAIL || process.env.ADMIN_EMAIL || 'sales@siddhicorp.com';
+    const emailSubject = `[Custom Cable Cutting Request] ${companyName} - ${name}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+        <div style="border-bottom: 2px solid #dc2626; padding-bottom: 16px; margin-bottom: 20px;">
+          <h2 style="color: #0f172a; margin: 0 0 6px 0;">Siddhi Cable Corporation</h2>
+          <p style="color: #dc2626; font-size: 14px; font-weight: bold; margin: 0; text-transform: uppercase;">
+            New Custom Product Cutting Request
+          </p>
+        </div>
+        
+        <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+          A customer has submitted a custom cutting and length preparation request through the web portal:
+        </p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
+          <tbody>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b; width: 35%;">Contact Person:</td>
+              <td style="padding: 10px 12px; font-weight: bold; color: #0f172a;">${name}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b;">Company Name:</td>
+              <td style="padding: 10px 12px; font-weight: bold; color: #0f172a;">${companyName}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b;">Phone / Mobile:</td>
+              <td style="padding: 10px 12px; font-weight: bold; color: #0284c7;">${phone}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b;">Email Address:</td>
+              <td style="padding: 10px 12px; font-weight: bold; color: #0f172a;">${email}</td>
+            </tr>
+            ${productName ? `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b;">Product Reference:</td>
+              <td style="padding: 10px 12px; font-weight: bold; color: #0f172a;">${productName} ${partNo ? `(Part #${partNo})` : ''}</td>
+            </tr>` : ''}
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b; vertical-align: top;">Specific Requirement:</td>
+              <td style="padding: 10px 12px; color: #0f172a; white-space: pre-wrap; font-family: monospace; background: #f8fafc; border-radius: 6px;">${requirement}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; font-weight: bold; color: #64748b;">Submission Time:</td>
+              <td style="padding: 10px 12px; color: #64748b;">${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="background: #f8fafc; border-radius: 8px; padding: 14px; text-align: center; border: 1px dashed #cbd5e1; margin-top: 24px;">
+          <p style="margin: 0; font-size: 12px; color: #64748b;">
+            Request ID: <strong>${cuttingRequest._id}</strong> · Direct warehouse dispatch from Bangalore depot.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        await mailTransporter.sendMail({
+          from: `"Siddhi Cable Portal" <${process.env.SMTP_USER}>`,
+          to: recipientEmail,
+          subject: emailSubject,
+          html: emailHtml
+        });
+        console.log(`✅ Custom cutting inquiry email successfully dispatched to ${recipientEmail}`);
+      } else {
+        console.log(`ℹ️ [Simulated Email] Custom Cutting Inquiry from ${name} (${companyName}) dispatched to ${recipientEmail}`);
+      }
+    } catch (mailErr) {
+      console.warn('⚠️ Mail send error (inquiry saved to DB successfully):', mailErr);
+    }
+
+    res.status(201).json({
+      message: 'Custom product cutting request submitted successfully. Our team will contact you shortly.',
+      request: cuttingRequest
+    });
+  } catch (error: any) {
+    console.error('Error submitting custom cutting request:', error);
+    res.status(500).json({ error: 'Failed to submit cutting request', details: error.message });
+  }
+});
+
+// Get Custom Product Cutting Requests (Admin & Sales)
+app.get('/api/custom-cutting', async (req, res) => {
+  try {
+    const list = await CustomCutting.find().sort({ createdAt: -1 });
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch custom cutting requests' });
   }
 });
 
@@ -844,10 +1007,32 @@ app.patch('/api/rfqs/:id/status', async (req, res) => {
       }
     }
 
-    const { status } = req.body;
-    const updatedRfq = await RFQ.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' });
+    const { status, notes } = req.body;
+    const updateFields: any = { status };
+    if (notes !== undefined) {
+      updateFields.notes = notes;
+    }
+    const updatedRfq = await RFQ.findByIdAndUpdate(req.params.id, updateFields, { returnDocument: 'after' }).populate('assignedTo', 'name email role');
     if (!updatedRfq) return res.status(404).json({ error: 'RFQ not found' });
-    res.json(updatedRfq);
+
+    // Return to Sales notification
+    if (notes && (status === 'Pending' || status === 'Assigned')) {
+      try {
+        await Notification.create({
+          title: `RFQ ${updatedRfq.quoteNo} Returned to Sales`,
+          message: `Returned for revision: ${notes}`,
+          type: 'rfq',
+          referenceId: updatedRfq._id.toString()
+        });
+      } catch (nErr) {}
+    }
+
+    const obj: any = updatedRfq.toObject ? updatedRfq.toObject() : { ...updatedRfq };
+    if (obj.assignedTo && typeof obj.assignedTo === 'object') {
+      obj.assignedToName = obj.assignedTo.name || obj.assignedToName;
+      obj.assignedTo = obj.assignedTo._id?.toString() || obj.assignedTo;
+    }
+    res.json(obj);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update RFQ status' });
   }
@@ -1130,23 +1315,33 @@ app.get('/api/products', async (req, res) => {
       partNo: p.partNo,
       name: p.name,
       category: { name: p.categoryName },
+      categoryName: p.categoryName,
       brand: { name: p.brandName },
+      brandName: p.brandName,
       core: p.core,
       coreSize: p.coreSize,
       size: p.size,
+      colour: p.colour,
+      uom: p.uom || 'Meter',
+      outerDiameter: p.outerDiameter,
+      weight: p.weight,
+      copperIndex: p.copperIndex,
+      testVoltage: p.testVoltage,
+      flameRetardancy: p.flameRetardancy,
       price: p.price,
       mrp: p.mrp,
       gst: p.gst,
       imageUrl: p.imageUrl,
       datasheetUrl: p.datasheetUrl,
+      description: p.description,
       application: p.description || p.name
     }));
     res.json(formatted);
   } catch (error) {
     console.error('DB fetch products failed, using fallback', error);
     res.json([
-      { id: 'prod1', partNo: 'LAPP001', name: 'ÖLFLEX® CLASSIC 110', category: { name: 'Control Cables' }, brand: { name: 'LAPP' }, price: 45 },
-      { id: 'prod2', partNo: 'EATON101', name: 'Eaton 5P UPS', category: { name: 'Power Quality' }, brand: { name: 'Eaton' }, price: 12500 }
+      { id: 'prod1', partNo: 'LAPP001', name: 'ÖLFLEX® CLASSIC 110', category: { name: 'Control Cables' }, brand: { name: 'LAPP' }, price: 45, uom: 'Meter', colour: 'Grey' },
+      { id: 'prod2', partNo: 'EATON101', name: 'Eaton 5P UPS', category: { name: 'Power Quality' }, brand: { name: 'Eaton' }, price: 12500, uom: 'Piece', colour: 'Black' }
     ]);
   }
 });
@@ -1169,12 +1364,25 @@ app.get('/api/products/:id', async (req, res) => {
       partNo: p.partNo,
       name: p.name,
       category: { name: p.categoryName },
+      categoryName: p.categoryName,
       brand: { name: p.brandName },
+      brandName: p.brandName,
       core: p.core,
       coreSize: p.coreSize,
+      size: p.size,
+      colour: p.colour,
+      uom: p.uom || 'Meter',
+      outerDiameter: p.outerDiameter,
+      weight: p.weight,
+      copperIndex: p.copperIndex,
+      testVoltage: p.testVoltage,
+      flameRetardancy: p.flameRetardancy,
       price: p.price,
+      mrp: p.mrp,
+      gst: p.gst,
       imageUrl: p.imageUrl,
       datasheetUrl: p.datasheetUrl,
+      description: p.description,
       application: p.description || p.name
     });
   } catch (error) {
@@ -1374,70 +1582,115 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
 
   try {
     // Parse Excel file
+    // Parse Excel file and process all sheets
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) return res.status(400).json({ error: 'Excel file has no sheets' });
-    const worksheet = workbook.Sheets[sheetName];
-    if (!worksheet) return res.status(400).json({ error: 'Worksheet not found' });
-    
-    // Convert to JSON
-    const data = xlsx.utils.sheet_to_json(worksheet) as any[];
-
-    if (data.length === 0) {
-      return res.status(400).json({ error: 'Excel file is empty' });
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return res.status(400).json({ error: 'Excel file has no sheets' });
     }
 
     let successCount = 0;
     let failedCount = 0;
     const errors: any[] = [];
 
-    // Process each row
-    for (const [index, row] of data.entries()) {
-      try {
-        const rowNum = index + 2; // +1 for 0-index, +1 for header
-        const productName = row['Product Name'] || row['Name'];
+    // Process each sheet in the workbook
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) continue;
 
-        if (!productName) {
+      const data = xlsx.utils.sheet_to_json(worksheet) as any[];
+      if (!data || data.length === 0) continue;
+
+      // Determine default category & brand from sheet name if applicable
+      let defaultCategory = 'Control Cables';
+      const snLower = sheetName.toLowerCase();
+      if (snLower.includes('skintop')) defaultCategory = 'Cable Glands';
+      else if (snLower.includes('silvyn')) defaultCategory = 'Conduits & Accessories';
+      else if (snLower.includes('liy') || snLower.includes('unitronic')) defaultCategory = 'Data & Signal Cables';
+      else if (snLower.includes('uniplus') || snLower.includes('infra') || snLower.includes('fr')) defaultCategory = 'Single Core Wires';
+      else if (snLower.includes('power')) defaultCategory = 'Power Cables';
+
+      for (const [index, row] of data.entries()) {
+        try {
+          const rowNum = index + 2;
+          const productName = row['Product Name'] || row['Product name'] || row['Description'] || row['Name'] || row['Part Description'];
+          const partNo = row['Part No'] || row['Part no'] || row['Part Number'] || row['PartNo'] ? String(row['Part No'] || row['Part no'] || row['Part Number'] || row['PartNo']).trim() : null;
+
+          if (!productName && !partNo) {
+            continue; // Skip blank or header sub-rows
+          }
+
+          const resolvedName = String(productName || (partNo ? `LAPP Product ${partNo}` : 'Industrial Cable'));
+          const categoryName = row['Category'] || row['Category Name'] ? String(row['Category'] || row['Category Name']).trim() : defaultCategory;
+          const brandName = row['Brand'] || row['Brand Name'] ? String(row['Brand'] || row['Brand Name']).trim() : 'LAPP KABEL';
+
+          // Extract Price / LP
+          const rawPrice = row['Price'] || row['Current LP'] || row['New LP'] || row[' LP '] || row['LP'] || row['Rate'] || row['List Price'];
+          const price = rawPrice !== undefined && rawPrice !== null && rawPrice !== '' ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) : null;
+
+          // Extract MRP / SP
+          const rawMrp = row['MRP'] || row['Current SP'] || row['New SP'] || row['SP'] || row['Selling Price'];
+          const mrp = rawMrp !== undefined && rawMrp !== null && rawMrp !== '' ? parseFloat(String(rawMrp).replace(/[^0-9.]/g, '')) : null;
+
+          // Extract GST
+          const rawGst = row['GST'] || row['Tax'];
+          const gst = rawGst !== undefined && rawGst !== null && rawGst !== '' ? parseFloat(String(rawGst).replace(/[^0-9.]/g, '')) : 18;
+
+          // Extract Specs: Core, Core Size, Colour, PE, UOM
+          const core = row['Core'] || row['Cores'] !== undefined ? String(row['Core'] || row['Cores']) : null;
+          const coreSize = row['Core Size'] || row['Core size'] || row['Size'] !== undefined ? String(row['Core Size'] || row['Core size'] || row['Size']) : null;
+          const parsedSize = coreSize ? parseFloat(coreSize) : null;
+          const colour = row['Colour'] || row['Color'] || row['colour'] || row['color'] ? String(row['Colour'] || row['Color'] || row['colour'] || row['color']) : null;
+          const pe = row['PE'] || row['pe'] ? String(row['PE'] || row['pe']) : null;
+          const uom = row['Pack size'] || row['Pack Size'] || row['UOM'] || row['Unit'] || (snLower.includes('skintop') || snLower.includes('silvyn') ? 'Piece' : 'Meter');
+
+          const outerDiameter = row['Outer Diameter'] || row['Outer Dia'] || row['OD'] ? String(row['Outer Diameter'] || row['Outer Dia'] || row['OD']) : null;
+          const copperIndex = row['Copper Index'] ? String(row['Copper Index']) : null;
+          const weight = row['Weight'] ? String(row['Weight']) : null;
+          const testVoltage = row['Test Voltage'] ? String(row['Test Voltage']) : null;
+          const flameRetardancy = row['Flame Retardancy'] ? String(row['Flame Retardancy']) : null;
+          const description = row['Description'] ? String(row['Description']) : null;
+
+          const productPayload: any = {
+            partNo,
+            name: resolvedName,
+            description,
+            categoryName,
+            brandName,
+            price: isNaN(price as number) ? null : price,
+            mrp: isNaN(mrp as number) ? null : mrp,
+            gst: isNaN(gst as number) ? 18 : gst,
+            uom: String(uom).trim(),
+            colour,
+            core,
+            coreSize,
+            pe,
+            size: parsedSize && !isNaN(parsedSize) ? parsedSize : null,
+            outerDiameter,
+            copperIndex,
+            weight,
+            testVoltage,
+            flameRetardancy
+          };
+
+          if (partNo) {
+            // Upsert by Part Number
+            await Product.findOneAndUpdate({ partNo }, productPayload, { upsert: true, new: true });
+          } else {
+            await Product.create(productPayload);
+          }
+          successCount++;
+        } catch (rowError: any) {
           failedCount++;
-          errors.push({ row: rowNum, error: 'Product Name is required' });
-          continue;
+          errors.push({ sheet: sheetName, row: index + 2, error: rowError.message });
         }
-
-        const categoryName = row['Category'] ? String(row['Category']) : null;
-        const brandName = row['Brand'] ? String(row['Brand']) : null;
-
-        // Create product directly
-        await Product.create({
-          partNo: row['Part No'] ? String(row['Part No']) : null,
-          name: String(productName),
-          description: row['Description'] ? String(row['Description']) : null,
-          categoryName: categoryName,
-          brandName: brandName,
-          price: row['Price'] ? parseFloat(row['Price']) : null,
-          mrp: row['MRP'] ? parseFloat(row['MRP']) : null,
-          gst: row['GST'] ? parseFloat(row['GST']) : null,
-          core: row['Core'] ? String(row['Core']) : null,
-          coreSize: row['Core Size'] ? String(row['Core Size']) : null,
-          pe: row['PE'] ? String(row['PE']) : null,
-          size: row['Size'] ? parseFloat(row['Size']) : null,
-          outerDiameter: row['Outer Diameter'] ? String(row['Outer Diameter']) : null,
-          copperIndex: row['Copper Index'] ? String(row['Copper Index']) : null,
-          weight: row['Weight'] ? String(row['Weight']) : null,
-          testVoltage: row['Test Voltage'] ? String(row['Test Voltage']) : null,
-          flameRetardancy: row['Flame Retardancy'] ? String(row['Flame Retardancy']) : null,
-        });
-        successCount++;
-      } catch (rowError: any) {
-        failedCount++;
-        errors.push({ row: index + 2, error: rowError.message });
       }
     }
 
     res.json({
-      message: 'Import completed',
+      message: `Import completed across all sheets. ${successCount} products imported/updated successfully.`,
       successCount,
       failedCount,
-      errors
+      errors: errors.slice(0, 10)
     });
 
   } catch (error: any) {

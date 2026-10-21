@@ -4,7 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Upload, Plus, Download, FileSpreadsheet, Search, ShoppingBag, X, 
   Image as ImageIcon, Trash2, Link as LinkIcon, RefreshCw, Layers, Tag, 
-  Edit2, FileText, CheckCircle2, AlertCircle, ExternalLink, Eye
+  Edit2, FileText, CheckCircle2, AlertCircle, ExternalLink, Eye,
+  ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 
@@ -38,6 +39,9 @@ export const AdminProducts: React.FC = () => {
   const [viewProduct, setViewProduct] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [activeBrand, setActiveBrand] = useState<string>('All');
+  const [sortField, setSortField] = useState<'name' | 'partNo' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
@@ -231,7 +235,7 @@ export const AdminProducts: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredProducts.map(p => p.id));
+      setSelectedIds(sortedProducts.map(p => p.id));
     } else {
       setSelectedIds([]);
     }
@@ -400,13 +404,11 @@ export const AdminProducts: React.FC = () => {
   // Combined list of categories from backend /api/categories AND products in state
   const dropdownCategories = React.useMemo(() => {
     const catMap = new Map<string, string>();
-    // Add from categories state
     categories.forEach((c) => {
       if (c.name && c.name.trim()) {
         catMap.set(c.name.trim().toLowerCase(), c.name.trim());
       }
     });
-    // Add from products in state
     products.forEach((p) => {
       const name = p.category?.name || p.categoryName;
       if (name && typeof name === 'string' && name.trim()) {
@@ -419,27 +421,89 @@ export const AdminProducts: React.FC = () => {
     return Array.from(catMap.values()).sort((a, b) => a.localeCompare(b));
   }, [categories, products]);
 
-  // Filter Products
-  const filteredProducts = products.filter((p) => {
-    const pCat = (p.category?.name || p.categoryName || '').toLowerCase().trim();
-    const pBrand = (p.brand?.name || p.brandName || '').toLowerCase().trim();
+  // Count products per brand
+  const brandCountMap = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    products.forEach((p) => {
+      const brandName = p.brand?.name || p.brandName || '';
+      if (brandName) {
+        const key = brandName.trim().toLowerCase();
+        map[key] = (map[key] || 0) + 1;
+      }
+    });
+    return map;
+  }, [products]);
 
-    const matchesSearch = 
-      (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.partNo && p.partNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      pBrand.includes(searchQuery.toLowerCase()) ||
-      pCat.includes(searchQuery.toLowerCase());
+  // Combined list of brands from backend /api/brands AND products in state
+  const dropdownBrands = React.useMemo(() => {
+    const brandMap = new Map<string, string>();
+    brands.forEach((b) => {
+      if (b.name && b.name.trim()) {
+        brandMap.set(b.name.trim().toLowerCase(), b.name.trim());
+      }
+    });
+    products.forEach((p) => {
+      const name = p.brand?.name || p.brandName;
+      if (name && typeof name === 'string' && name.trim()) {
+        const key = name.trim().toLowerCase();
+        if (!brandMap.has(key)) {
+          brandMap.set(key, name.trim());
+        }
+      }
+    });
+    return Array.from(brandMap.values()).sort((a, b) => a.localeCompare(b));
+  }, [brands, products]);
 
-    const activeCatLower = activeCategory.toLowerCase().trim();
-    const matchesCategory = 
-      activeCategory === 'All' || 
-      pCat === activeCatLower ||
-      (activeCatLower === 'control cables' && pCat.includes('control')) ||
-      (activeCatLower === 'power cables' && pCat.includes('power')) ||
-      (activeCatLower === 'cable accessories' && (pCat.includes('gland') || pCat.includes('rill')));
+  // Filter Products by Search, Category, and Brand
+  const filteredProducts = React.useMemo(() => {
+    return products.filter((p) => {
+      const pCat = (p.category?.name || p.categoryName || '').toLowerCase().trim();
+      const pBrand = (p.brand?.name || p.brandName || '').toLowerCase().trim();
 
-    return matchesSearch && matchesCategory;
-  });
+      const matchesSearch = 
+        !searchQuery.trim() ||
+        (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.partNo && p.partNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        pBrand.includes(searchQuery.toLowerCase()) ||
+        pCat.includes(searchQuery.toLowerCase());
+
+      const activeCatLower = activeCategory.toLowerCase().trim();
+      const matchesCategory = 
+        activeCategory === 'All' || 
+        pCat === activeCatLower ||
+        (activeCatLower === 'control cables' && pCat.includes('control')) ||
+        (activeCatLower === 'power cables' && pCat.includes('power')) ||
+        (activeCatLower === 'cable accessories' && (pCat.includes('gland') || pCat.includes('rill')));
+
+      const activeBrandLower = activeBrand.toLowerCase().trim();
+      const matchesBrand =
+        activeBrand === 'All' ||
+        pBrand === activeBrandLower;
+
+      return matchesSearch && matchesCategory && matchesBrand;
+    });
+  }, [products, searchQuery, activeCategory, activeBrand]);
+
+  // Sort Products (Product Name and Part Number ascending/descending)
+  const sortedProducts = React.useMemo(() => {
+    if (!sortField) return filteredProducts;
+    return [...filteredProducts].sort((a, b) => {
+      const valA = String(a[sortField] || '').toLowerCase().trim();
+      const valB = String(b[sortField] || '').toLowerCase().trim();
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredProducts, sortField, sortDirection]);
+
+  const handleSort = (field: 'name' | 'partNo') => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -549,8 +613,8 @@ export const AdminProducts: React.FC = () => {
       {/* TAB 1: PRODUCTS CATALOG */}
       {activeTab === 'Products' && (
         <div className="space-y-3">
-          {/* Search & Category Filter Controls */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+          {/* Search, Category & Brand Filter Controls */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 text-slate-400" size={15} />
               <input 
@@ -562,11 +626,13 @@ export const AdminProducts: React.FC = () => {
               />
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Category Filter */}
               <select
                 value={activeCategory}
                 onChange={(e) => setActiveCategory(e.target.value)}
-                className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none font-medium text-slate-700"
+                className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none font-semibold text-slate-700 cursor-pointer hover:border-slate-300"
+                title="Filter by Category"
               >
                 <option value="All">All Categories ({products.length})</option>
                 {dropdownCategories.map((catName) => {
@@ -574,6 +640,24 @@ export const AdminProducts: React.FC = () => {
                   return (
                     <option key={catName} value={catName}>
                       {catName} {count > 0 ? `(${count})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+
+              {/* Brand Filter */}
+              <select
+                value={activeBrand}
+                onChange={(e) => setActiveBrand(e.target.value)}
+                className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none font-semibold text-slate-700 cursor-pointer hover:border-slate-300"
+                title="Filter by Brand"
+              >
+                <option value="All">All Brands ({products.length})</option>
+                {dropdownBrands.map((brandName) => {
+                  const count = brandCountMap[brandName.toLowerCase().trim()] || 0;
+                  return (
+                    <option key={brandName} value={brandName}>
+                      {brandName} {count > 0 ? `(${count})` : ''}
                     </option>
                   );
                 })}
@@ -593,24 +677,51 @@ export const AdminProducts: React.FC = () => {
           {/* Products Table Container */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[850px]">
+              <table className="w-full text-left text-sm min-w-[950px]">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
                   <tr>
                     {isAdmin && (
                       <th className="py-2.5 px-3 w-10 text-center">
                         <input 
                           type="checkbox" 
-                          checked={filteredProducts.length > 0 && selectedIds.length === filteredProducts.length}
+                          checked={sortedProducts.length > 0 && selectedIds.length === sortedProducts.length}
                           onChange={handleSelectAll}
                           className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
                         />
                       </th>
                     )}
-                    <th className="py-2.5 px-3 font-semibold">Product Name</th>
-                    <th className="py-2.5 px-3 font-semibold">Part No</th>
+                    <th 
+                      onClick={() => handleSort('name')}
+                      className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
+                      title="Click to sort by Product Name (Ascending / Descending)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Product Name</span>
+                        {sortField === 'name' ? (
+                          sortDirection === 'asc' ? <ArrowUp size={13} className="text-red-600" /> : <ArrowDown size={13} className="text-red-600" />
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 group-hover:text-slate-600 opacity-60" />
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort('partNo')}
+                      className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
+                      title="Click to sort by Part Number (Ascending / Descending)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Part No</span>
+                        {sortField === 'partNo' ? (
+                          sortDirection === 'asc' ? <ArrowUp size={13} className="text-red-600" /> : <ArrowDown size={13} className="text-red-600" />
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 group-hover:text-slate-600 opacity-60" />
+                        )}
+                      </div>
+                    </th>
                     <th className="py-2.5 px-3 font-semibold">Category & Brand</th>
-                    <th className="py-2.5 px-3 font-semibold">Specs (Core/OD)</th>
+                    <th className="py-2.5 px-3 font-semibold">Specifications</th>
                     <th className="py-2.5 px-3 font-semibold">Price (₹)</th>
+                    <th className="py-2.5 px-3 font-semibold">UOM</th>
                     <th className="py-2.5 px-3 font-semibold text-center">Datasheet (PDF)</th>
                     {isAdmin && <th className="py-2.5 px-3 font-semibold text-right">Actions</th>}
                   </tr>
@@ -618,20 +729,20 @@ export const AdminProducts: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={isAdmin ? 8 : 7} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={isAdmin ? 9 : 8} className="px-4 py-12 text-center text-slate-500">
                         <RefreshCw className="w-6 h-6 text-red-600 animate-spin mx-auto mb-2" />
                         Loading products...
                       </td>
                     </tr>
-                  ) : filteredProducts.length === 0 ? (
+                  ) : sortedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 8 : 7} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={isAdmin ? 9 : 8} className="px-4 py-12 text-center text-slate-500">
                         <ShoppingBag size={24} className="mx-auto text-slate-300 mb-2" />
                         No products match your search or filter criteria.
                       </td>
                     </tr>
                   ) : (
-                    filteredProducts.map((p) => (
+                    sortedProducts.map((p) => (
                       <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
                         {isAdmin && (
                           <td className="py-2.5 px-3 text-center">
@@ -691,11 +802,38 @@ export const AdminProducts: React.FC = () => {
                             )}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-slate-600">
-                          {p.core ? `${p.core} / ${p.coreSize || p.size || '-'}` : '-'}
+                        <td className="py-2.5 px-3 text-slate-700">
+                          <div className="flex flex-col gap-1 items-start">
+                            {(p.core || p.coreSize || p.size) && (
+                              <span className="font-semibold text-slate-800">
+                                {p.core ? `${p.core} Cores` : ''}
+                                {p.core && (p.coreSize || p.size) ? ' × ' : ''}
+                                {p.coreSize || p.size ? `${p.coreSize || p.size}` : ''}
+                              </span>
+                            )}
+                            {p.colour && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                Colour: {p.colour}
+                              </span>
+                            )}
+                            {(p.outerDiameter || p.od) && (
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                OD: {p.outerDiameter || p.od}
+                              </span>
+                            )}
+                            {!p.core && !p.coreSize && !p.size && !p.colour && !p.outerDiameter && (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                          {p.price ? `₹${Number(p.price).toLocaleString()}` : <span className="text-slate-400 font-normal">Quote</span>}
+                          {p.price ? `₹${Number(p.price).toLocaleString('en-IN')}` : <span className="text-slate-400 font-normal">Quote</span>}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-slate-700">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+                            {p.uom || p.packSize || 'Meter'}
+                          </span>
                         </td>
                         
                         {/* Datasheet Column */}
@@ -1085,6 +1223,50 @@ export const AdminProducts: React.FC = () => {
                   </div>
 
                   <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Colour</label>
+                    <input 
+                      type="text" 
+                      name="colour" 
+                      defaultValue={currentProduct?.colour || ''} 
+                      placeholder="e.g. Grey (RAL 7001), Black, Blue"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">UOM (Unit of Measurement)</label>
+                    <input 
+                      type="text" 
+                      name="uom" 
+                      defaultValue={currentProduct?.uom || currentProduct?.packSize || 'Meter'} 
+                      placeholder="e.g. Meter, 100 m, 500 m, Coil, Drum"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">PE (Packaging Unit)</label>
+                    <input 
+                      type="text" 
+                      name="pe" 
+                      defaultValue={currentProduct?.pe || ''} 
+                      placeholder="e.g. 50, 100"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Copper Index (kg/km)</label>
+                    <input 
+                      type="text" 
+                      name="copperIndex" 
+                      defaultValue={currentProduct?.copperIndex || ''} 
+                      placeholder="e.g. 43.2"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                    />
+                  </div>
+
+                  <div>
                     <label className="block font-semibold text-slate-700 mb-1">MRP (List Price ₹)</label>
                     <input 
                       type="number" 
@@ -1243,12 +1425,31 @@ export const AdminProducts: React.FC = () => {
                         {viewProduct.price ? `₹${Number(viewProduct.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'On Request / Quotation'}
                       </td>
                     </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">UOM (Unit of Measurement)</td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-800">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                          {viewProduct.uom || viewProduct.packSize || 'Meter'}
+                        </span>
+                      </td>
+                    </tr>
                     {viewProduct.mrp && (
                       <tr>
                         <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">MRP (List Price)</td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-slate-700">₹{Number(viewProduct.mrp).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                       </tr>
                     )}
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Colour</td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-800">
+                        {viewProduct.colour ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+                            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                            {viewProduct.colour}
+                          </span>
+                        ) : 'Standard / As per spec'}
+                      </td>
+                    </tr>
                     <tr>
                       <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Cores / Configuration</td>
                       <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.core || 'Standard'}</td>
@@ -1257,6 +1458,18 @@ export const AdminProducts: React.FC = () => {
                       <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Core Size / Cross Section</td>
                       <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.coreSize || viewProduct.size || 'N/A'}</td>
                     </tr>
+                    {viewProduct.pe && (
+                      <tr>
+                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">PE (Packaging Unit)</td>
+                        <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.pe}</td>
+                      </tr>
+                    )}
+                    {viewProduct.copperIndex && (
+                      <tr>
+                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Copper Index</td>
+                        <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.copperIndex} kg/km</td>
+                      </tr>
+                    )}
                     {viewProduct.outerDiameter && (
                       <tr>
                         <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Outer Diameter</td>

@@ -143,7 +143,13 @@ export const AdminUsers: React.FC = () => {
     return r === 'customer' || r === 'website customer' || r === 'corporate customer' || r === 'client';
   };
 
-  const customers = users.filter(u => isCustomerRole(u.role));
+  const customers = users
+    .filter(u => isCustomerRole(u.role))
+    .sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA; // newest first
+    });
   const internalUsers = users.filter(u => {
     if (isCustomerRole(u.role)) return false;
     const em = (u.email || '').toLowerCase().trim();
@@ -170,7 +176,7 @@ export const AdminUsers: React.FC = () => {
           </h2>
           <p className="text-sm text-slate-500 mt-1">
             {activeTab === 'Customers' 
-              ? 'View and manage registered customers, GSTIN, and company details.' 
+              ? 'View registered corporate customers, registration dates, GSTIN, and company profiles.' 
               : 'Manage internal administrators, sales managers, and executives.'}
           </p>
         </div>
@@ -199,10 +205,11 @@ export const AdminUsers: React.FC = () => {
         <div className="overflow-x-auto">
           {activeTab === 'Customers' ? (
             /* Corporate Customers Table */
-            <table className="w-full text-left text-sm min-w-[750px]">
+            <table className="w-full text-left text-sm min-w-[850px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                 <tr>
                   <th className="py-3 px-6 font-semibold">Customer / Company</th>
+                  <th className="py-3 px-6 font-semibold">Registered Date</th>
                   <th className="py-3 px-6 font-semibold">Contact Details</th>
                   <th className="py-3 px-6 font-semibold">GSTIN</th>
                   <th className="py-3 px-6 font-semibold">Location</th>
@@ -213,14 +220,14 @@ export const AdminUsers: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-500">
                       <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-red-600" />
                       Loading customers...
                     </td>
                   </tr>
                 ) : customers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center">
+                    <td colSpan={7} className="py-12 text-center">
                       <Building className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                       <h3 className="text-lg font-medium text-slate-900">No Customers Registered Yet</h3>
                       <p className="text-slate-500 text-sm mt-1">Customer profiles will appear here once they register on the storefront.</p>
@@ -236,6 +243,20 @@ export const AdminUsers: React.FC = () => {
                         </div>
                         {user.company && (
                           <div className="text-xs text-slate-500 mt-0.5 font-medium">Attn: {user.name}</div>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-xs text-slate-600 font-medium">
+                        {user.createdAt ? (
+                          <div>
+                            <div className="font-bold text-slate-800">
+                              {new Date(user.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              {new Date(user.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">Registered</span>
                         )}
                       </td>
                       <td className="py-4 px-6 text-slate-600">
@@ -410,6 +431,20 @@ export const AdminUsers: React.FC = () => {
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Phone / Mobile</p>
                   <p className="font-medium text-slate-800 mt-1">{selectedCustomer.phone || 'N/A'}</p>
                 </div>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Registration Date</p>
+                  <p className="font-semibold text-slate-800 mt-1">
+                    {selectedCustomer.createdAt 
+                      ? new Date(selectedCustomer.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                      : 'Corporate Client'}
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg">
+                  Registered User
+                </span>
               </div>
 
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">

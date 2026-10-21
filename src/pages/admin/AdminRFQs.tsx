@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   FileText, Eye, RefreshCw, AlertCircle, CheckCircle, UserPlus, Trash2, X, 
   Download, Printer, Search, ArrowLeft, Clock, Tag, Percent, Edit3, Save, 
-  FileSpreadsheet, Check
+  FileSpreadsheet, Check, ArrowUpDown, ArrowUp, ArrowDown, User as UserIcon
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { API_BASE_URL } from '../../config/api';
@@ -63,6 +63,7 @@ export const AdminRFQs: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dateSortOrder, setDateSortOrder] = useState<'desc' | 'asc'>('desc');
 
   // Pricing & Special Discount Editor State
   const [isEditingPrice, setIsEditingPrice] = useState(false);
@@ -291,12 +292,21 @@ export const AdminRFQs: React.FC = () => {
     }
   };
 
-  // Requirement 2: Sales updates status (Under Review -> Process by Sales -> Closed)
-  const handleStatusChange = async (rfqId: string, newStatus: string) => {
+  // Update status with optional revision notes (Supports Return-to-Sales workflow)
+  const handleStatusChange = async (rfqId: string, newStatus: string, returnNotes?: string) => {
     // Instant Optimistic Update
-    setRfqs(prev => prev.map(r => r._id === rfqId ? { ...r, status: newStatus } : r));
+    setRfqs(prev => prev.map(r => r._id === rfqId ? { 
+      ...r, 
+      status: newStatus,
+      notes: returnNotes !== undefined ? returnNotes : r.notes
+    } : r));
+    
     if (selectedRfq && selectedRfq._id === rfqId) {
-      setSelectedRfq(prev => prev ? { ...prev, status: newStatus } : null);
+      setSelectedRfq(prev => prev ? { 
+        ...prev, 
+        status: newStatus,
+        notes: returnNotes !== undefined ? returnNotes : prev.notes
+      } : null);
     }
 
     try {
@@ -307,7 +317,7 @@ export const AdminRFQs: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus, notes: returnNotes })
       });
       fetchData(true);
     } catch (err) {
@@ -391,7 +401,7 @@ export const AdminRFQs: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredRfqs.map(r => r._id));
+      setSelectedIds(sortedRfqs.map(r => r._id));
     } else {
       setSelectedIds([]);
     }
@@ -534,7 +544,7 @@ export const AdminRFQs: React.FC = () => {
         ['Quote No', 'Date', 'Customer Name', 'Company Name', 'Email', 'Phone', 'Subtotal (₹)', 'Special Discount (%)', 'Discount (₹)', 'Grand Total (₹)', 'Status', 'Assigned To']
       ];
 
-      filteredRfqs.forEach(r => {
+      sortedRfqs.forEach((r: any) => {
         const sub = r.subtotal ?? (r.grandTotal || 0);
         const discRate = r.discountRate || 0;
         const discAmt = r.discountAmount || 0;
@@ -579,7 +589,7 @@ export const AdminRFQs: React.FC = () => {
     }
   };
 
-  // Requirement 3: Admin View shows current status as clean Badge only (no dropdown)
+  // Status Badge rendering for 5 core statuses: New, Assigned, Pending, Under Review, Closed
   const renderStatusBadge = (status: string) => {
     const norm = (status || 'New').trim();
     if (norm === 'Closed' || norm === 'Completed') {
@@ -590,19 +600,19 @@ export const AdminRFQs: React.FC = () => {
         </span>
       );
     }
-    if (norm === 'Process by Sales' || norm === 'Processing') {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-300 shadow-2xs">
-          <Clock size={13} className="text-purple-600" />
-          Process by Sales
-        </span>
-      );
-    }
     if (norm === 'Under Review') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-orange-50 text-orange-700 border border-orange-300 shadow-2xs">
           <AlertCircle size={13} className="text-orange-600" />
           Under Review
+        </span>
+      );
+    }
+    if (norm === 'Pending' || norm === 'Process by Sales' || norm === 'Processing') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs">
+          <Clock size={13} className="text-amber-600" />
+          Pending
         </span>
       );
     }
@@ -622,34 +632,44 @@ export const AdminRFQs: React.FC = () => {
     );
   };
 
-  const filteredRfqs = rfqs.filter(r => {
-    // 1. Text Search Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matches = 
-        (r.quoteNo && r.quoteNo.toLowerCase().includes(q)) ||
-        (r.customerName && r.customerName.toLowerCase().includes(q)) ||
-        (r.companyName && r.companyName.toLowerCase().includes(q)) ||
-        (r.email && r.email.toLowerCase().includes(q)) ||
-        (r.phone && r.phone.includes(q)) ||
-        (r.assignedToName && r.assignedToName.toLowerCase().includes(q));
-      if (!matches) return false;
-    }
+  // Filtered & Date-Sorted RFQs
+  const sortedRfqs = useMemo(() => {
+    const filtered = rfqs.filter(r => {
+      // 1. Text Search Filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matches = 
+          (r.quoteNo && r.quoteNo.toLowerCase().includes(q)) ||
+          (r.customerName && r.customerName.toLowerCase().includes(q)) ||
+          (r.companyName && r.companyName.toLowerCase().includes(q)) ||
+          (r.email && r.email.toLowerCase().includes(q)) ||
+          (r.phone && r.phone.includes(q)) ||
+          (r.assignedToName && r.assignedToName.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
 
-    // 2. Status Pipeline Filter
-    if (statusFilter === 'All') return true;
-    if (statusFilter === 'Pending Actions') {
-      return r.status !== 'Closed' && r.status !== 'Completed';
-    }
-    if (statusFilter === 'New') {
-      return r.status === 'New' || r.status === 'Open' || r.status === 'RFQ Submitted' || r.status === 'Generated';
-    }
-    if (statusFilter === 'Assigned') return r.status === 'Assigned';
-    if (statusFilter === 'Under Review') return r.status === 'Under Review';
-    if (statusFilter === 'Process by Sales') return r.status === 'Process by Sales' || r.status === 'Processing';
-    if (statusFilter === 'Closed') return r.status === 'Closed' || r.status === 'Completed';
-    return true;
-  });
+      // 2. Status Pipeline Filter: New, Assigned, Pending, Under Review, Closed
+      if (statusFilter === 'All') return true;
+      if (statusFilter === 'New') {
+        return r.status === 'New' || r.status === 'Open' || r.status === 'RFQ Submitted' || r.status === 'Generated';
+      }
+      if (statusFilter === 'Assigned') return r.status === 'Assigned';
+      if (statusFilter === 'Pending') {
+        return r.status === 'Pending' || r.status === 'Process by Sales' || r.status === 'Processing';
+      }
+      if (statusFilter === 'Under Review') return r.status === 'Under Review';
+      if (statusFilter === 'Closed') return r.status === 'Closed' || r.status === 'Completed';
+      return true;
+    });
+
+    // 3. Date Sorting (Ascending / Descending by RFQ Generation Date)
+    return filtered.sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.date).getTime();
+      const timeB = new Date(b.createdAt || b.date).getTime();
+      if (isNaN(timeA) || isNaN(timeB)) return 0;
+      return dateSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+  }, [rfqs, searchQuery, statusFilter, dateSortOrder]);
 
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
@@ -661,7 +681,7 @@ export const AdminRFQs: React.FC = () => {
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
             {isAdmin 
-              ? 'Assign quotation requests to sales staff and monitor review pipeline progress.' 
+              ? 'Assign quotation requests to sales staff, review quotations, and monitor review pipeline progress.' 
               : 'Review your assigned RFQs, apply customer discounts, and transition through to closure.'}
           </p>
         </div>
@@ -717,20 +737,19 @@ export const AdminRFQs: React.FC = () => {
         </div>
         {searchQuery && (
           <span className="text-xs text-slate-500 font-medium px-2">
-            Showing {filteredRfqs.length} matching result{filteredRfqs.length !== 1 ? 's' : ''}
+            Showing {sortedRfqs.length} matching result{sortedRfqs.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
 
-      {/* Status Pipeline Filter Tabs - Colorful Light Aesthetic */}
+      {/* Status Pipeline Filter Tabs: New, Assigned, Pending, Under Review, Closed */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
         {[
           { key: 'All', label: `All (${rfqs.length})`, active: 'bg-slate-800 text-white font-bold', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
-          { key: 'Pending Actions', label: `Pending Actions (${rfqs.filter(r => r.status !== 'Closed' && r.status !== 'Completed').length})`, active: 'bg-orange-600 text-white font-bold shadow-xs', inactive: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100' },
           { key: 'New', label: `New (${rfqs.filter(r => r.status === 'New' || r.status === 'Open' || r.status === 'RFQ Submitted' || r.status === 'Generated').length})`, active: 'bg-red-600 text-white font-bold shadow-xs', inactive: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' },
           { key: 'Assigned', label: `Assigned (${rfqs.filter(r => r.status === 'Assigned').length})`, active: 'bg-sky-600 text-white font-bold shadow-xs', inactive: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100' },
-          { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
-          { key: 'Process by Sales', label: `Process by Sales (${rfqs.filter(r => r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-purple-600 text-white font-bold shadow-xs', inactive: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' },
+          { key: 'Pending', label: `Pending (${rfqs.filter(r => r.status === 'Pending' || r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
+          { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-orange-600 text-white font-bold shadow-xs', inactive: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100' },
           { key: 'Closed', label: `Closed (${rfqs.filter(r => r.status === 'Closed' || r.status === 'Completed').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
         ].map(({ key, label, active, inactive }) => (
           <button
@@ -744,80 +763,116 @@ export const AdminRFQs: React.FC = () => {
           </button>
         ))}
       </div>
-
       {/* RFQ Data Table */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm min-w-[850px]">
+          <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
               <tr>
                 {isAdmin && (
-                  <th className="py-3 px-4 w-12 font-semibold">
+                  <th className="py-3 px-3 w-10 text-center font-semibold shrink-0">
                     <input 
                       type="checkbox" 
-                      checked={filteredRfqs.length > 0 && selectedIds.length === filteredRfqs.length}
+                      checked={sortedRfqs.length > 0 && selectedIds.length === sortedRfqs.length}
                       onChange={handleSelectAll}
-                      className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-4 h-4"
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
                     />
                   </th>
                 )}
-                <th className="py-3 px-4 font-semibold">RFQ Number</th>
-                <th className="py-3 px-4 font-semibold">Company / Client</th>
-                <th className="py-3 px-4 font-semibold">Amount (₹)</th>
-                <th className="py-3 px-4 font-semibold">Status</th>
-                <th className="py-3 px-4 font-semibold">Assigned / Processed By</th>
-                <th className="py-3 px-4 font-semibold text-center">Actions</th>
+                <th className="py-3 px-3 w-14 text-center font-bold text-slate-600 shrink-0">S.No.</th>
+                <th className="py-3 px-4 font-semibold w-44 shrink-0">RFQ Number</th>
+                <th className="py-3 px-4 font-semibold min-w-[220px]">Client Name</th>
+                <th className="py-3 px-4 font-semibold w-36 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setDateSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    className="inline-flex items-center gap-1.5 hover:text-slate-900 font-bold transition-colors cursor-pointer group"
+                    title={`Sort by Date (${dateSortOrder === 'desc' ? 'Newest First' : 'Oldest First'})`}
+                  >
+                    <span>Date</span>
+                    {dateSortOrder === 'desc' ? (
+                      <ArrowDown size={14} className="text-red-600" />
+                    ) : (
+                      <ArrowUp size={14} className="text-red-600" />
+                    )}
+                  </button>
+                </th>
+                <th className="py-3 px-4 font-semibold w-36 shrink-0">Amount (₹)</th>
+                <th className="py-3 px-4 font-semibold w-40 shrink-0">Status</th>
+                <th className="py-3 px-4 font-semibold w-44 shrink-0">Assigned / Processed By</th>
+                <th className="py-3 px-4 font-semibold text-center w-28 shrink-0">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="py-8 text-center text-slate-500">
+                  <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-red-600" />
                     Loading RFQs...
                   </td>
                 </tr>
-              ) : filteredRfqs.length === 0 ? (
+              ) : sortedRfqs.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="py-12 text-center">
+                  <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center">
                     <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                     <h3 className="text-base font-semibold text-slate-900">No RFQs Found</h3>
                     <p className="text-xs text-slate-400 mt-1">No quotation requests match your search or filter criteria.</p>
                   </td>
                 </tr>
               ) : (
-                filteredRfqs.map((rfq) => (
+                sortedRfqs.map((rfq, index) => (
                   <tr key={rfq._id} className="hover:bg-red-50/20 transition-colors group">
                     {isAdmin && (
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3 text-center align-middle">
                         <input 
                           type="checkbox" 
                           checked={selectedIds.includes(rfq._id)}
                           onChange={() => handleSelectOne(rfq._id)}
-                          className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-4 h-4"
+                          className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
                         />
                       </td>
                     )}
+                    <td className="py-3 px-3 text-center font-bold text-slate-500 text-xs align-middle">
+                      {index + 1}
+                    </td>
                     <td 
-                      className="py-3 px-4 font-mono font-bold text-sky-700 hover:text-sky-900 cursor-pointer"
+                      className="py-3 px-4 font-mono font-bold text-sky-700 hover:text-sky-900 cursor-pointer align-middle"
                       onClick={() => setSelectedRfq(rfq)}
                     >
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold hover:bg-sky-100 transition-colors shadow-2xs">
-                        <FileText size={12} className="text-sky-600" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold hover:bg-sky-100 transition-colors shadow-2xs font-mono text-xs">
+                        <FileText size={12} className="text-sky-600 shrink-0" />
                         {rfq.quoteNo}
                       </span>
                     </td>
                     <td 
-                      className="py-3 px-4 cursor-pointer"
+                      className="py-3 px-4 cursor-pointer align-middle"
                       onClick={() => setSelectedRfq(rfq)}
                     >
-                      <div className="font-semibold text-slate-900 group-hover:text-red-700 transition-colors">
-                        {rfq.companyName || rfq.customerName}
+                      <div className="font-semibold text-slate-900 group-hover:text-red-700 transition-colors leading-snug">
+                        {rfq.companyName || rfq.customerName || 'Direct Client'}
                       </div>
-                      <div className="text-xs text-slate-500">{rfq.customerName}</div>
+                      {rfq.companyName && rfq.customerName && rfq.companyName !== rfq.customerName && (
+                        <div className="text-xs text-slate-500 mt-0.5">{rfq.customerName}</div>
+                      )}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-800">
-                      <div>₹{rfq.grandTotal?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                    <td className="py-3 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">
+                      {rfq.createdAt ? (
+                        <div>
+                          <div className="font-bold text-slate-800">
+                            {new Date(rfq.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {new Date(rfq.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      ) : (
+                        <span>{rfq.date || 'Recent'}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-slate-800 align-middle">
+                      <div>
+                        ₹{Number(rfq.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
                       {Boolean(rfq.discountAmount && rfq.discountAmount > 0) && (
                         <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
                           <Tag size={10} /> -{rfq.discountRate || ''}% off
@@ -825,66 +880,65 @@ export const AdminRFQs: React.FC = () => {
                       )}
                     </td>
 
-                    {/* Requirement 1, 2, 3:
-                        - If Admin: Status is displayed as a badge ONLY (no dropdown)
-                        - If Sales: Status dropdown with Under Review -> Process by Sales -> Closed
-                    */}
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 align-middle">
                       {isAdmin ? (
                         renderStatusBadge(rfq.status)
                       ) : (
-                        <select 
-                          value={rfq.status}
-                          onChange={(e) => handleStatusChange(rfq._id, e.target.value)}
-                          className={`text-xs font-bold rounded-lg px-2.5 py-1.5 border outline-none cursor-pointer shadow-2xs transition-all ${
-                            rfq.status === 'Closed' || rfq.status === 'Completed'
-                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800' 
-                              : rfq.status === 'Process by Sales' || rfq.status === 'Processing'
-                              ? 'border-purple-300 bg-purple-50 text-purple-800'
-                              : rfq.status === 'Under Review'
-                              ? 'border-orange-300 bg-orange-50 text-orange-800'
-                              : rfq.status === 'Assigned'
-                              ? 'border-sky-300 bg-sky-50 text-sky-800'
-                              : 'border-slate-300 bg-white text-slate-800'
-                          } focus:ring-2 focus:ring-red-500`}
-                        >
-                          {rfq.status === 'New' && <option value="New">New</option>}
-                          <option value="Assigned">Assigned</option>
-                          <option value="Under Review">Under Review</option>
-                          <option value="Process by Sales">Process by Sales</option>
-                          <option value="Closed">Closed</option>
-                        </select>
+                        <div className="w-full max-w-[135px]">
+                          <select 
+                            value={rfq.status}
+                            onChange={(e) => handleStatusChange(rfq._id, e.target.value)}
+                            className={`w-full text-xs font-bold rounded-lg px-2.5 py-1.5 border outline-none cursor-pointer shadow-2xs transition-all ${
+                              rfq.status === 'Closed' || rfq.status === 'Completed'
+                                ? 'border-emerald-300 bg-emerald-50 text-emerald-800' 
+                                : rfq.status === 'Under Review'
+                                ? 'border-orange-300 bg-orange-50 text-orange-800'
+                                : rfq.status === 'Pending' || rfq.status === 'Process by Sales' || rfq.status === 'Processing'
+                                ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                : rfq.status === 'Assigned'
+                                ? 'border-sky-300 bg-sky-50 text-sky-800'
+                                : 'border-slate-300 bg-white text-slate-800'
+                            } focus:ring-2 focus:ring-red-500`}
+                          >
+                            {rfq.status === 'New' && <option value="New">New</option>}
+                            <option value="Assigned">Assigned</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        </div>
                       )}
                     </td>
 
                     {/* Assigned Salesperson Column (Admin assigns, Sales views) */}
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 align-middle">
                       {canAssign ? (
                         <select 
-                          className="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer max-w-[200px]"
+                          className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer max-w-[170px]"
                           value={getAssignedUserId(rfq.assignedTo, rfq.assignedToName)}
                           onChange={(e) => handleAssign(rfq._id, e.target.value)}
                         >
                           <option value="">-- Assign Salesperson --</option>
                           {users.map(u => (
                             <option key={u._id} value={u._id}>
-                              {u.name} ({u.role})
+                              {u.name} ({u.role?.replace('Sales ', '')})
                             </option>
                           ))}
                         </select>
                       ) : (
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
                           rfq.assignedToName 
-                            ? 'bg-gradient-to-r from-red-50 to-orange-50 text-red-800 border border-orange-200 shadow-2xs font-semibold' 
-                            : 'bg-slate-100 text-slate-500 border border-slate-200'
+                            ? 'bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs' 
+                            : 'bg-slate-50 text-slate-400 border border-slate-200'
                         }`}>
-                          {rfq.assignedToName || 'Unassigned'}
+                          <UserIcon size={12} className="text-slate-500 shrink-0" />
+                          <span className="truncate max-w-[120px]">{rfq.assignedToName || 'Unassigned'}</span>
                         </span>
                       )}
                     </td>
 
-                    {/* Actions: Full Details View + Individual Quotation Excel Download */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                    {/* Actions: View Details, Return to Sales, Excel, Delete */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap align-middle">
                       <div className="flex items-center justify-center gap-1">
                         <button 
                           onClick={() => setSelectedRfq(rfq)}
@@ -943,7 +997,7 @@ export const AdminRFQs: React.FC = () => {
                   <span>Back</span>
                 </button>
 
-                {/* Status: Admin views status badge ONLY. Sales updates status */}
+                {/* Status: Admin views status badge. Sales updates status */}
                 {isAdmin ? (
                   <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
@@ -965,8 +1019,8 @@ export const AdminRFQs: React.FC = () => {
                     >
                       {selectedRfq.status === 'New' && <option value="New" className="bg-white text-slate-900">New</option>}
                       <option value="Assigned" className="bg-white text-slate-900">Assigned</option>
+                      <option value="Pending" className="bg-white text-slate-900">Pending</option>
                       <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
-                      <option value="Process by Sales" className="bg-white text-slate-900">Process by Sales</option>
                       <option value="Closed" className="bg-white text-slate-900">Closed</option>
                     </select>
                   </div>
@@ -1230,6 +1284,7 @@ export const AdminRFQs: React.FC = () => {
             {/* Official Invoice / Bill Document Area - Scrollable Inside Card */}
             <div id="rfq-print-content" className="p-4 sm:p-8 md:p-12 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
               
+
               {/* Header: Logo and Company Info */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">
                 <div>
@@ -1383,6 +1438,7 @@ export const AdminRFQs: React.FC = () => {
         </div>,
         document.body
       )}
+
 
     </div>
   );

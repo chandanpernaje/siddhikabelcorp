@@ -19,6 +19,7 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { RFQModal } from "../components/ui/RFQModal";
 import { ImageZoomModal } from "../components/ui/ImageZoomModal";
+import { CustomCuttingModal } from "../components/ui/CustomCuttingModal";
 import { API_BASE_URL } from "../config/api";
 
 export const ProductDetail: React.FC = () => {
@@ -194,6 +195,7 @@ export const ProductDetail: React.FC = () => {
   const [qty, setQty] = useState(product?.brand?.includes("LAPP") && product.unit === "meter" ? 25 : 1);
   const [selectedImg, setSelectedImg] = useState(product.image || "/images/cable-olflex-cores.png");
   const [rfqOpen, setRfqOpen] = useState(false);
+  const [isCuttingModalOpen, setIsCuttingModalOpen] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [inlineZoom, setInlineZoom] = useState(1);
   // Natural scroll-based zoom for the product image (no manual zoom buttons)
@@ -653,8 +655,8 @@ export const ProductDetail: React.FC = () => {
               <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
                 <span>Direct Warehouse Dispatch from Bangalore</span>
                 <button
-                  onClick={() => setRfqOpen(true)}
-                  className="text-red-600 font-bold hover:underline"
+                  onClick={() => setIsCuttingModalOpen(true)}
+                  className="text-red-600 font-bold hover:underline cursor-pointer"
                 >
                   Need Custom Project Cutting?
                 </button>
@@ -761,6 +763,14 @@ export const ProductDetail: React.FC = () => {
           productName={`${product.name} (${product.partNo})`}
           isOpen={rfqOpen}
           onClose={() => setRfqOpen(false)}
+        />
+
+        {/* Custom Cutting Modal */}
+        <CustomCuttingModal
+          isOpen={isCuttingModalOpen}
+          onClose={() => setIsCuttingModalOpen(false)}
+          productName={product.name}
+          partNo={product.partNo}
         />
 
         {/* Fullscreen Image Zoom Modal (+/-) */}

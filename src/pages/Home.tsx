@@ -26,6 +26,7 @@ import { PRODUCTS_DATA, CATEGORIES, BRANDS } from "../data/products";
 import { ProductCard } from "../components/products/ProductCard";
 import { QuickViewModal } from "../components/ui/QuickViewModal";
 import { RFQModal } from "../components/ui/RFQModal";
+import { CustomCuttingModal } from "../components/ui/CustomCuttingModal";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -51,6 +52,7 @@ export const Home: React.FC = () => {
   const [brandModal, setBrandModal] = useState<string | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [rfqModalOpen, setRfqModalOpen] = useState(false);
+  const [isCuttingModalOpen, setIsCuttingModalOpen] = useState(false);
   const [rfqProductName, setRfqProductName] = useState<string | null>(null);
   const [rfqProductPrice, setRfqProductPrice] = useState<number | null>(null);
 
@@ -781,14 +783,25 @@ export const Home: React.FC = () => {
               </p>
             </div>
 
-            <div className="space-y-2 p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-sky-50/60 to-white border border-blue-200 shadow-xs">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
-                <span>Warehouse Infrastructure</span>
-              </h4>
-              <p className="text-slate-600 leading-relaxed font-medium">
-                Equipped with motorized cable decoilers, drum handling cranes, and specialized cutting stations to provide exact length requirements without charging for unnecessary scrap.
-              </p>
+            <div className="space-y-2 p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 via-sky-50/60 to-white border border-blue-200 shadow-xs flex flex-col justify-between">
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span>Warehouse Infrastructure</span>
+                </h4>
+                <p className="text-slate-600 leading-relaxed font-medium">
+                  Equipped with motorized cable decoilers, drum handling cranes, and specialized cutting stations to provide exact length requirements without charging for unnecessary scrap.
+                </p>
+              </div>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCuttingModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                >
+                  <span>Need Custom Cutting? Request Lengths</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-50/60 to-white border border-emerald-200 shadow-xs">
@@ -1135,6 +1148,12 @@ export const Home: React.FC = () => {
           setRfqProductName(null);
           setRfqProductPrice(null);
         }}
+      />
+
+      {/* Global Custom Cutting Modal */}
+      <CustomCuttingModal
+        isOpen={isCuttingModalOpen}
+        onClose={() => setIsCuttingModalOpen(false)}
       />
     </main>
   );
