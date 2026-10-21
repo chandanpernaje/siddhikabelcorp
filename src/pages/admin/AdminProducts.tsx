@@ -1244,27 +1244,6 @@ export const AdminProducts: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">PE (Packaging Unit)</label>
-                    <input 
-                      type="text" 
-                      name="pe" 
-                      defaultValue={currentProduct?.pe || ''} 
-                      placeholder="e.g. 50, 100"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Copper Index (kg/km)</label>
-                    <input 
-                      type="text" 
-                      name="copperIndex" 
-                      defaultValue={currentProduct?.copperIndex || ''} 
-                      placeholder="e.g. 43.2"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
-                  </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">MRP (List Price ₹)</label>
