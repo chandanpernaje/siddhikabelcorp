@@ -44,20 +44,13 @@ mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 5000 })
         { brandName: 'Minak' },
         { $set: { brandName: 'Mennekes' } }
       );
-      // Migrate Solar Cables to Domestic / House Wiring for LAPP if present
-      await mongoose.connection.collection('categories').updateOne(
-        { name: 'Solar Cables', make: 'LAPP' },
-        { 
-          $set: { 
-            name: 'Domestic / House Wiring', 
-            subGroup: 'Building Wires / Single Cores',
-            description: 'Flame-retardant FR-LSH building wires, copper conductor house wiring cables for residential and commercial installations'
-          } 
-        }
-      );
+      // Permanently remove Solar Cables and migrate any products to Domestic / House Wiring
       await mongoose.connection.collection('products').updateMany(
-        { categoryName: 'Solar Cables' },
+        { categoryName: { $regex: /^solar cables$/i } },
         { $set: { categoryName: 'Domestic / House Wiring' } }
+      );
+      await mongoose.connection.collection('categories').deleteMany(
+        { name: { $regex: /^solar cables$/i } }
       );
     } catch (e: any) {
       console.warn('sqmm/brand backfill notice:', e?.message);
@@ -1749,17 +1742,19 @@ app.get('/api/categories', async (req, res) => {
       );
     }
 
-    // Clean up empty obsolete placeholder names if any
-    const obsoleteNames = ['Control Cables', 'Power Cables', 'Data & Communication', 'Cable Accessories'];
+    // Clean up empty obsolete placeholder names and permanently purge Solar Cables
+    await Category.deleteMany({ name: { $regex: /^solar cables$/i } });
+    await Product.updateMany(
+      { categoryName: { $regex: /^solar cables$/i } },
+      { $set: { categoryName: 'Domestic / House Wiring' } }
+    );
+    const obsoleteNames = ['Control Cables', 'Power Cables', 'Data & Communication', 'Cable Accessories', 'Solar Cables'];
     for (const oldName of obsoleteNames) {
-      const prodsWithOld = await Product.countDocuments({ categoryName: oldName });
-      if (prodsWithOld === 0) {
-        await Category.deleteOne({ name: oldName });
-      }
+      await Category.deleteOne({ name: oldName });
     }
 
-    // Fetch all categories and sort in canonical client order: LAPP (Cables first) -> Eaton -> Mennekes -> Partex
-    const allCategories = await Category.find();
+    // Fetch all categories excluding obsolete ones
+    const allCategories = await Category.find({ name: { $nin: ['Solar Cables', ...obsoleteNames] } });
     
     // Sort map based on OFFICIAL_24_CATEGORIES order
     const orderMap = new Map<string, number>();

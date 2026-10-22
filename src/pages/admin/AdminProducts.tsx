@@ -822,7 +822,8 @@ export const AdminProducts: React.FC = () => {
   const canonicalMakeOrder = ['LAPP', 'Eaton', 'Mennekes', 'Partex'];
 
   const sortedCategories = React.useMemo(() => {
-    return [...categories].sort((a, b) => {
+    const activeCats = categories.filter(c => c.name?.toLowerCase().trim() !== 'solar cables');
+    return [...activeCats].sort((a, b) => {
       const makeA = a.make || 'LAPP';
       const makeB = b.make || 'LAPP';
       const idxA = canonicalMakeOrder.indexOf(makeA);
@@ -846,7 +847,7 @@ export const AdminProducts: React.FC = () => {
           if (s.includes('cabinet') || s.includes('single core') || s.includes('panel wire')) return 3;
           if (s.includes('gland') || s.includes('locknut') || s.includes('skintop')) return 4;
           if (s.includes('rill') || s.includes('conduit') || s.includes('klick') || s.includes('silvyn')) return 5;
-          if (s.includes('domestic') || s.includes('house') || s.includes('building') || s.includes('solar')) return 6;
+          if (s.includes('domestic') || s.includes('house') || s.includes('building') || s.includes('infra')) return 6;
           return 99;
         };
         const orderA = getLappIdx(a.name || '');
@@ -859,7 +860,10 @@ export const AdminProducts: React.FC = () => {
   }, [categories]);
 
   const displayedCategories = React.useMemo(() => {
-    return sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === categoryMakeFilter.toLowerCase());
+    return sortedCategories.filter(c => 
+      (c.make || 'LAPP').toLowerCase() === categoryMakeFilter.toLowerCase() &&
+      c.name?.toLowerCase().trim() !== 'solar cables'
+    );
   }, [sortedCategories, categoryMakeFilter]);
 
   const categorySubGroupMap = React.useMemo(() => {
@@ -870,7 +874,6 @@ export const AdminProducts: React.FC = () => {
       'cable glands & counter nuts': 'SKINTOP® Cable Glands',
       'rill, conduit & klick': 'SILVYN® Protective Conduits',
       'domestic / house wiring': 'Building Wires / Single Cores',
-      'solar cables': 'ÖLFLEX® SOLAR',
       'switchgear & protection': 'Motor Starters, Contactors & Breakers',
       'motor protection breakers': 'PKZM0 Motor Breakers',
       'molded case circuit breakers': 'NZM Compact MCCBs',
@@ -1046,7 +1049,7 @@ export const AdminProducts: React.FC = () => {
       const name = p.category?.name || p.categoryName;
       if (name && typeof name === 'string' && name.trim()) {
         const key = name.trim().toLowerCase();
-        if (!catMap.has(key)) {
+        if (key !== 'solar cables' && !catMap.has(key)) {
           catMap.set(key, name.trim());
         }
       }
