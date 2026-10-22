@@ -67,8 +67,7 @@ export const RFQModal: React.FC<RFQModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       if (isCartRequest && cart.length > 0) {
-        const cartList = cart.map(item => `- ${item.name} [Part: ${item.partNo}] (Qty: ${item.qty} ${item.unit})`).join("\n");
-        setNotes(`Requesting official quotation for the following items selected in my cart:\n\n${cartList}\n\nPlease provide formal commercial quotation with lead times.`);
+        setNotes("");
       } else {
         setNotes(
           productName && !isCartRequest

@@ -706,8 +706,9 @@ export const AdminRFQs: React.FC = () => {
         ['Email:', email, '', 'Phone:', phone],
       );
 
-      if (rfq.deliveryLocation || rfq.specialInstructions) {
-        rows.push(['Delivery Bay / Instructions:', `${rfq.deliveryLocation ? `Bay: ${rfq.deliveryLocation} | ` : ''}${rfq.specialInstructions || ''}`]);
+      const cleanSpecialInstructions = rfq.specialInstructions && !rfq.specialInstructions.includes('Requesting official quotation for the following items') ? rfq.specialInstructions : '';
+      if (rfq.deliveryLocation || cleanSpecialInstructions) {
+        rows.push(['Delivery Bay / Instructions:', `${rfq.deliveryLocation ? `Bay: ${rfq.deliveryLocation} | ` : ''}${cleanSpecialInstructions}`]);
       }
 
       rows.push([]);
@@ -1274,137 +1275,163 @@ export const AdminRFQs: React.FC = () => {
         return createPortal(
           <div
             id="rfq-print-overlay"
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 sm:p-4 md:p-6 overflow-hidden print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-0 sm:p-4 md:p-6 overflow-hidden print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible"
             onClick={(e) => {
               if (e.target === e.currentTarget && !isEditingPrice) handleCloseModal();
             }}
           >
-            <div id="rfq-print-card" className="bg-white shadow-2xl w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col relative my-0 animate-in zoom-in-95 duration-150 print:w-full print:h-auto print:max-h-none print:shadow-none print:m-0 print:p-0 rounded-2xl overflow-hidden border border-slate-200">
+            <div id="rfq-print-card" className="bg-white shadow-2xl w-full max-w-5xl h-full sm:h-auto sm:max-h-[92vh] flex flex-col relative my-0 animate-in zoom-in-95 duration-150 print:w-full print:h-auto print:max-h-none print:shadow-none print:m-0 print:p-0 rounded-none sm:rounded-2xl overflow-hidden border-0 sm:border border-slate-200">
 
-              {/* Top Toolbar: Fitted on a Single Line with X pinned at the far end (Hidden on Print) */}
-              <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2 sm:gap-3 print:hidden shrink-0 z-30 shadow-2xs overflow-x-auto custom-scrollbar">
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
-                  {/* Back Button */}
-                  <button
-                    onClick={handleCloseModal}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
-                    title="Return to RFQ List"
-                  >
-                    <ArrowLeft size={14} />
-                    <span>Back</span>
-                  </button>
-
-                  {/* Status: Admin & Sales can manage status with preserved statuses: Pending, Under Review, PO Received, Closed, Lost, Expired */}
-                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
-                      ? 'bg-emerald-50 border-emerald-300'
-                      : selectedRfq.status === 'Closed'
-                        ? 'bg-slate-200 border-slate-400'
-                        : selectedRfq.status === 'Under Review'
-                          ? 'bg-sky-50 border-sky-300'
-                          : selectedRfq.status === 'Lost'
-                            ? 'bg-slate-100 border-slate-300'
-                            : selectedRfq.status === 'Expired'
-                              ? 'bg-red-50 border-red-300'
-                              : 'bg-white border-slate-200'
-                    }`}>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
-                    <select
-                      value={selectedRfq.status}
-                      onChange={(e) => handleInitiateStatusChange(selectedRfq._id, e.target.value, selectedRfq)}
-                      className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
-                          ? 'text-emerald-800 font-extrabold'
-                          : selectedRfq.status === 'Closed'
-                            ? 'text-slate-900 font-extrabold'
-                            : selectedRfq.status === 'Under Review'
-                              ? 'text-sky-800 font-extrabold'
-                              : selectedRfq.status === 'Lost'
-                                ? 'text-slate-700 font-bold'
-                                : selectedRfq.status === 'Expired'
-                                  ? 'text-red-700 font-extrabold'
-                                  : 'text-amber-700'
-                        }`}
+              {/* Top Toolbar: Fully responsive for Mobile & Desktop (Hidden on Print) */}
+              <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-5 py-2 sm:py-2.5 print:hidden shrink-0 z-30 shadow-2xs">
+                {/* Mobile Top Header Row (< sm): Back Button + Quote Number + Close X */}
+                <div className="flex sm:hidden items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <button
+                      onClick={handleCloseModal}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
+                      title="Back to RFQ List"
                     >
-                      <option value="Pending" className="bg-white text-slate-900">Pending</option>
-                      <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
-                      <option value="PO Received" className="bg-white text-slate-900">PO Received</option>
-                      <option value="Closed" className="bg-white text-slate-900">Closed</option>
-                      <option value="Lost" className="bg-white text-slate-900">Lost</option>
-                      {selectedRfq.status === 'Expired' && <option value="Expired" className="bg-white text-slate-900">Expired</option>}
-                    </select>
+                      <ArrowLeft size={14} />
+                      <span>Back</span>
+                    </button>
+                    <span className="text-xs font-bold font-mono text-slate-900 bg-white px-2 py-1 rounded-lg border border-slate-200 truncate">
+                      {selectedRfq.quoteNo}
+                    </span>
                   </div>
-
-                  {/* Assignment: Admin assigns salesperson. Sales views assigned name */}
-                  {canAssign ? (
-                    <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Assign:</span>
-                      <select
-                        value={getAssignedUserId(selectedRfq.assignedTo, selectedRfq.assignedToName)}
-                        onChange={(e) => handleAssign(selectedRfq._id, e.target.value)}
-                        className="text-xs font-bold bg-transparent text-red-600 outline-none cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
-                      >
-                        <option value="" className="bg-white text-slate-900">-- Assign --</option>
-                        {users.map(u => (
-                          <option key={u._id} value={u._id} className="bg-white text-slate-900">
-                            {u.name} ({u.role?.replace('Sales ', '')})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs shrink-0 flex items-center gap-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Staff:</span>
-                      <span className="font-bold text-slate-900 truncate max-w-[110px]">{selectedRfq.assignedToName || 'Sales Team'}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons: Edit Price & Discount, Download Excel, Print, Close */}
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-                  {/* Special Discount & Price Edit Toggle */}
-                  <button
-                    onClick={() => setIsEditingPrice(!isEditingPrice)}
-                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer shrink-0 ${isEditingPrice
-                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
-                        : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
-                      }`}
-                    title="Edit quotation item rates and special customer discount"
-                  >
-                    <Tag size={13} />
-                    <span>{isEditingPrice ? 'Close Editor' : 'Price / Discount'}</span>
-                  </button>
-
-                  {/* Individual Excel Download */}
-                  <button
-                    onClick={() => handleExportSingleRfqExcel(selectedRfq)}
-                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
-                    title="Download this quotation as Microsoft Excel (.xlsx)"
-                  >
-                    <FileSpreadsheet size={14} />
-                    <span>Excel</span>
-                  </button>
-
-                  {/* Print Button */}
-                  <button
-                    onClick={() => window.print()}
-                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-red-600 via-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
-                    title="Print Quotation"
-                  >
-                    <Printer size={14} />
-                    <span>Print</span>
-                  </button>
-
-                  {/* Divider before Close */}
-                  <div className="h-5 w-px bg-slate-200 mx-0.5 sm:mx-1 shrink-0" />
-
-                  {/* Close Button - At the far right end */}
                   <button
                     onClick={handleCloseModal}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-red-600 hover:text-white text-slate-600 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs hover:border-red-600"
-                    title="Close Quotation View (Esc)"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-red-600 hover:text-white text-slate-600 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                    title="Close Modal (Esc)"
                     aria-label="Close Modal"
                   >
                     <X size={18} strokeWidth={2.5} />
                   </button>
+                </div>
+
+                {/* Main Controls Row (Desktop: single line; Mobile: clean compact wrapped controls) */}
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
+                    {/* Back Button (Desktop only) */}
+                    <button
+                      onClick={handleCloseModal}
+                      className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
+                      title="Return to RFQ List"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Back</span>
+                    </button>
+
+                    {/* Status: Admin & Sales can manage status with preserved statuses: Pending, Under Review, PO Received, Closed, Lost, Expired */}
+                    <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
+                        ? 'bg-emerald-50 border-emerald-300'
+                        : selectedRfq.status === 'Closed'
+                          ? 'bg-slate-200 border-slate-400'
+                          : selectedRfq.status === 'Under Review'
+                            ? 'bg-sky-50 border-sky-300'
+                            : selectedRfq.status === 'Lost'
+                              ? 'bg-slate-100 border-slate-300'
+                              : selectedRfq.status === 'Expired'
+                                ? 'bg-red-50 border-red-300'
+                                : 'bg-white border-slate-200'
+                      }`}>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
+                      <select
+                        value={selectedRfq.status}
+                        onChange={(e) => handleInitiateStatusChange(selectedRfq._id, e.target.value, selectedRfq)}
+                        className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
+                            ? 'text-emerald-800 font-extrabold'
+                            : selectedRfq.status === 'Closed'
+                              ? 'text-slate-900 font-extrabold'
+                              : selectedRfq.status === 'Under Review'
+                                ? 'text-sky-800 font-extrabold'
+                                : selectedRfq.status === 'Lost'
+                                  ? 'text-slate-700 font-bold'
+                                  : selectedRfq.status === 'Expired'
+                                    ? 'text-red-700 font-extrabold'
+                                    : 'text-amber-700'
+                          }`}
+                      >
+                        <option value="Pending" className="bg-white text-slate-900">Pending</option>
+                        <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
+                        <option value="PO Received" className="bg-white text-slate-900">PO Received</option>
+                        <option value="Closed" className="bg-white text-slate-900">Closed</option>
+                        <option value="Lost" className="bg-white text-slate-900">Lost</option>
+                        {selectedRfq.status === 'Expired' && <option value="Expired" className="bg-white text-slate-900">Expired</option>}
+                      </select>
+                    </div>
+
+                    {/* Assignment: Admin assigns salesperson. Sales views assigned name */}
+                    {canAssign ? (
+                      <div className="flex items-center gap-1 sm:gap-1.5 bg-white px-2 sm:px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Assign:</span>
+                        <select
+                          value={getAssignedUserId(selectedRfq.assignedTo, selectedRfq.assignedToName)}
+                          onChange={(e) => handleAssign(selectedRfq._id, e.target.value)}
+                          className="text-xs font-bold bg-transparent text-red-600 outline-none cursor-pointer max-w-[100px] sm:max-w-[160px] truncate"
+                        >
+                          <option value="" className="bg-white text-slate-900">-- Assign --</option>
+                          {users.map(u => (
+                            <option key={u._id} value={u._id} className="bg-white text-slate-900">
+                              {u.name} ({u.role?.replace('Sales ', '')})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="bg-white border border-slate-200 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs shrink-0 flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Staff:</span>
+                        <span className="font-bold text-slate-900 truncate max-w-[90px] sm:max-w-[110px]">{selectedRfq.assignedToName || 'Sales Team'}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons: Edit Price & Discount, Download Excel, Print, Close */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                    {/* Special Discount & Price Edit Toggle */}
+                    <button
+                      onClick={() => setIsEditingPrice(!isEditingPrice)}
+                      className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer shrink-0 ${isEditingPrice
+                          ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                          : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
+                        }`}
+                      title="Edit quotation item rates and special customer discount"
+                    >
+                      <Tag size={13} />
+                      <span>{isEditingPrice ? 'Close' : 'Price / Discount'}</span>
+                    </button>
+
+                    {/* Individual Excel Download */}
+                    <button
+                      onClick={() => handleExportSingleRfqExcel(selectedRfq)}
+                      className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
+                      title="Download this quotation as Microsoft Excel (.xlsx)"
+                    >
+                      <FileSpreadsheet size={14} />
+                      <span className="hidden xs:inline">Excel</span>
+                    </button>
+
+                    {/* Print Button */}
+                    <button
+                      onClick={() => window.print()}
+                      className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 bg-gradient-to-r from-red-600 via-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
+                      title="Print Quotation"
+                    >
+                      <Printer size={14} />
+                      <span className="hidden xs:inline">Print</span>
+                    </button>
+
+                    {/* Desktop Close Button */}
+                    <div className="hidden sm:block h-5 w-px bg-slate-200 mx-0.5 sm:mx-1 shrink-0" />
+                    <button
+                      onClick={handleCloseModal}
+                      className="hidden sm:flex w-8 h-8 items-center justify-center rounded-xl bg-slate-100 hover:bg-red-600 hover:text-white text-slate-600 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs hover:border-red-600"
+                      title="Close Quotation View (Esc)"
+                      aria-label="Close Modal"
+                    >
+                      <X size={18} strokeWidth={2.5} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1431,7 +1458,65 @@ export const AdminRFQs: React.FC = () => {
 
                   {/* Editable Items Table with Technical Specs */}
                   <div className="bg-white rounded-xl border border-amber-200 overflow-hidden mb-4 shadow-2xs">
-                    <div className="overflow-x-auto">
+                    {/* Mobile Card Editor View (< md) */}
+                    <div className="block md:hidden divide-y divide-slate-100 p-2.5 space-y-3">
+                      {editItems.map((item, idx) => {
+                        const coreSqmm = formatCoreSqmm(item.core || item.coreSize, item.sqmm, item.name);
+                        const uomAbbr = formatUom(item.uom || item.unit);
+                        const lineTotal = (Number(item.qty) || 1) * (Number(item.unitPrice) || 0);
+                        return (
+                          <div key={idx} className="bg-slate-50/70 p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                            <div className="flex items-start justify-between gap-1.5">
+                              <div>
+                                <span className="font-bold text-slate-900 font-mono text-xs">{item.partNo || `Item #${idx + 1}`}</span>
+                                <span className="text-slate-600 block text-[11px] line-clamp-1">{item.description || item.name}</span>
+                              </div>
+                              {coreSqmm !== '-' && (
+                                <span className="px-1.5 py-0.5 rounded bg-white text-slate-700 font-mono text-[10px] border border-slate-200 shrink-0 font-semibold">
+                                  {coreSqmm}
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/80">
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 block mb-1">Qty ({uomAbbr})</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.qty}
+                                  onChange={(e) => {
+                                    const val = Math.max(1, Number(e.target.value) || 1);
+                                    setEditItems(prev => prev.map((it, i) => i === idx ? { ...it, qty: val } : it));
+                                  }}
+                                  className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white font-mono font-medium focus:ring-1 focus:ring-amber-500 outline-none text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 block mb-1">Unit Rate (₹)</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={item.unitPrice}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, Number(e.target.value) || 0);
+                                    setEditItems(prev => prev.map((it, i) => i === idx ? { ...it, unitPrice: val } : it));
+                                  }}
+                                  className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white font-mono font-bold text-red-700 focus:ring-1 focus:ring-red-500 outline-none text-xs"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-200/60">
+                              <span className="text-slate-500 font-semibold text-[11px]">Item Total:</span>
+                              <span className="font-mono font-bold text-slate-900 text-sm">₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop Table Editor (>= md) */}
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-xs text-left min-w-[750px]">
                         <thead className="bg-slate-100/80 text-slate-700 border-b border-slate-200">
                           <tr>
@@ -1606,25 +1691,25 @@ export const AdminRFQs: React.FC = () => {
               )}
 
               {/* Official Invoice / Bill Document Area - Scrollable Inside Card */}
-              <div id="rfq-print-content" className="p-4 sm:p-8 md:p-12 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
+              <div id="rfq-print-content" className="p-3.5 sm:p-6 md:p-10 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
 
                 {/* Header: Logo and Company Info */}
-                <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-5 sm:pb-8 mb-5 sm:mb-8 gap-4 sm:gap-0">
                   <div>
                     <img
                       src="/images/siddhi-kabel-lockup.png"
                       alt="Siddhi Kabel"
-                      className="h-16 w-auto object-contain mb-4"
+                      className="h-12 sm:h-16 w-auto object-contain mb-3 sm:mb-4"
                       onError={(e) => { e.currentTarget.src = '/images/siddhi-kabel-logo.png'; }}
                     />
-                    <h1 className="text-xl font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
-                    <p className="text-sm text-slate-500 mt-1">Plot 42, Peenya Industrial Area, 2nd Stage</p>
-                    <p className="text-sm text-slate-500">Bangalore, Karnataka 560058</p>
-                    <p className="text-sm font-medium text-slate-600 mt-1">GSTIN: 29AABCU9603R1ZM</p>
+                    <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">Plot 42, Peenya Industrial Area, 2nd Stage</p>
+                    <p className="text-xs sm:text-sm text-slate-500">Bangalore, Karnataka 560058</p>
+                    <p className="text-xs sm:text-sm font-medium text-slate-600 mt-0.5 sm:mt-1">GSTIN: 29AABCU9603R1ZM</p>
                   </div>
-                  <div className="sm:text-right mt-6 sm:mt-0 bg-slate-50 p-4 rounded-xl border border-slate-200 min-w-[260px]">
-                    <h2 className="text-2xl font-black text-slate-800 mb-1">ESTIMATE</h2>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mt-3 text-left">
+                  <div className="w-full sm:w-auto sm:text-right mt-2 sm:mt-0 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 sm:min-w-[260px]">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">ESTIMATE</h2>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:text-sm mt-2.5 sm:mt-3 text-left">
                       <span className="text-slate-500 font-medium">Estimate / RFQ #:</span>
                       <span className="font-bold text-slate-900 font-mono text-right">{selectedRfq.quoteNo}</span>
                       <span className="text-slate-500 font-medium">Date:</span>
@@ -1648,33 +1733,28 @@ export const AdminRFQs: React.FC = () => {
                 </div>
 
                 {/* Requirement 3.1: Separate Billing Address & Delivery / Site Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 p-3.5 sm:p-4 bg-slate-50/70 rounded-xl border border-slate-200">
                   <div>
                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Billed To (Customer Master)</h3>
-                    <div className="text-slate-800 text-sm space-y-1">
-                      <p className="font-bold text-base text-slate-900">{selectedRfq.companyName}</p>
+                    <div className="text-slate-800 text-xs sm:text-sm space-y-1">
+                      <p className="font-bold text-sm sm:text-base text-slate-900">{selectedRfq.companyName}</p>
                       <p className="font-medium text-slate-700">Attn: {selectedRfq.customerName}</p>
                       <p className="text-slate-600">{selectedRfq.billingAddress || selectedRfq.address || 'Registered Corporate Address'}</p>
                       <p className="text-slate-600">{selectedRfq.city || 'Bangalore'}, {selectedRfq.state || 'Karnataka'} {selectedRfq.pincode ? `- ${selectedRfq.pincode}` : ''}</p>
                       <p className="text-slate-600 font-mono">GSTIN: {selectedRfq.email && (selectedRfq as any).gstin ? (selectedRfq as any).gstin : '29AABCU9603R1ZM'}</p>
-                      <p className="text-slate-600">Email: {selectedRfq.email} · Phone: {selectedRfq.phone}</p>
+                      <p className="text-slate-600 break-all sm:break-normal">Email: {selectedRfq.email} · Phone: {selectedRfq.phone}</p>
                     </div>
                   </div>
 
                   <div>
                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Delivery &amp; Project Site Details</h3>
-                    <div className="text-slate-800 text-sm space-y-1">
+                    <div className="text-slate-800 text-xs sm:text-sm space-y-1">
                       <p className="font-semibold text-slate-900">
                         Destination Address: <span className="font-normal">{selectedRfq.deliveryAddress || selectedRfq.billingAddress || selectedRfq.city || 'Standard Factory Gate'}</span>
                       </p>
                       {selectedRfq.deliveryLocation && (
                         <p className="text-slate-700">
                           <strong>Delivery Bay / Location:</strong> {selectedRfq.deliveryLocation}
-                        </p>
-                      )}
-                      {selectedRfq.specialInstructions && (
-                        <p className="text-slate-700 bg-amber-50 border border-amber-200 p-2 rounded-lg text-xs mt-2">
-                          <strong>Special Site Instructions:</strong> {selectedRfq.specialInstructions}
                         </p>
                       )}
                       {selectedRfq.lostReason && selectedRfq.status === 'Lost' && (
@@ -1757,8 +1837,89 @@ export const AdminRFQs: React.FC = () => {
                   </div>
                 )}
 
-                {/* Quotation Management Products Table: Part No, Description, Core/Cross Section, UOM, Price, Weight, OD, Validity, Brand, Qty, Amount */}
-                <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
+                {/* Quotation Management Products: Responsive Mobile Cards (< md) & Desktop/Print Table (>= md) */}
+                
+                {/* Mobile View: High-Density Responsive Product Cards (< md) */}
+                <div className="block md:hidden print:hidden space-y-3 mb-6">
+                  {selectedRfq.items && selectedRfq.items.length > 0 ? (
+                    selectedRfq.items.map((item: any, idx: number) => {
+                      const qty = Number(item.qty) || 1;
+                      const rate = Number(item.unitPrice) || 0;
+                      const lineTotal = item.totalBeforeTax ? Number(item.totalBeforeTax) : (qty * rate);
+                      const coreSqmm = formatCoreSqmm(item.core || item.coreSize, item.sqmm, item.name);
+                      const uomAbbr = formatUom(item.uom || item.unit);
+                      const weightStr = formatWeight(item.weight, item.name);
+                      const odStr = formatOD(item.outerDiameter, item.name);
+                      return (
+                        <div key={idx} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 text-xs space-y-2">
+                          {/* Row 1: Item # + Part No + Brand + Validity */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-400">#{idx + 1}</span>
+                              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs">
+                                {item.partNo || `PART-${idx + 1}`}
+                              </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded">
+                                {item.brand || 'LAPP'}
+                              </span>
+                            </div>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${modalValInfo.isExpired
+                                ? 'bg-rose-100 text-rose-800'
+                                : modalValInfo.remainingDays <= 2
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                              {item.validity || '7 Days'}
+                            </span>
+                          </div>
+
+                          {/* Row 2: Description */}
+                          <p className="font-semibold text-slate-800 text-xs leading-snug">
+                            {item.description || item.name}
+                          </p>
+
+                          {/* Row 3: Technical Specs Chips */}
+                          <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-600">
+                            {coreSqmm !== '-' && (
+                              <span className="px-2 py-0.5 rounded bg-white text-slate-800 border border-slate-200 font-mono font-medium">
+                                Core: {coreSqmm}
+                              </span>
+                            )}
+                            {weightStr !== '-' && (
+                              <span className="px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 font-mono">
+                                Wt: {weightStr}
+                              </span>
+                            )}
+                            {odStr !== '-' && (
+                              <span className="px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 font-mono">
+                                OD: {odStr}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Row 4: Quantity & Rate & Line Total */}
+                          <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                            <div className="text-slate-600 font-medium text-xs">
+                              <span className="text-slate-900 font-bold">{qty}</span> {uomAbbr}
+                              <span className="text-slate-400 mx-1">@</span>
+                              <span className="font-mono">₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="font-mono font-bold text-sm text-slate-900">
+                              ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-6 text-center text-slate-500 italic bg-slate-50 rounded-xl border border-slate-200">
+                      No items listed in this quotation.
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop & Official Print Table: 12-Column Specification Grid (>= md) */}
+                <div className="hidden md:block print:block mb-8 overflow-hidden rounded-xl border border-slate-200">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs sm:text-sm min-w-[980px]">
                       <thead className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
@@ -1852,6 +2013,78 @@ export const AdminRFQs: React.FC = () => {
                     </table>
                   </div>
                 </div>
+
+                {/* Quotation Financial Summary & Dispatch Terms */}
+                {(() => {
+                  const quoteSubtotal = selectedRfq.items && selectedRfq.items.length > 0
+                    ? selectedRfq.items.reduce((sum: number, it: any) => {
+                        const q = Number(it.qty) || 1;
+                        const r = Number(it.unitPrice) || 0;
+                        return sum + (it.totalBeforeTax ? Number(it.totalBeforeTax) : (q * r));
+                      }, 0)
+                    : (Number(selectedRfq.subtotal) || 0);
+                  const qDiscAmt = Number(selectedRfq.discountAmount) || 0;
+                  const qDiscRate = Number(selectedRfq.discountRate) || 0;
+                  const qTaxable = Math.max(0, quoteSubtotal - qDiscAmt);
+                  const qGst = Number(selectedRfq.gstAmount) || (Number(selectedRfq.cgst || 0) + Number(selectedRfq.sgst || 0)) || (qTaxable * 0.18);
+                  const qGrandTotal = Number(selectedRfq.grandTotal) || (qTaxable + qGst);
+
+                  return (
+                    <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-2 border-slate-200">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
+                        {/* Dispatch & Commercial Terms */}
+                        <div className="w-full sm:w-1/2 space-y-2 text-xs text-slate-600">
+                          <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] border-b border-slate-200 pb-1">
+                            Dispatch &amp; Commercial Terms
+                          </h4>
+                          <p><strong className="text-slate-800">Dispatch:</strong> Ex-Stock Bangalore Central Warehouse (24-48 Hours)</p>
+                          <p><strong className="text-slate-800">Payment Terms:</strong> 30 Days Credit against Approved Corporate PO</p>
+                          <p><strong className="text-slate-800">Freight:</strong> To Pay / Extra at actuals to project site</p>
+                          <p><strong className="text-slate-800">Quotation Validity:</strong> 7 Days from issue date</p>
+                        </div>
+
+                        {/* Financial Summary Card */}
+                        <div className="w-full sm:w-[320px] bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs shrink-0">
+                          <div className="flex justify-between text-slate-600">
+                            <span>Subtotal (Items):</span>
+                            <span className="font-mono font-medium">₹{quoteSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          {qDiscAmt > 0 && (
+                            <div className="flex justify-between text-emerald-600 font-semibold">
+                              <span>Special Discount ({qDiscRate}%):</span>
+                              <span className="font-mono">-₹{qDiscAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-slate-600">
+                            <span>Taxable Amount:</span>
+                            <span className="font-mono font-medium">₹{qTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between text-slate-600">
+                            <span>GST (18%):</span>
+                            <span className="font-mono font-medium">₹{qGst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t-2 border-slate-900">
+                            <span>Grand Total:</span>
+                            <span className="font-mono text-base text-red-700">₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Official Signatory Block */}
+                      <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 text-xs text-slate-500">
+                        <div>
+                          <p className="font-bold text-slate-800">SIDDHI KABEL CORP PVT LTD</p>
+                          <p className="text-[11px] text-slate-500">Authorized Channel Partner &amp; Master Stockist</p>
+                        </div>
+                        <div className="sm:text-right">
+                          <div className="h-10 border-b border-dashed border-slate-300 w-44 mb-1"></div>
+                          <p className="font-bold text-slate-700">Authorized Signatory</p>
+                          <p className="text-[10px] text-slate-400">Computer generated official estimate</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
 
               </div>
