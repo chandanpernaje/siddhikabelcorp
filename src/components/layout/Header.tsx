@@ -122,13 +122,13 @@ export const Header: React.FC = () => {
           top: offsetPosition,
           behavior: "smooth"
         });
-        window.history.pushState(null, "", path);
+        navigate(path);
       }
     }
   };
 
   const navLinks = [
-    { label: "Products", path: "/#brand-portfolios" },
+    { label: "Products", path: "/#brands" },
     { label: "Industries & Solutions", path: "/industries" },
     { label: "Company", path: "/#about" },
     { label: "Contact", path: "/#contact" },
@@ -160,21 +160,30 @@ export const Header: React.FC = () => {
           </Link>
 
           {/* Zone 2: Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold text-slate-800">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.path}
-                onClick={(e) => handleNavClick(e, link.path, false)}
-                className={`transition-colors py-1 hover:text-red-600 ${
-                  location.hash === link.path.replace("/", "")
-                    ? "text-red-600 font-bold"
-                    : "text-slate-800"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden lg:flex items-center gap-3 xl:gap-4 text-sm font-semibold text-slate-800">
+            {navLinks.map((link) => {
+              const isHashLink = link.path.startsWith('/#');
+              const hashTarget = link.path.replace('/#', '');
+              const isActive = isHashLink
+                ? (location.pathname === '/' && location.hash === `#${hashTarget}`)
+                : (location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path)));
+
+              return (
+                <Link
+                  key={link.label}
+                  to={link.path}
+                  onClick={(e) => handleNavClick(e, link.path, false)}
+                  className={`transition-all py-1.5 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5 ${
+                    isActive
+                      ? "text-red-700 bg-red-50 border border-red-200 shadow-2xs font-extrabold"
+                      : "text-slate-700 hover:text-red-600 hover:bg-slate-50 font-semibold"
+                  }`}
+                >
+                  {link.label}
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0 animate-pulse" />}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Zone 3: Search, Client Portal & Quotation Cart */}
@@ -253,16 +262,28 @@ export const Header: React.FC = () => {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-200 bg-white px-4 sm:px-6 py-4 space-y-3.5 shadow-xl text-slate-900">
             <div className="space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  to={link.path}
-                  onClick={(e) => handleNavClick(e, link.path, true)}
-                  className="block px-3 py-2.5 text-sm font-semibold text-slate-800 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isHashLink = link.path.startsWith('/#');
+                const hashTarget = link.path.replace('/#', '');
+                const isActive = isHashLink
+                  ? (location.pathname === '/' && location.hash === `#${hashTarget}`)
+                  : (location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path)));
+
+                return (
+                  <Link
+                    key={link.label}
+                    to={link.path}
+                    onClick={(e) => handleNavClick(e, link.path, true)}
+                    className={`block px-3.5 py-2.5 text-sm rounded-xl transition-colors font-bold ${
+                      isActive 
+                        ? "text-red-700 bg-red-50 border border-red-200" 
+                        : "text-slate-800 hover:text-red-600 hover:bg-slate-50 font-semibold"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">

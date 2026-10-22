@@ -129,10 +129,10 @@ export const AdminLayout: React.FC = () => {
     setNotifsOpen(false);
   }, [location.pathname, isMobile]);
 
-  // Fetch Notifications
+  // Fetch Notifications (Show pending actions only)
   const fetchNotifications = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/notifications`);
+      const res = await fetch(`${API_BASE_URL}/api/notifications?pendingOnly=true`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);
@@ -252,7 +252,8 @@ export const AdminLayout: React.FC = () => {
   const handleNotificationClick = async (notif: NotificationItem) => {
     try {
       await fetch(`${API_BASE_URL}/api/notifications/${notif._id}/read`, { method: 'PATCH' });
-      setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, read: true } : n));
+      // Clear/remove notification after it is opened (showing pending actions only)
+      setNotifications(prev => prev.filter(n => n._id !== notif._id));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (e) {}
 
@@ -268,7 +269,7 @@ export const AdminLayout: React.FC = () => {
   const handleMarkAllRead = async () => {
     try {
       await fetch(`${API_BASE_URL}/api/notifications/read-all`, { method: 'PATCH' });
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications([]);
       setUnreadCount(0);
     } catch (e) {}
   };
@@ -411,11 +412,16 @@ export const AdminLayout: React.FC = () => {
                   ref={usersMenuRef}
                   className="relative group/userMenu"
                 >
-                  {/* Customers & Users Button - Clicking purely toggles dropdown */}
+                  {/* Customers & Users Button - Navigates directly to /admin/users and toggles dropdown */}
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCustomersMenuOpen(prev => !prev);
+                      if (!isUsersRoute) {
+                        navigate('/admin/users');
+                        setCustomersMenuOpen(true);
+                      } else {
+                        setCustomersMenuOpen(prev => !prev);
+                      }
                     }}
                     className={`relative flex items-center px-3.5 py-3 rounded-xl transition-all duration-200 cursor-pointer select-none group ${
                       isActive 
@@ -721,8 +727,9 @@ export const AdminLayout: React.FC = () => {
                               {!n.read && <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" />}
                             </div>
                             <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
-                            <span className="text-[10px] text-slate-400 mt-1 inline-block font-mono">
-                              {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            <span className="text-[10px] text-slate-400 mt-1 inline-flex items-center gap-1 font-mono">
+                              <Clock size={11} className="text-slate-400" />
+                              {new Date(n.createdAt).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })} • {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>

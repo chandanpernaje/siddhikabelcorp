@@ -91,7 +91,13 @@ export const Home: React.FC = () => {
       const el = document.getElementById(id);
       if (el) {
         setTimeout(() => {
-          el.scrollIntoView({ behavior: "smooth" });
+          const headerOffset = 90;
+          const elementPosition = el.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+          });
         }, 150);
       }
     }
@@ -592,7 +598,7 @@ export const Home: React.FC = () => {
       {/* ======================================================== */}
       {/* AUTHORIZED BRAND PORTFOLIO CARDS                         */}
       {/* ======================================================== */}
-      <section className="w-full pt-16 pb-8 bg-white text-slate-900">
+      <section id="brands" className="w-full scroll-mt-24 pt-16 pb-8 bg-white text-slate-900">
         <div className="w-[95%] max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-center text-center space-y-3 mb-10">
             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">

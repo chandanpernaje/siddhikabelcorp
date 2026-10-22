@@ -20,6 +20,7 @@ import { useToast } from "../context/ToastContext";
 import { RFQModal } from "../components/ui/RFQModal";
 import { ImageZoomModal } from "../components/ui/ImageZoomModal";
 import { CustomCuttingModal } from "../components/ui/CustomCuttingModal";
+import { ColourSwatch } from "../components/ui/ColourSwatch";
 import { API_BASE_URL } from "../config/api";
 
 export const ProductDetail: React.FC = () => {
@@ -39,29 +40,38 @@ export const ProductDetail: React.FC = () => {
       .then(data => {
         const found = data.find((p: any) => p.id === productId || (p.partNo && p.partNo.toLowerCase() === productId.toLowerCase()));
         if (found) {
+          const resolvedSqmm = found.sqmm || found.coreSize || (found.size ? String(found.size) : null);
           setDbProduct({
             id: found.id,
-            category: "cables",
-            brand: found.brand?.name || "LAPP KABEL",
+            category: found.categoryName || "cables",
+            brand: found.brand?.name || found.brandName || "LAPP KABEL",
             partNo: found.partNo || `P-${found.id.substring(0,6)}`,
             name: found.name,
+            core: found.core,
+            coreSize: found.coreSize,
+            sqmm: resolvedSqmm,
+            colour: found.colour,
+            uom: found.uom || 'Meter',
             specs: [
-              `Cores: ${found.core || '-'} Cores`,
-              `Cross Section: ${found.coreSize || '-'} mm²`,
-              `Outer Diameter: ${found.outerDiameter || '-'}`,
-              `Copper Index: ${found.copperIndex || '-'}`,
-              `Weight: ${found.weight || '-'}`,
-              `Test Voltage: ${found.testVoltage || '4000 V'}`,
+              ...(found.core ? [`Cores: ${found.core} Cores`] : []),
+              ...(resolvedSqmm ? [`Conductor Cross Section: ${resolvedSqmm} mm²`] : []),
+              ...(found.colour ? [`Cable Colour: ${found.colour}`] : []),
+              ...(found.uom ? [`Unit of Measurement (UOM): ${found.uom}`] : []),
+              ...(found.outerDiameter ? [`Outer Diameter: ${found.outerDiameter}`] : []),
+              ...(found.copperIndex ? [`Copper Index: ${found.copperIndex} kg/km`] : []),
+              ...(found.weight ? [`Weight: ${found.weight}`] : []),
+              ...(found.testVoltage ? [`Test Voltage: ${found.testVoltage}`] : ['Test Voltage: 4000 V']),
             ],
             voltage: "300/500 V",
             tempRange: "-40°C to +80°C static",
             conductor: "Fine-wire strands of bare copper (IEC 60228 Class 5)",
             price: found.price || 0,
-            unit: "meter",
+            unit: (found.uom || 'meter').toLowerCase(),
             stock: "Bangalore Central Hub",
             icon: "cable",
-            application: "Industrial applications",
+            application: found.description || "Industrial applications",
             image: found.imageUrl || "/images/cable-olflex-cores.png",
+            datasheetUrl: found.datasheetUrl || found.categoryDatasheetUrl || (found.category && found.category.datasheetUrl) || '',
             hsnCode: "85444990",
           });
         }
@@ -456,7 +466,7 @@ export const ProductDetail: React.FC = () => {
           {/* Right Column: Contiguous Purchase Module (6 Cols) */}
           <div className="lg:col-span-6 space-y-6">
             <div>
-              <div className="flex items-center gap-2 text-xs uppercase font-mono text-slate-400 mb-2 font-bold">
+              <div className="flex flex-wrap items-center gap-2 text-xs uppercase font-mono text-slate-400 mb-2 font-bold">
                 <span className="text-red-600">{product.brand}</span>
                 <span>·</span>
                 <span>Part No: {product.partNo}</span>
@@ -466,11 +476,34 @@ export const ProductDetail: React.FC = () => {
                     <span>HSN: {product.hsnCode}</span>
                   </>
                 )}
+                {(dbProduct?.colour || product.colour) && (
+                  <>
+                    <span>·</span>
+                    <ColourSwatch colour={dbProduct?.colour || product.colour} size="xs" />
+                  </>
+                )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-red-700 tracking-tight leading-snug mb-6">
+              <h1 className="text-2xl sm:text-3xl font-black text-red-700 tracking-tight leading-snug mb-3">
                 {displayProductName}
               </h1>
+
+              {/* Key Specs Pills */}
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                {(dbProduct?.core || dbProduct?.sqmm) && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-50 text-red-800 border border-red-200 text-xs font-mono font-bold">
+                    {dbProduct.core ? `${dbProduct.core} Cores` : ''}
+                    {dbProduct.core && dbProduct.sqmm ? ' × ' : ''}
+                    {dbProduct.sqmm ? `${dbProduct.sqmm} mm² (sqmm)` : ''}
+                  </span>
+                )}
+                {(dbProduct?.colour || product.colour) && (
+                  <ColourSwatch colour={dbProduct?.colour || product.colour} size="sm" />
+                )}
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
+                  UOM: {dbProduct?.uom || product.uom || product.unit || 'Meter'}
+                </span>
+              </div>
             </div>
 
             {/* LAPP Variant Layout - Configurable Cables Only */}
@@ -751,6 +784,36 @@ export const ProductDetail: React.FC = () => {
                   <span className="text-slate-400 font-mono block">Oil Resistance</span>
                   <span className="text-slate-900 font-bold text-sm">
                     DIN EN 50290-2-22
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
+                  <span className="text-slate-400 font-mono block">Cross-Sectional Area</span>
+                  <span className="text-slate-900 font-bold text-sm">
+                    {dbProduct?.sqmm || product.sqmm || (product.size ? `${product.size} mm²` : '0.5 - 35 mm²')}
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
+                  <span className="text-slate-400 font-mono block">Core Configuration</span>
+                  <span className="text-slate-900 font-bold text-sm">
+                    {dbProduct?.core ? `${dbProduct.core} Cores` : (product.core ? `${product.core} Cores` : 'Single & Multi-Core')}
+                  </span>
+                </div>
+
+                {(dbProduct?.colour || product.colour) && (
+                  <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
+                    <span className="text-slate-400 font-mono block">Sheath / Core Colour</span>
+                    <div className="pt-0.5">
+                      <ColourSwatch colour={dbProduct?.colour || product.colour} size="sm" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
+                  <span className="text-slate-400 font-mono block">Unit of Measurement (UOM)</span>
+                  <span className="text-slate-900 font-bold text-sm">
+                    {dbProduct?.uom || product.uom || product.unit || 'Meter (m)'}
                   </span>
                 </div>
               </div>

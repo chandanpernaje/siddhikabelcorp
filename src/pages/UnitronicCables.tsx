@@ -1,12 +1,56 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { RFQModal } from "../components/ui/RFQModal";
 import type { OlflexProduct } from "../types";
 import { NEW_LAPP_OTHER_PRODUCTS } from "../data/lappOtherData";
 
-const UNITRONIC_LIYCY = NEW_LAPP_OTHER_PRODUCTS.filter((p: OlflexProduct) => p.name.includes('LiYCY'));
-const UNITRONIC_LIYY = NEW_LAPP_OTHER_PRODUCTS.filter((p: OlflexProduct) => p.name.includes('LiYY'));
+// Normalization Helpers to eliminate duplicate options and cards
+const normalizeCore = (val: any, name?: string): number | null => {
+  if (val !== null && val !== undefined && String(val).trim() !== '') {
+    const cleanStr = String(val).replace(/cores?/gi, '').trim();
+    const num = parseInt(cleanStr, 10);
+    if (!isNaN(num) && num > 0) return num;
+  }
+  if (name) {
+    const m = String(name).match(/(\d+)\s*[xXgG]\s*([0-9]+(?:[.,][0-9]+)?)/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > 0) return n;
+    }
+  }
+  return null;
+};
+
+const normalizeCrossSection = (val: any, name?: string): number | null => {
+  if (val !== null && val !== undefined && String(val).trim() !== '') {
+    const cleanStr = String(val).replace(/,/g, '.').replace(/mm²|sqmm|sq\.?\s*mm/gi, '').trim();
+    const num = parseFloat(cleanStr);
+    if (!isNaN(num) && num > 0) return num;
+  }
+  if (name) {
+    const m = String(name).match(/(\d+)\s*[xXgG]\s*([0-9]+(?:[.,][0-9]+)?)/);
+    if (m) {
+      const n = parseFloat(m[2].replace(',', '.'));
+      if (!isNaN(n) && n > 0) return n;
+    }
+  }
+  return null;
+};
+
+const deduplicateProducts = (products: OlflexProduct[]): OlflexProduct[] => {
+  const seen = new Set<string>();
+  return products.filter(p => {
+    const key = p.partNo ? String(p.partNo).trim().toLowerCase() : (p.name ? String(p.name).trim().toLowerCase() : null);
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const UNITRONIC_LIYCY = deduplicateProducts(NEW_LAPP_OTHER_PRODUCTS.filter((p: OlflexProduct) => p.name.includes('LiYCY')));
+const UNITRONIC_LIYY = deduplicateProducts(NEW_LAPP_OTHER_PRODUCTS.filter((p: OlflexProduct) => p.name.includes('LiYY')));
 
 const SECTIONS = [
   { id: 'liycy', title: 'UNITRONIC® LiYCY', data: UNITRONIC_LIYCY, image: '/images/cable-olflex-cores.png' },
@@ -64,26 +108,60 @@ export const UnitronicCables: React.FC = () => {
     setRfqModalOpen(true);
   };
 
-  // Extract unique cores and sizes from all products
-  const allProducts = SECTIONS.flatMap(s => s.data);
-  const uniqueCores = Array.from(new Set(allProducts.map(p => p.core))).filter(Boolean).sort((a, b) => Number(a) - Number(b));
-  const uniqueSizes = Array.from(new Set(allProducts.map(p => p.size))).filter(Boolean).sort((a, b) => Number(a) - Number(b));
+  // Extract unique cores and sizes from all products (strictly deduplicated and sorted numerically)
+  const allProducts = useMemo(() => SECTIONS.flatMap(s => s.data), []);
 
-  const filteredSections = SECTIONS.map(section => {
-    if (activeFilter !== 'all' && section.id !== activeFilter) return null;
-    
-    const filteredData = section.data.filter((p: OlflexProduct) => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch = p.name.toLowerCase().includes(q) || p.partNo.toLowerCase().includes(q);
-      const matchCore = coreFilter ? p.core?.toString() === coreFilter : true;
-      const matchSize = sqmmFilter ? p.size?.toString() === sqmmFilter : true;
-      return matchSearch && matchCore && matchSize;
+  const uniqueCores = useMemo(() => {
+    const coreSet = new Set<number>();
+    allProducts.forEach(p => {
+      const c = normalizeCore(p.core, p.name);
+      if (c !== null && c > 0) coreSet.add(c);
     });
+    return Array.from(coreSet).sort((a, b) => a - b);
+  }, [allProducts]);
 
-    return { ...section, data: filteredData };
-  }).filter(Boolean) as typeof SECTIONS;
+  const uniqueSizes = useMemo(() => {
+    const sizeSet = new Set<number>();
+    allProducts.forEach(p => {
+      const s = normalizeCrossSection(
+        p.size !== undefined && p.size !== null && p.size !== 0 ? p.size : (p.sqmm || (p as any).coreSize),
+        p.name
+      );
+      if (s !== null && s > 0) sizeSet.add(s);
+    });
+    return Array.from(sizeSet).sort((a, b) => a - b);
+  }, [allProducts]);
 
-  const totalFilteredCount = filteredSections.reduce((acc, curr) => acc + curr.data.length, 0);
+  const filteredSections = useMemo(() => {
+    return SECTIONS.map(section => {
+      if (activeFilter !== 'all' && section.id !== activeFilter) return null;
+      
+      const filteredData = section.data.filter((p: OlflexProduct) => {
+        const q = searchQuery.toLowerCase().trim();
+        const matchSearch = !q || (
+          p.name.toLowerCase().includes(q) || 
+          (p.partNo && p.partNo.toLowerCase().includes(q))
+        );
+
+        const pCore = normalizeCore(p.core, p.name);
+        const matchCore = !coreFilter || (pCore !== null && pCore.toString() === coreFilter);
+
+        const pSize = normalizeCrossSection(
+          p.size !== undefined && p.size !== null && p.size !== 0 ? p.size : (p.sqmm || (p as any).coreSize),
+          p.name
+        );
+        const matchSize = !sqmmFilter || (pSize !== null && pSize.toString() === sqmmFilter);
+
+        return matchSearch && matchCore && matchSize;
+      });
+
+      return { ...section, data: filteredData };
+    }).filter(Boolean) as typeof SECTIONS;
+  }, [activeFilter, searchQuery, coreFilter, sqmmFilter]);
+
+  const totalFilteredCount = useMemo(() => {
+    return filteredSections.reduce((acc, curr) => acc + curr.data.length, 0);
+  }, [filteredSections]);
 
   const resetFilters = () => {
     setSearchQuery('');

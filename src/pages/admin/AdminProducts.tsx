@@ -5,32 +5,170 @@ import {
   Upload, Plus, Download, FileSpreadsheet, Search, ShoppingBag, X, 
   Image as ImageIcon, Trash2, Link as LinkIcon, RefreshCw, Layers, Tag, 
   Edit2, FileText, CheckCircle2, AlertCircle, ExternalLink, Eye,
-  ArrowUpDown, ArrowUp, ArrowDown
+  ArrowUpDown, ArrowUp, ArrowDown, Calendar, Check, Building, ChevronRight, Zap
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { API_BASE_URL } from '../../config/api';
+import { 
+  AVAILABLE_CORES, 
+  getValidSqmmOptions, 
+  validateCoreSqmm, 
+  UOM_OPTIONS, 
+  COLOUR_OPTIONS 
+} from '../../config/cableSpecs';
+import { ColourSwatch } from '../../components/ui/ColourSwatch';
+import { formatUom, formatWeight, formatOD } from './AdminRFQs';
+
+// Requirement 5.2: Strictly four authorized makes
+export const ALLOWED_MAKES = ['LAPP', 'Eaton', 'Partex', 'Mennekes'] as const;
+
+// 4 Canonical Sub-Series Options for each of the 6 LAPP Categories
+export interface SubSeriesOption {
+  id: string;
+  title: string;
+  desc: string;
+  pattern: RegExp;
+  baselineCount: number;
+}
+
+export interface CategorySeriesConfig {
+  brandTitle: string;
+  groupPrefix: string;
+  allLabel: string;
+  baselineTotal: number;
+  series: SubSeriesOption[];
+}
+
+export const LAPP_CATEGORY_CONFIGS: Record<string, CategorySeriesConfig> = {
+  'power and control cables': {
+    brandTitle: 'ÖLFLEX® Flexible Control Cables',
+    groupPrefix: 'ÖLFLEX',
+    allLabel: 'All ÖLFLEX®',
+    baselineTotal: 143,
+    series: [
+      { id: '110', title: 'ÖLFLEX® CLASSIC 110', desc: 'VDE-registered PVC control cable with numbered cores (300/500V)', pattern: /classic\s*110\b(?!.*(?:sy|cy))/i, baselineCount: 45 },
+      { id: '110sy', title: 'ÖLFLEX® CLASSIC 110 SY', desc: 'Steel wire braid armored PVC control cable for mechanical protection (300/500V)', pattern: /classic\s*110\s*sy/i, baselineCount: 32 },
+      { id: '110cy', title: 'ÖLFLEX® CLASSIC 110 CY', desc: 'Screened PVC control cable with copper braid for EMC compliance (300/500V)', pattern: /classic\s*110\s*cy/i, baselineCount: 38 },
+      { id: '100', title: 'ÖLFLEX® CLASSIC 100I', desc: 'Color-coded PVC control cable for power & industrial connections (300/500V - 450/750V)', pattern: /(?:classic\s*)?100/i, baselineCount: 28 },
+    ]
+  },
+  'data communication cables': {
+    brandTitle: 'UNITRONIC® Data & Communication Cables',
+    groupPrefix: 'UNITRONIC',
+    allLabel: 'All UNITRONIC®',
+    baselineTotal: 68,
+    series: [
+      { id: 'liycy-tp', title: 'UNITRONIC® LiYCY (TP)', desc: 'Screened twisted pair data transmission cable for noise-sensitive EMC environments', pattern: /liycy\s*\(tp\)/i, baselineCount: 20 },
+      { id: 'liycy', title: 'UNITRONIC® LiYCY', desc: 'Screened multi-core data cable with tinned copper braid against electromagnetic interference', pattern: /liycy\b(?!.*\(tp\))/i, baselineCount: 24 },
+      { id: 'liyy-tp', title: 'UNITRONIC® LiYY (TP)', desc: 'Space-saving twisted pair data cable with compact outer diameter and minimal crosstalk', pattern: /liyy\s*\(tp\)/i, baselineCount: 14 },
+      { id: 'liyy', title: 'UNITRONIC® LiYY', desc: 'Space-saving unshielded multi-core data and signal transmission cable', pattern: /liyy\b(?!.*\(tp\))/i, baselineCount: 10 },
+    ]
+  },
+  'control cabinet single cores': {
+    brandTitle: 'UNIPLUS® Control Cabinet Single Cores',
+    groupPrefix: 'UNIPLUS',
+    allLabel: 'All UNIPLUS®',
+    baselineTotal: 95,
+    series: [
+      { id: 'h07v-k', title: 'ÖLFLEX® UNIPLUS H07V-K', desc: 'Flexible PVC single core wiring cable for switch cabinets & control panels (450/750V)', pattern: /h07v-k|uniplus.*(?:1\.5|2\.5|4|6|10|16)/i, baselineCount: 36 },
+      { id: 'h05v-k', title: 'ÖLFLEX® UNIPLUS H05V-K', desc: 'Flexible hook-up wire for internal apparatus wiring and electronics (300/500V)', pattern: /h05v-k|uniplus.*(?:0\.5|0\.75|1\b)/i, baselineCount: 24 },
+      { id: 'multinorm', title: 'ÖLFLEX® MULTINORM', desc: 'UL/CSA/HAR multi-standard approved single core wire for export machinery', pattern: /multinorm/i, baselineCount: 18 },
+      { id: 'tri-rated', title: 'UNIPLUS® TRI-RATED', desc: 'BS/UL/CSA certified panel wiring wire for high temperature resistance up to 105°C', pattern: /tri-rated|trirated/i, baselineCount: 17 },
+    ]
+  },
+  'cable glands & counter nuts': {
+    brandTitle: 'SKINTOP® Cable Glands & Counter Nuts',
+    groupPrefix: 'SKINTOP',
+    allLabel: 'All SKINTOP®',
+    baselineTotal: 84,
+    series: [
+      { id: 'st-m', title: 'SKINTOP® ST-M', desc: 'Metric polyamide cable gland with integrated vibration protection and IP68 seal', pattern: /st-m|st\s*pg|st\s*m/i, baselineCount: 32 },
+      { id: 'gmp-gl-m', title: 'SKINTOP® GMP-GL-M', desc: 'Metric glass-fiber reinforced polyamide counter nuts / locknuts', pattern: /gmp-gl-m|gmp|counter\s*nut|locknut/i, baselineCount: 22 },
+      { id: 'ms-m', title: 'SKINTOP® MS-M', desc: 'Nickel-plated brass cable gland for harsh mechanical and chemical environments', pattern: /ms-m|brass/i, baselineCount: 18 },
+      { id: 'click', title: 'SKINTOP® CLICK', desc: 'Innovative quick-mount click cable gland system with snap-in installation', pattern: /click/i, baselineCount: 12 },
+    ]
+  },
+  'rill, conduit & klick': {
+    brandTitle: 'SILVYN® Protective Conduits & Systems',
+    groupPrefix: 'SILVYN',
+    allLabel: 'All SILVYN®',
+    baselineTotal: 52,
+    series: [
+      { id: 'rill', title: 'SILVYN® RILL', desc: 'Corrugated flexible polyamide conduit for dynamic cable bundling and physical protection', pattern: /rill/i, baselineCount: 20 },
+      { id: 'klick', title: 'SILVYN® KLICK', desc: 'Quick-snap push-in conduit connector glands with high pull-out resistance (IP66/IP68)', pattern: /klick/i, baselineCount: 16 },
+      { id: 'fpas', title: 'SILVYN® FPAS', desc: 'Heavy-duty polyamide PA6 flexible protective conduit for machinery & automation', pattern: /fpas/i, baselineCount: 10 },
+      { id: 'lgs-2', title: 'SILVYN® LGS-2', desc: 'Liquid-tight galvanized steel armored conduit with oil-resistant PVC jacket', pattern: /lgs|metal/i, baselineCount: 6 },
+    ]
+  },
+  'domestic / house wiring': {
+    brandTitle: 'LAPP INFRA Building & House Wires',
+    groupPrefix: 'INFRA',
+    allLabel: 'All LAPP INFRA',
+    baselineTotal: 76,
+    series: [
+      { id: 'frls', title: 'ÖLFLEX® INFRA FRLS', desc: 'Flame Retardant Low Smoke building wire for residential & commercial wiring (1100V)', pattern: /frls/i, baselineCount: 28 },
+      { id: 'fr', title: 'ÖLFLEX® INFRA FR', desc: 'Flame Retardant PVC insulated house wire with high oxygen index for fire safety', pattern: /\bfr\b(?!.*(?:ls|zh))/i, baselineCount: 20 },
+      { id: 'hrfr', title: 'ÖLFLEX® INFRA HRFR', desc: 'Heat Resistant Flame Retardant house wire for high-load and warm environments (85°C)', pattern: /hrfr/i, baselineCount: 16 },
+      { id: 'zhfr', title: 'ÖLFLEX® INFRA ZHFR', desc: 'Zero Halogen Flame Retardant eco-friendly building wire with zero toxic emissions', pattern: /zhfr/i, baselineCount: 12 },
+    ]
+  }
+};
+
+export const getLappCategoryKey = (catName: string): string => {
+  const s = (catName || '').toLowerCase().trim();
+  if (s.includes('power') || s.includes('control cable')) return 'power and control cables';
+  if (s.includes('data') || s.includes('communication')) return 'data communication cables';
+  if (s.includes('single core') || s.includes('cabinet') || s.includes('panel')) return 'control cabinet single cores';
+  if (s.includes('gland') || s.includes('counter nut') || s.includes('nut')) return 'cable glands & counter nuts';
+  if (s.includes('rill') || s.includes('conduit') || s.includes('klick')) return 'rill, conduit & klick';
+  if (s.includes('domestic') || s.includes('house') || s.includes('infra') || s.includes('building') || s.includes('solar')) return 'domestic / house wiring';
+  return '';
+};
+
+export const OLFLEX_SERIES_OPTIONS = LAPP_CATEGORY_CONFIGS['power and control cables'].series;
 
 interface CategoryItem {
   _id: string;
   name: string;
   description?: string;
+  make?: string;
+  subGroup?: string;
+  imageUrl?: string | null;
+  datasheetUrl?: string | null;
 }
 
-interface BrandItem {
+interface MakeItem {
   _id: string;
   name: string;
   description?: string;
+  categoryCount?: number;
+  productCount?: number;
 }
+type BrandItem = MakeItem;
 
 export const AdminProducts: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [brands, setBrands] = useState<BrandItem[]>([]);
+  const [makes, setMakes] = useState<MakeItem[]>([]);
+  const brands = makes;
+  const setBrands = setMakes;
+
+  // Canonical Brand Display Order: 1. LAPP, 2. Eaton, 3. Partex, 4. Mennekes
+  const sortedMakes = React.useMemo(() => {
+    const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
+    return [...makes].sort((a, b) => {
+      const idxA = brandOrder.findIndex(o => o.toLowerCase() === (a.name || '').toLowerCase());
+      const idxB = brandOrder.findIndex(o => o.toLowerCase() === (b.name || '').toLowerCase());
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    });
+  }, [makes]);
   
-  const [activeTab, setActiveTab] = useState<'Products' | 'Categories' | 'Brands'>('Products');
+  const [activeTab, setActiveTab] = useState<'Products' | 'Categories' | 'Makes'>('Products');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
+  const [isPriceOnlyUpload, setIsPriceOnlyUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   
   // Product Modal State
@@ -47,6 +185,18 @@ export const AdminProducts: React.FC = () => {
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
   
+  // Core Size & SQMM & UOM & Colour Form State
+  const [modalCore, setModalCore] = useState<string>('');
+  const [modalSqmm, setModalSqmm] = useState<string>('');
+  const [modalUom, setModalUom] = useState<string>('Meter');
+  const [modalColour, setModalColour] = useState<string>('');
+  const [customColour, setCustomColour] = useState<string>('');
+  const [coreSqmmError, setCoreSqmmError] = useState<string | null>(null);
+  
+  // Price Validity State (Requirement 5.9)
+  const [modalValidFrom, setModalValidFrom] = useState<string>('');
+  const [modalExpiryDate, setModalExpiryDate] = useState<string>('');
+
   // Datasheet State
   const [modalDatasheet, setModalDatasheet] = useState<string | null>(null);
   const [datasheetInputMode, setDatasheetInputMode] = useState<'upload' | 'url'>('upload');
@@ -54,14 +204,42 @@ export const AdminProducts: React.FC = () => {
   
   const [isSaving, setIsSaving] = useState(false);
 
-  // Category / Brand Modal State
+  // Category / Make Modal State (Hierarchy: Make -> Make Category -> Product Category/Group -> Product)
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [currentCat, setCurrentCat] = useState<CategoryItem | null>(null);
-  const [catFormData, setCatFormData] = useState({ name: '', description: '' });
+  const [catFormData, setCatFormData] = useState({ 
+    name: '', 
+    description: '', 
+    make: 'LAPP', 
+    subGroup: '', 
+    imageUrl: '', 
+    datasheetUrl: '' 
+  });
 
-  const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
-  const [currentBrand, setCurrentBrand] = useState<BrandItem | null>(null);
-  const [brandFormData, setBrandFormData] = useState({ name: '', description: '' });
+  const [isMakeModalOpen, setIsMakeModalOpen] = useState(false);
+  const [currentMake, setCurrentMake] = useState<MakeItem | null>(null);
+  const [makeFormData, setMakeFormData] = useState({ name: 'LAPP', description: '' });
+
+  // Category Make filter for Category Management tab (Default to LAPP; strictly 6 per make, no All-24 mixing)
+  const [categoryMakeFilter, setCategoryMakeFilter] = useState<string>('LAPP');
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('Power and Control Cables');
+  const [selectedSubSeries, setSelectedSubSeries] = useState<string>('all');
+  const selectedOlflexSeries = selectedSubSeries;
+  const setSelectedOlflexSeries = setSelectedSubSeries;
+  const [activeSubCategory, setActiveSubCategory] = useState<string>('All');
+
+  // Hierarchy form state for Add / Edit Product modal (Make -> Category -> Subgroup -> Product)
+  const [modalMake, setModalMake] = useState<string>('LAPP');
+  const [modalCategory, setModalCategory] = useState<string>('');
+  const [modalSubGroup, setModalSubGroup] = useState<string>('');
+
+  // Backwards compat aliases
+  const isBrandModalOpen = isMakeModalOpen;
+  const setIsBrandModalOpen = setIsMakeModalOpen;
+  const currentBrand = currentMake;
+  const setCurrentBrand = setCurrentMake;
+  const brandFormData = makeFormData;
+  const setBrandFormData = setMakeFormData;
 
   // Current admin details & role permissions (Case-Insensitive check)
   const currentAdminStr = localStorage.getItem('siddhi_admin_user');
@@ -103,16 +281,24 @@ export const AdminProducts: React.FC = () => {
     }
   };
 
-  const fetchBrands = async () => {
+  const fetchMakes = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/brands`);
+      const res = await fetch(`${API_BASE_URL}/api/makes`);
       if (res.ok) {
-        setBrands(await res.json());
+        const data = await res.json();
+        const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
+        const sorted = [...data].sort((a, b) => {
+          const idxA = brandOrder.findIndex(o => o.toLowerCase() === (a.name || '').toLowerCase());
+          const idxB = brandOrder.findIndex(o => o.toLowerCase() === (b.name || '').toLowerCase());
+          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+        });
+        setMakes(sorted);
       }
     } catch (error) {
-      console.error('Failed to fetch brands', error);
+      console.error('Failed to fetch makes', error);
     }
   };
+  const fetchBrands = fetchMakes;
 
   useEffect(() => {
     fetchProducts();
@@ -129,9 +315,14 @@ export const AdminProducts: React.FC = () => {
 
     const formData = new FormData();
     formData.append('file', file);
+    if (isPriceOnlyUpload) formData.append('mode', 'price_only');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/products/import`, {
+      const importUrl = isPriceOnlyUpload 
+        ? `${API_BASE_URL}/api/products/import?mode=price_only`
+        : `${API_BASE_URL}/api/products/import`;
+
+      const res = await fetch(importUrl, {
         method: 'POST',
         body: formData,
       });
@@ -151,6 +342,102 @@ export const AdminProducts: React.FC = () => {
     }
   };
 
+  // Requirement 6.1: Product Excel Template Download
+  const handleDownloadProductTemplate = () => {
+    const templateRows = [
+      {
+        'Part Number': '1119003',
+        'Description': 'ÖLFLEX® CLASSIC 110 3G1.5',
+        'Make': 'LAPP',
+        'Category': 'Control Cables',
+        'Core': '3',
+        'Cross Section': '1.5',
+        'UOM': 'Meter',
+        'List Price': 148.50,
+        'Outer Diameter': '6.7 mm',
+        'Weight': '75 kg/km',
+        'Valid From': '2026-10-01',
+        'Expiry Date': '2027-03-31'
+      },
+      {
+        'Part Number': 'EATON-PKZM0-10',
+        'Description': 'Eaton PKZM0-10 Motor Protective Circuit Breaker',
+        'Make': 'Eaton',
+        'Category': 'Motor Protection',
+        'Core': '',
+        'Cross Section': '',
+        'UOM': 'Piece',
+        'List Price': 2850.00,
+        'Outer Diameter': '',
+        'Weight': '0.35 kg',
+        'Valid From': '2026-10-01',
+        'Expiry Date': '2027-03-31'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateRows);
+    ws['!cols'] = [
+      { wch: 18 },
+      { wch: 38 },
+      { wch: 12 },
+      { wch: 22 },
+      { wch: 8 },
+      { wch: 14 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ProductMaster');
+    XLSX.writeFile(wb, 'Product_Catalog_Template.xlsx');
+  };
+
+  // Category file upload handlers (Requirement 5.5 & 5.6)
+  const handleUploadCategoryDatasheet = async (catId: string, file: File) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('datasheet', file);
+      const res = await fetch(`${API_BASE_URL}/api/categories/${catId}/datasheet`, {
+        method: 'POST',
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: formData
+      });
+      if (res.ok) {
+        alert('Category technical datasheet uploaded successfully!');
+        fetchCategories();
+      } else {
+        alert('Failed to upload category datasheet.');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUploadCategoryImage = async (catId: string, file: File) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`${API_BASE_URL}/api/categories/${catId}/image`, {
+        method: 'POST',
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: formData
+      });
+      if (res.ok) {
+        alert('Category image uploaded successfully!');
+        fetchCategories();
+      } else {
+        alert('Failed to upload category image.');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const openAddModal = () => {
     setCurrentProduct(null);
     setModalImage(null);
@@ -159,6 +446,17 @@ export const AdminProducts: React.FC = () => {
     setModalDatasheet(null);
     setDatasheetUrlInput('');
     setDatasheetInputMode('upload');
+    setModalCore('');
+    setModalSqmm('');
+    setModalUom('Meter');
+    setModalColour('');
+    setCustomColour('');
+    setModalValidFrom('');
+    setModalExpiryDate('');
+    setModalMake('LAPP');
+    setModalCategory('Power and Control Cables');
+    setModalSubGroup('ÖLFLEX® Power & Control');
+    setCoreSqmmError(null);
     setIsModalOpen(true);
   };
 
@@ -170,7 +468,58 @@ export const AdminProducts: React.FC = () => {
     setModalDatasheet(product.datasheetUrl || null);
     setDatasheetUrlInput(product.datasheetUrl || '');
     setDatasheetInputMode('upload');
+
+    const initCore = product.core ? String(product.core).trim() : '';
+    const initSqmm = product.sqmm ? String(product.sqmm).trim() : (product.coreSize ? String(product.coreSize).trim() : (product.size ? String(product.size) : ''));
+    setModalCore(initCore);
+    setModalSqmm(initSqmm);
+    setModalUom(product.uom || product.packSize || 'Meter');
+    setModalValidFrom(product.validFrom || '');
+    setModalExpiryDate(product.expiryDate || '');
+
+    const mMake = product.brand?.name || product.brandName || 'LAPP';
+    const mCat = product.category?.name || product.categoryName || '';
+    setModalMake(mMake);
+    setModalCategory(mCat);
+    setModalSubGroup(product.subGroup || product.subCategory || categorySubGroupMap[mCat.toLowerCase().trim()] || '');
+
+    const existingColour = product.colour ? String(product.colour).trim() : '';
+    const isStandardColour = COLOUR_OPTIONS.some(c => c.code.toLowerCase() === existingColour.toLowerCase());
+    if (existingColour && !isStandardColour) {
+      setModalColour('Other');
+      setCustomColour(existingColour);
+    } else {
+      setModalColour(existingColour);
+      setCustomColour('');
+    }
+
+    setCoreSqmmError(null);
     setIsModalOpen(true);
+  };
+
+  const handleCoreChange = (newCore: string) => {
+    setModalCore(newCore);
+    setCoreSqmmError(null);
+    if (!newCore) {
+      return;
+    }
+    const validOptions = getValidSqmmOptions(newCore);
+    if (validOptions.length === 1) {
+      // Exactly one valid SQMM - auto-select it immediately
+      setModalSqmm(validOptions[0]);
+    } else if (validOptions.length > 1 && modalSqmm && !validOptions.includes(modalSqmm)) {
+      setModalSqmm(validOptions[0]);
+    }
+  };
+
+  const handleSqmmChange = (newSqmm: string) => {
+    setModalSqmm(newSqmm);
+    if (modalCore && newSqmm) {
+      const val = validateCoreSqmm(modalCore, newSqmm);
+      setCoreSqmmError(val.valid ? null : (val.error || 'Invalid core/SQMM combination'));
+    } else {
+      setCoreSqmmError(null);
+    }
   };
 
   // Image Upload Handlers
@@ -270,6 +619,17 @@ export const AdminProducts: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate combination on frontend before saving
+    if (modalCore && modalSqmm) {
+      const val = validateCoreSqmm(modalCore, modalSqmm);
+      if (!val.valid) {
+        setCoreSqmmError(val.error || 'Invalid combination of Core Size and SQMM');
+        alert(val.error || 'Invalid combination of Core Size and SQMM');
+        return;
+      }
+    }
+
     setIsSaving(true);
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -277,6 +637,16 @@ export const AdminProducts: React.FC = () => {
 
     data.imageUrl = modalImage || '';
     data.datasheetUrl = modalDatasheet || datasheetUrlInput || '';
+    data.core = modalCore || null;
+    data.sqmm = modalSqmm || null;
+    data.coreSize = modalSqmm || null;
+    data.uom = modalUom || 'Meter';
+    data.colour = (modalColour === 'Other' && customColour.trim() ? customColour.trim() : modalColour) || null;
+    data.validFrom = currentProduct?.validFrom || null;
+    data.expiryDate = currentProduct?.expiryDate || null;
+    data.brandName = modalMake || data.brandName || 'LAPP';
+    data.categoryName = modalCategory || data.categoryName;
+    data.subGroup = modalSubGroup || data.subGroup || categorySubGroupMap[(data.categoryName || '').toLowerCase().trim()] || null;
 
     try {
       const token = localStorage.getItem('token');
@@ -295,10 +665,13 @@ export const AdminProducts: React.FC = () => {
         setCurrentProduct(null);
         setModalImage(null);
         setModalDatasheet(null);
+        setCoreSqmmError(null);
         fetchProducts();
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.error || 'Failed to save product');
+        const errMsg = errData.error || 'Failed to save product';
+        setCoreSqmmError(errMsg);
+        alert(errMsg);
       }
     } catch (error) {
       console.error('Save failed', error);
@@ -326,7 +699,7 @@ export const AdminProducts: React.FC = () => {
       if (res.ok) {
         setIsCatModalOpen(false);
         setCurrentCat(null);
-        setCatFormData({ name: '', description: '' });
+        setCatFormData({ name: '', description: '', make: 'LAPP', subGroup: '', imageUrl: '', datasheetUrl: '' });
         fetchCategories();
       }
     } catch (err) {
@@ -348,45 +721,55 @@ export const AdminProducts: React.FC = () => {
     }
   };
 
-  // Brand Save / Delete
-  const handleSaveBrand = async (e: React.FormEvent) => {
+  // Make (Manufacturer) Save / Delete
+  const handleSaveMake = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const url = currentBrand ? `${API_BASE_URL}/api/brands/${currentBrand._id}` : `${API_BASE_URL}/api/brands`;
-      const method = currentBrand ? 'PUT' : 'POST';
+      const url = currentMake ? `${API_BASE_URL}/api/makes/${currentMake._id}` : `${API_BASE_URL}/api/makes`;
+      const method = currentMake ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
         headers: { 
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify(brandFormData)
+        body: JSON.stringify(makeFormData)
       });
       if (res.ok) {
-        setIsBrandModalOpen(false);
-        setCurrentBrand(null);
-        setBrandFormData({ name: '', description: '' });
-        fetchBrands();
+        setIsMakeModalOpen(false);
+        setCurrentMake(null);
+        setMakeFormData({ name: 'LAPP', description: '' });
+        fetchMakes();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to save make');
       }
     } catch (err) {
       console.error(err);
     }
   };
+  const handleSaveBrand = handleSaveMake;
 
-  const handleDeleteBrand = async (id: string) => {
-    if (!window.confirm('Delete this brand?')) return;
+  const handleDeleteMake = async (id: string, name?: string) => {
+    if (!window.confirm(`Delete make "${name || 'selected'}"? This is only allowed if no products are mapped to it.`)) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/brands/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/makes/${id}`, {
         method: 'DELETE',
         headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
       });
-      if (res.ok) fetchBrands();
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete make');
+      } else {
+        fetchMakes();
+      }
     } catch (err) {
       console.error(err);
     }
   };
+  const handleDeleteBrand = (id: string) => handleDeleteMake(id);
 
   // Count products per category
   const categoryCountMap = React.useMemo(() => {
@@ -401,10 +784,260 @@ export const AdminProducts: React.FC = () => {
     return map;
   }, [products]);
 
-  // Combined list of categories from backend /api/categories AND products in state
+  // Dynamic 4-series product counts for each of the 6 LAPP Categories
+  const effectiveCategory = activeTab === 'Products' ? activeCategory : selectedCategoryTab;
+  const currentCategoryKey = getLappCategoryKey(effectiveCategory);
+  const currentCategoryConfig = ((activeTab === 'Products' ? (activeBrand === 'All' || activeBrand.toLowerCase() === 'lapp') : (categoryMakeFilter.toLowerCase() === 'lapp')))
+    ? LAPP_CATEGORY_CONFIGS[currentCategoryKey] 
+    : null;
+
+  const currentSubSeriesCounts = React.useMemo(() => {
+    if (!currentCategoryConfig) return { all: 0 };
+    const counts: Record<string, number> = { all: currentCategoryConfig.baselineTotal };
+    currentCategoryConfig.series.forEach(s => {
+      counts[s.title] = s.baselineCount;
+    });
+
+    const matchingCatProducts = products.filter(p => {
+      const brand = (p.brand?.name || p.brandName || '').toLowerCase();
+      const cat = (p.category?.name || p.categoryName || '').toLowerCase();
+      const isLapp = brand.includes('lapp') || !brand;
+      const key = getLappCategoryKey(cat);
+      return isLapp && key === currentCategoryKey;
+    });
+
+    if (matchingCatProducts.length > 0) {
+      currentCategoryConfig.series.forEach(s => {
+        const c = matchingCatProducts.filter(p => s.pattern.test(String(p.name || '')) || s.pattern.test(String(p.subGroup || p.subCategory || ''))).length;
+        if (c > 0) counts[s.title] = c;
+      });
+      counts.all = matchingCatProducts.length;
+    }
+
+    return counts;
+  }, [currentCategoryConfig, currentCategoryKey, products]);
+  const olflexCounts = currentSubSeriesCounts;
+
+  // Canonical manufacturer make order and category priority (LAPP cables first)
+  const canonicalMakeOrder = ['LAPP', 'Eaton', 'Mennekes', 'Partex'];
+
+  const sortedCategories = React.useMemo(() => {
+    return [...categories].sort((a, b) => {
+      const makeA = a.make || 'LAPP';
+      const makeB = b.make || 'LAPP';
+      const idxA = canonicalMakeOrder.indexOf(makeA);
+      const idxB = canonicalMakeOrder.indexOf(makeB);
+      if (idxA !== idxB) {
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      }
+
+      // Strict client-specified order for LAPP categories:
+      // 1. Power and Control Cables
+      // 2. Data Communication Cables
+      // 3. Control Cabinet Single Cores
+      // 4. Cable Glands & Counter Nuts
+      // 5. Rill, Conduit & Klick
+      // 6. Domestic / House Wiring
+      if (makeA.toLowerCase() === 'lapp' && makeB.toLowerCase() === 'lapp') {
+        const getLappIdx = (n: string) => {
+          const s = (n || '').toLowerCase().trim();
+          if (s.includes('power') && s.includes('control')) return 1;
+          if (s.includes('data') || s.includes('communication') || s.includes('unitronic') || s.includes('etherline')) return 2;
+          if (s.includes('cabinet') || s.includes('single core') || s.includes('panel wire')) return 3;
+          if (s.includes('gland') || s.includes('locknut') || s.includes('skintop')) return 4;
+          if (s.includes('rill') || s.includes('conduit') || s.includes('klick') || s.includes('silvyn')) return 5;
+          if (s.includes('domestic') || s.includes('house') || s.includes('building') || s.includes('solar')) return 6;
+          return 99;
+        };
+        const orderA = getLappIdx(a.name || '');
+        const orderB = getLappIdx(b.name || '');
+        if (orderA !== orderB) return orderA - orderB;
+      }
+
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [categories]);
+
+  const displayedCategories = React.useMemo(() => {
+    return sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === categoryMakeFilter.toLowerCase());
+  }, [sortedCategories, categoryMakeFilter]);
+
+  const categorySubGroupMap = React.useMemo(() => {
+    const map: Record<string, string> = {
+      'power and control cables': 'ÖLFLEX® Power & Control',
+      'data communication cables': 'UNITRONIC® / ETHERLINE®',
+      'control cabinet single cores': 'Single Core Panel Wires',
+      'cable glands & counter nuts': 'SKINTOP® Cable Glands',
+      'rill, conduit & klick': 'SILVYN® Protective Conduits',
+      'domestic / house wiring': 'Building Wires / Single Cores',
+      'solar cables': 'ÖLFLEX® SOLAR',
+      'switchgear & protection': 'Motor Starters, Contactors & Breakers',
+      'motor protection breakers': 'PKZM0 Motor Breakers',
+      'molded case circuit breakers': 'NZM Compact MCCBs',
+      'miniature circuit breakers & rcds': 'FAZ DIN-Rail MCBs',
+      'power contactors & relays': 'DILM Power Contactors',
+      'power quality & ups': 'Capacitors & APFC Systems',
+      'industrial plugs & sockets': 'Heavy Duty CEE Plugs & Sockets',
+      'amaxx® & distribution enclosures': 'Modular Distribution Units',
+      'panel mounted receptacle sockets': 'Watertight Receptacles',
+      'chemical earthing electrodes': 'Maintenance-Free Chemical Electrodes',
+      'copper clad earth rods & accessories': 'Earth Rods & Clamps',
+      'earthing solutions': 'Chemical Electrodes & Earthing Accessories',
+      'cable marking systems': 'PA Markers & ProMark Printers',
+      'profile marking sleeves': 'PO/POZ Profile Sleeves',
+      'stainless steel cable markers': 'PKS Embossed Steel Markers',
+      'component & terminal block marking': 'Snap-On Terminal Markers',
+      'industrial thermal printers & ribbons': 'ProMark T-1000 Printers',
+      'industrial cable ties & fasteners': 'Polyamide & Steel Cable Ties',
+    };
+    categories.forEach(c => {
+      if (c.name && c.subGroup) {
+        map[c.name.toLowerCase().trim()] = c.subGroup;
+      }
+    });
+    return map;
+  }, [categories]);
+
+  // Dynamic extraction and mapping of Level 3 Sub-categories / Series
+  const getProductSubCategory = React.useCallback((p: any, categoryFallback?: string): string => {
+    if (p.subGroup && typeof p.subGroup === 'string' && p.subGroup.trim()) {
+      return p.subGroup.trim();
+    }
+    if (p.subCategory && typeof p.subCategory === 'string' && p.subCategory.trim()) {
+      return p.subCategory.trim();
+    }
+    
+    const name = String(p.name || '').trim();
+    const cat = String(p.category?.name || p.categoryName || categoryFallback || '').trim();
+    const catLower = cat.toLowerCase();
+
+    // 1. LAPP Power and Control Cables / Cables
+    if (catLower.includes('power') || catLower.includes('control cable') || /olflex|ölflex/i.test(name)) {
+      if (/110\s*sy/i.test(name)) return 'ÖLFLEX® CLASSIC 110 SY';
+      if (/110\s*cy/i.test(name)) return 'ÖLFLEX® CLASSIC 110 CY';
+      if (/110\s*black/i.test(name)) return 'ÖLFLEX® CLASSIC 110 Black';
+      if (/classic\s*110/i.test(name)) return 'ÖLFLEX® CLASSIC 110';
+      if (/100\s*cy/i.test(name)) return 'ÖLFLEX® CLASSIC 100 CY';
+      if (/classic\s*100\s*i/i.test(name) || /100i/i.test(name)) return 'ÖLFLEX® CLASSIC 100I';
+      if (/classic\s*100/i.test(name)) return 'ÖLFLEX® CLASSIC 100';
+      if (/400\s*p/i.test(name) || /400\s*cp/i.test(name)) return 'ÖLFLEX® 400 P / CP';
+      if (/fd/i.test(name)) return 'ÖLFLEX® FD Continuous Flex';
+      if (/heat/i.test(name)) return 'ÖLFLEX® HEAT High Temp';
+      if (/smart\s*108/i.test(name)) return 'ÖLFLEX® SMART 108';
+      if (/servo/i.test(name)) return 'ÖLFLEX® SERVO';
+      return 'ÖLFLEX® Power & Control';
+    }
+
+    // 2. Control Cabinet Single Cores / Panel Wires
+    if (catLower.includes('single core') || catLower.includes('panel wire') || /h07v-k|h05v-k/i.test(name)) {
+      if (/h07v-k/i.test(name)) return 'H07V-K Panel Single Core';
+      if (/h05v-k/i.test(name)) return 'H05V-K Hook-up Wire';
+      if (/multinorm/i.test(name)) return 'ÖLFLEX® MULTINORM Single Core';
+      return 'Single Core Panel Wires';
+    }
+
+    // 3. Data Communication Cables
+    if (catLower.includes('data') || catLower.includes('communication') || /unitronic|etherline/i.test(name)) {
+      if (/etherline/i.test(name)) return 'ETHERLINE® Industrial Ethernet';
+      if (/liycy/i.test(name)) return 'UNITRONIC® LiYCY Screened';
+      if (/liyy/i.test(name)) return 'UNITRONIC® LiYY Data';
+      if (/bus|profibus|can/i.test(name)) return 'UNITRONIC® BUS System';
+      if (/fd/i.test(name)) return 'UNITRONIC® FD Continuous Flex';
+      return 'UNITRONIC® / ETHERLINE®';
+    }
+
+    // 4. Solar Cables
+    if (catLower.includes('solar') || /solar|h1z2z2/i.test(name)) {
+      return 'ÖLFLEX® SOLAR';
+    }
+
+    // 5. Cable Glands & Counter Nuts
+    if (catLower.includes('gland') || catLower.includes('counter nut') || /skintop/i.test(name)) {
+      if (/click/i.test(name)) return 'SKINTOP® CLICK Quick Mount';
+      if (/ms-m|brass/i.test(name)) return 'SKINTOP® Nickel-Plated Brass';
+      if (/st-m|polyamide/i.test(name)) return 'SKINTOP® Polyamide Glands';
+      if (/gmp|locknut|counter/i.test(name)) return 'SKINTOP® Locknuts';
+      return 'SKINTOP® Cable Glands';
+    }
+
+    // 6. Rill, Conduit & Klick
+    if (catLower.includes('rill') || catLower.includes('conduit') || /silvyn/i.test(name)) {
+      if (/conduit/i.test(name) || /rill/i.test(name)) return 'SILVYN® Flexible Conduits';
+      if (/klick/i.test(name) || /gland/i.test(name)) return 'SILVYN® Conduit Connectors';
+      return 'SILVYN® Protective Conduits';
+    }
+
+    // 7. Eaton Switchgear & Protection
+    if (/pkzm0/i.test(name)) return 'PKZM0 Motor Breakers';
+    if (/pkzm4/i.test(name)) return 'PKZM4 Motor Breakers';
+    if (/nzm/i.test(name)) return 'NZM Compact MCCBs';
+    if (/faz|pl/i.test(name)) return 'FAZ DIN-Rail MCBs';
+    if (/dilm/i.test(name)) return 'DILM Power Contactors';
+    if (/dilem/i.test(name)) return 'DILEM Mini Contactors';
+    if (catLower.includes('switchgear') || catLower.includes('motor')) return 'Motor Starters & Breakers';
+
+    // 8. Mennekes Plugs, Sockets & Earthing
+    if (/mennekes/i.test(name)) return 'MENNEKES Industrial Plugs';
+    if (/amaplast|cee/i.test(name)) return 'Industrial CEE Plugs & Sockets';
+    if (/amaxx/i.test(name)) return 'Modular Distribution Units';
+    if (/electrode/i.test(name)) return 'Maintenance-Free Chemical Electrodes';
+    if (/rod/i.test(name)) return 'Copper Clad Earth Rods';
+
+    // 9. Partex Marking Systems
+    if (/promark|t-1000/i.test(name)) return 'ProMark Thermal Printers';
+    if (/po|poz/i.test(name)) return 'PO/POZ Profile Sleeves';
+    if (/pks/i.test(name)) return 'PKS Stainless Steel Markers';
+    if (/pa\b/i.test(name)) return 'PA Closed Cable Markers';
+    if (/tie/i.test(name)) return 'Polyamide & Steel Cable Ties';
+
+    if (categorySubGroupMap[catLower]) {
+      return categorySubGroupMap[catLower];
+    }
+
+    return cat || 'General Products';
+  }, [categorySubGroupMap]);
+
+  // Dynamic available Sub-categories based on active Brand and Category
+  const availableSubCategories = React.useMemo(() => {
+    const subMap = new Map<string, number>();
+    const activeCatLower = activeCategory.toLowerCase().trim();
+    const activeBrandLower = activeBrand.toLowerCase().trim();
+
+    products.forEach((p) => {
+      const pCat = (p.category?.name || p.categoryName || '').toLowerCase().trim();
+      const pBrand = (p.brand?.name || p.brandName || '').toLowerCase().trim();
+
+      const matchesBrand = activeBrand === 'All' || pBrand === activeBrandLower;
+      const matchesCategory = 
+        activeCategory === 'All' || 
+        pCat === activeCatLower ||
+        (activeCatLower === 'control cables' && pCat.includes('control')) ||
+        (activeCatLower === 'power cables' && pCat.includes('power')) ||
+        (activeCatLower === 'cable accessories' && (pCat.includes('gland') || pCat.includes('rill')));
+
+      if (matchesBrand && matchesCategory) {
+        const sub = getProductSubCategory(p, p.category?.name || p.categoryName);
+        if (sub) {
+          subMap.set(sub, (subMap.get(sub) || 0) + 1);
+        }
+      }
+    });
+
+    return Array.from(subMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [products, activeCategory, activeBrand, getProductSubCategory]);
+
+  const filteredFormCategories = React.useMemo(() => {
+    const targetMake = modalMake || 'LAPP';
+    const list = sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === targetMake.toLowerCase());
+    return list.length > 0 ? list : sortedCategories;
+  }, [sortedCategories, modalMake]);
+
+  // Combined list of categories from backend /api/categories AND products in state (Cables prioritized)
   const dropdownCategories = React.useMemo(() => {
     const catMap = new Map<string, string>();
-    categories.forEach((c) => {
+    sortedCategories.forEach((c) => {
       if (c.name && c.name.trim()) {
         catMap.set(c.name.trim().toLowerCase(), c.name.trim());
       }
@@ -418,12 +1051,23 @@ export const AdminProducts: React.FC = () => {
         }
       }
     });
-    return Array.from(catMap.values()).sort((a, b) => a.localeCompare(b));
-  }, [categories, products]);
+    const list = Array.from(catMap.values());
+    const orderIndexMap = new Map<string, number>();
+    sortedCategories.forEach((c, idx) => {
+      orderIndexMap.set((c.name || '').toLowerCase().trim(), idx);
+    });
+    return list.sort((a, b) => {
+      const idxA = orderIndexMap.has(a.toLowerCase().trim()) ? orderIndexMap.get(a.toLowerCase().trim())! : 999;
+      const idxB = orderIndexMap.has(b.toLowerCase().trim()) ? orderIndexMap.get(b.toLowerCase().trim())! : 999;
+      if (idxA !== idxB) return idxA - idxB;
+      return a.localeCompare(b);
+    });
+  }, [sortedCategories, products]);
 
-  // Count products per brand
-  const brandCountMap = React.useMemo(() => {
+  // Count products per make (strictly normalized to 4 approved makes)
+  const makeCountMap = React.useMemo(() => {
     const map: Record<string, number> = {};
+    ALLOWED_MAKES.forEach(m => { map[m.toLowerCase()] = 0; });
     products.forEach((p) => {
       const brandName = p.brand?.name || p.brandName || '';
       if (brandName) {
@@ -433,28 +1077,13 @@ export const AdminProducts: React.FC = () => {
     });
     return map;
   }, [products]);
+  const brandCountMap = makeCountMap;
 
-  // Combined list of brands from backend /api/brands AND products in state
-  const dropdownBrands = React.useMemo(() => {
-    const brandMap = new Map<string, string>();
-    brands.forEach((b) => {
-      if (b.name && b.name.trim()) {
-        brandMap.set(b.name.trim().toLowerCase(), b.name.trim());
-      }
-    });
-    products.forEach((p) => {
-      const name = p.brand?.name || p.brandName;
-      if (name && typeof name === 'string' && name.trim()) {
-        const key = name.trim().toLowerCase();
-        if (!brandMap.has(key)) {
-          brandMap.set(key, name.trim());
-        }
-      }
-    });
-    return Array.from(brandMap.values()).sort((a, b) => a.localeCompare(b));
-  }, [brands, products]);
+  // Canonical list of Makes strictly restricted to the 4 approved manufacturers
+  const dropdownMakes = ALLOWED_MAKES;
+  const dropdownBrands = dropdownMakes as readonly string[];
 
-  // Filter Products by Search, Category, and Brand
+  // Filter Products by Search, Category, Brand, and Sub-category (4-level hierarchy)
   const filteredProducts = React.useMemo(() => {
     return products.filter((p) => {
       const pCat = (p.category?.name || p.categoryName || '').toLowerCase().trim();
@@ -480,9 +1109,26 @@ export const AdminProducts: React.FC = () => {
         activeBrand === 'All' ||
         pBrand === activeBrandLower;
 
-      return matchesSearch && matchesCategory && matchesBrand;
+      let matchesSubSeries = true;
+      if (currentCategoryConfig && selectedSubSeries !== 'all') {
+        if (selectedSubSeries === 'Newly Added Products') {
+          const matchesAnyStandard = currentCategoryConfig.series.some(s => 
+            s.pattern.test(String(p.name || '')) || s.pattern.test(String(p.subGroup || p.subCategory || ''))
+          );
+          matchesSubSeries = !matchesAnyStandard;
+        } else {
+          const seriesOpt = currentCategoryConfig.series.find(s => s.title === selectedSubSeries || s.id === selectedSubSeries);
+          if (seriesOpt) {
+            const pName = String(p.name || '');
+            const pSub = String(p.subGroup || p.subCategory || '');
+            matchesSubSeries = seriesOpt.pattern.test(pName) || seriesOpt.pattern.test(pSub);
+          }
+        }
+      }
+
+      return matchesSearch && matchesCategory && matchesBrand && matchesSubSeries;
     });
-  }, [products, searchQuery, activeCategory, activeBrand]);
+  }, [products, searchQuery, activeCategory, activeBrand, currentCategoryConfig, selectedSubSeries]);
 
   // Sort Products (Product Name and Part Number ascending/descending)
   const sortedProducts = React.useMemo(() => {
@@ -559,17 +1205,17 @@ export const AdminProducts: React.FC = () => {
 
           {isAdmin && activeTab === 'Categories' && (
             <button 
-              onClick={() => { setCurrentCat(null); setCatFormData({ name: '', description: '' }); setIsCatModalOpen(true); }}
+              onClick={() => { setCurrentCat(null); setCatFormData({ name: '', description: '', make: 'LAPP', subGroup: '', imageUrl: '', datasheetUrl: '' }); setIsCatModalOpen(true); }}
               className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
             >
               <Plus size={14} className="mr-1" />
-              Add Category
+              Add Product Category
             </button>
           )}
 
-          {isAdmin && activeTab === 'Brands' && (
+          {isAdmin && (activeTab === 'Makes' || (activeTab as any) === 'Brands') && (
             <button 
-              onClick={() => { setCurrentBrand(null); setBrandFormData({ name: '', description: '' }); setIsBrandModalOpen(true); }}
+              onClick={() => { setCurrentMake(null); setMakeFormData({ name: 'LAPP', description: '' }); setIsMakeModalOpen(true); }}
               className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
             >
               <Plus size={14} className="mr-1" />
@@ -600,13 +1246,13 @@ export const AdminProducts: React.FC = () => {
           Category Management ({categories.length})
         </button>
         <button
-          onClick={() => setActiveTab('Brands')}
+          onClick={() => setActiveTab('Makes')}
           className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
-            activeTab === 'Brands' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
+            activeTab === 'Makes' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Tag size={16} />
-          Brand Management ({brands.length})
+          <Building size={16} />
+          Brand Management ({makes.length})
         </button>
       </div>
 
@@ -630,7 +1276,12 @@ export const AdminProducts: React.FC = () => {
               {/* Category Filter */}
               <select
                 value={activeCategory}
-                onChange={(e) => setActiveCategory(e.target.value)}
+                onChange={(e) => {
+                  setActiveCategory(e.target.value);
+                  setSelectedCategoryTab(e.target.value);
+                  setSelectedSubSeries('all');
+                  setActiveSubCategory('All');
+                }}
                 className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none font-semibold text-slate-700 cursor-pointer hover:border-slate-300"
                 title="Filter by Category"
               >
@@ -645,19 +1296,23 @@ export const AdminProducts: React.FC = () => {
                 })}
               </select>
 
-              {/* Brand Filter */}
+              {/* Make Filter (4 Approved Manufacturers) */}
               <select
                 value={activeBrand}
-                onChange={(e) => setActiveBrand(e.target.value)}
+                onChange={(e) => {
+                  setActiveBrand(e.target.value);
+                  setSelectedSubSeries('all');
+                  setActiveSubCategory('All');
+                }}
                 className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none font-semibold text-slate-700 cursor-pointer hover:border-slate-300"
-                title="Filter by Brand"
+                title="Filter by Make (Manufacturer)"
               >
-                <option value="All">All Brands ({products.length})</option>
-                {dropdownBrands.map((brandName) => {
-                  const count = brandCountMap[brandName.toLowerCase().trim()] || 0;
+                <option value="All">All Makes ({products.length})</option>
+                {dropdownMakes.map((makeName) => {
+                  const count = makeCountMap[makeName.toLowerCase().trim()] || 0;
                   return (
-                    <option key={brandName} value={brandName}>
-                      {brandName} {count > 0 ? `(${count})` : ''}
+                    <option key={makeName} value={makeName}>
+                      {makeName} {count > 0 ? `(${count})` : ''}
                     </option>
                   );
                 })}
@@ -673,6 +1328,141 @@ export const AdminProducts: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Category Quick Selector Pills in Products Catalog Tab */}
+          {(activeBrand === 'All' || activeBrand.toLowerCase() === 'lapp') && (
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Category / Group:</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory('All');
+                    setSelectedSubSeries('all');
+                    setActiveSubCategory('All');
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                    activeCategory === 'All'
+                      ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
+                >
+                  All Categories ({products.length})
+                </button>
+                {displayedCategories.map((c) => {
+                  const isCatActive = activeCategory.toLowerCase() === c.name.toLowerCase();
+                  const count = categoryCountMap[c.name.toLowerCase().trim()] || 0;
+                  return (
+                    <button
+                      key={c._id || c.name}
+                      type="button"
+                      onClick={() => {
+                        setActiveCategory(c.name);
+                        setSelectedCategoryTab(c.name);
+                        setSelectedSubSeries('all');
+                        setActiveSubCategory('All');
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                        isCatActive
+                          ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      <span>{c.name}</span>
+                      {count > 0 && <span className="ml-1 opacity-80 text-[11px]">({count})</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Subseries 4-Pill Bar in Products Catalog Tab (Allows easy switching/changing between 4 series) */}
+          {currentCategoryConfig && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-2.5 shadow-xs space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-amber-700 uppercase tracking-wider font-mono flex items-center gap-1">
+                    <Zap size={14} className="text-amber-500 fill-amber-500" />
+                    {currentCategoryConfig.brandTitle}
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    · Select series to filter:
+                  </span>
+                </div>
+                {selectedSubSeries !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubSeries('all')}
+                    className="text-xs font-bold text-slate-500 hover:text-slate-800 hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    <span>Clear Filter (Show All {currentCategoryConfig.groupPrefix})</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Exact Pill Bar matching screenshot */}
+              <div className="flex overflow-x-auto hide-scrollbar bg-slate-100/70 p-1.5 rounded-2xl border border-slate-200 gap-1.5 items-center">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubSeries('all')}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                    selectedSubSeries === 'all'
+                      ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  {currentCategoryConfig.allLabel} ({currentSubSeriesCounts.all || currentCategoryConfig.baselineTotal})
+                </button>
+
+                {currentCategoryConfig.series.map((series) => {
+                  const isActive = selectedSubSeries === series.id || selectedSubSeries === series.title;
+                  return (
+                    <button
+                      key={series.id}
+                      type="button"
+                      onClick={() => setSelectedSubSeries(series.title)}
+                      className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                      }`}
+                    >
+                      {series.title}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubSeries('Newly Added Products')}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                    selectedSubSeries === 'Newly Added Products'
+                      ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  Newly Added Products
+                </button>
+              </div>
+
+              {/* Series Description & Active Status Banner */}
+              {selectedSubSeries !== 'all' && (
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs text-amber-950">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-amber-900">{selectedSubSeries}:</span>
+                    <span className="text-amber-800">
+                      {currentCategoryConfig.series.find(s => s.title === selectedSubSeries)?.desc ||
+                       (selectedSubSeries === 'Newly Added Products' ? `Custom / newly added ${currentCategoryConfig.groupPrefix} products` : 'Standard LAPP Industrial Configuration')}
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 bg-amber-200/70 text-amber-900 font-bold rounded text-[11px]">
+                    Showing {filteredProducts.length} Products
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Products Table Container */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
@@ -690,27 +1480,14 @@ export const AdminProducts: React.FC = () => {
                         />
                       </th>
                     )}
-                    <th 
-                      onClick={() => handleSort('name')}
-                      className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
-                      title="Click to sort by Product Name (Ascending / Descending)"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>Product Name</span>
-                        {sortField === 'name' ? (
-                          sortDirection === 'asc' ? <ArrowUp size={13} className="text-red-600" /> : <ArrowDown size={13} className="text-red-600" />
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 group-hover:text-slate-600 opacity-60" />
-                        )}
-                      </div>
-                    </th>
+                    <th className="py-2.5 px-3 font-semibold text-center w-14">S.No</th>
                     <th 
                       onClick={() => handleSort('partNo')}
                       className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
                       title="Click to sort by Part Number (Ascending / Descending)"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span>Part No</span>
+                        <span>Part Number</span>
                         {sortField === 'partNo' ? (
                           sortDirection === 'asc' ? <ArrowUp size={13} className="text-red-600" /> : <ArrowDown size={13} className="text-red-600" />
                         ) : (
@@ -718,31 +1495,46 @@ export const AdminProducts: React.FC = () => {
                         )}
                       </div>
                     </th>
-                    <th className="py-2.5 px-3 font-semibold">Category & Brand</th>
-                    <th className="py-2.5 px-3 font-semibold">Specifications</th>
-                    <th className="py-2.5 px-3 font-semibold">Price (₹)</th>
-                    <th className="py-2.5 px-3 font-semibold">UOM</th>
-                    <th className="py-2.5 px-3 font-semibold text-center">Datasheet (PDF)</th>
-                    {isAdmin && <th className="py-2.5 px-3 font-semibold text-right">Actions</th>}
+                    <th 
+                      onClick={() => handleSort('name')}
+                      className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
+                      title="Click to sort by Description / Product Name (Ascending / Descending)"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Description</span>
+                        {sortField === 'name' ? (
+                          sortDirection === 'asc' ? <ArrowUp size={13} className="text-red-600" /> : <ArrowDown size={13} className="text-red-600" />
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 group-hover:text-slate-600 opacity-60" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-2.5 px-3 font-semibold text-center">Core</th>
+                    <th className="py-2.5 px-3 font-semibold text-center">Cross Section</th>
+                    <th className="py-2.5 px-3 font-semibold text-center">UOM</th>
+                    <th className="py-2.5 px-3 font-semibold text-right">Price (₹)</th>
+                    <th className="py-2.5 px-3 font-semibold text-center">Weight</th>
+                    <th className="py-2.5 px-3 font-semibold text-center">(OD)</th>
+                    <th className="py-2.5 px-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={isAdmin ? 9 : 8} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={isAdmin ? 11 : 10} className="px-4 py-12 text-center text-slate-500">
                         <RefreshCw className="w-6 h-6 text-red-600 animate-spin mx-auto mb-2" />
                         Loading products...
                       </td>
                     </tr>
                   ) : sortedProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 9 : 8} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={isAdmin ? 11 : 10} className="px-4 py-12 text-center text-slate-500">
                         <ShoppingBag size={24} className="mx-auto text-slate-300 mb-2" />
                         No products match your search or filter criteria.
                       </td>
                     </tr>
                   ) : (
-                    sortedProducts.map((p) => (
+                    sortedProducts.map((p, index) => (
                       <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
                         {isAdmin && (
                           <td className="py-2.5 px-3 text-center">
@@ -754,32 +1546,13 @@ export const AdminProducts: React.FC = () => {
                             />
                           </td>
                         )}
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="h-9 w-9 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
-                              {p.imageUrl ? (
-                                <img 
-                                  src={p.imageUrl} 
-                                  alt={p.name} 
-                                  className="h-full w-full object-contain cursor-pointer"
-                                  onClick={() => setViewingImage(p.imageUrl)} 
-                                />
-                              ) : (
-                                <ShoppingBag size={16} className="text-slate-400" />
-                              )}
-                            </div>
-                            <div>
-                              <p 
-                                onClick={() => setViewProduct(p)}
-                                className="font-semibold text-slate-800 hover:text-red-700 line-clamp-1 cursor-pointer transition-colors"
-                                title="Click to view full details"
-                              >
-                                {p.name}
-                              </p>
-                            </div>
-                          </div>
+                        {/* 1. sl nbr */}
+                        <td className="py-2.5 px-3 text-center text-slate-500 font-bold text-xs">
+                          {index + 1}
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-medium text-slate-700">
+
+                        {/* 2. Part Number */}
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
                           {p.partNo ? (
                             <span 
                               onClick={() => setViewProduct(p)}
@@ -790,71 +1563,82 @@ export const AdminProducts: React.FC = () => {
                             </span>
                           ) : '-'}
                         </td>
+
+                        {/* 3. Description */}
                         <td className="py-2.5 px-3">
-                          <div className="flex flex-col gap-0.5 items-start">
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                              {p.category?.name || 'Uncategorized'}
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                              {p.imageUrl ? (
+                                <img 
+                                  src={p.imageUrl} 
+                                  alt={p.name} 
+                                  className="h-full w-full object-contain cursor-pointer"
+                                  onClick={() => setViewingImage(p.imageUrl)} 
+                                />
+                              ) : (
+                                <ShoppingBag size={15} className="text-slate-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p 
+                                onClick={() => setViewProduct(p)}
+                                className="font-semibold text-slate-800 hover:text-red-700 line-clamp-1 cursor-pointer transition-colors max-w-xs"
+                                title={p.description || p.name}
+                              >
+                                {p.description || p.name}
+                              </p>
+                              {p.description && p.name && p.description !== p.name && (
+                                <p className="text-[11px] text-slate-400 line-clamp-1 max-w-xs">{p.name}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 4. Core */}
+                        <td className="py-2.5 px-3 font-mono font-medium text-slate-800 text-center">
+                          {p.core ? (
+                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-xs">
+                              {p.core} Cores
                             </span>
-                            {p.brand?.name && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 bg-red-50 text-red-700 border border-red-200 rounded">
-                                {p.brand.name}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-700">
-                          <div className="flex flex-col gap-1 items-start">
-                            {(p.core || p.coreSize || p.size) && (
-                              <span className="font-semibold text-slate-800">
-                                {p.core ? `${p.core} Cores` : ''}
-                                {p.core && (p.coreSize || p.size) ? ' × ' : ''}
-                                {p.coreSize || p.size ? `${p.coreSize || p.size}` : ''}
-                              </span>
-                            )}
-                            {p.colour && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                Colour: {p.colour}
-                              </span>
-                            )}
-                            {(p.outerDiameter || p.od) && (
-                              <span className="text-[10px] text-slate-500 font-mono">
-                                OD: {p.outerDiameter || p.od}
-                              </span>
-                            )}
-                            {!p.core && !p.coreSize && !p.size && !p.colour && !p.outerDiameter && (
-                              <span className="text-slate-400">-</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                          {p.price ? `₹${Number(p.price).toLocaleString('en-IN')}` : <span className="text-slate-400 font-normal">Quote</span>}
-                        </td>
-                        <td className="py-2.5 px-3 font-semibold text-slate-700">
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
-                            {p.uom || p.packSize || 'Meter'}
-                          </span>
-                        </td>
-                        
-                        {/* Datasheet Column */}
-                        <td className="py-2.5 px-3 text-center">
-                          {p.datasheetUrl ? (
-                            <a
-                              href={p.datasheetUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-md font-bold text-[11px] transition-colors shadow-xs cursor-pointer"
-                              title="Open Technical Datasheet PDF"
-                            >
-                              <FileText size={12} className="text-red-600" />
-                              <span>PDF</span>
-                              <ExternalLink size={10} className="opacity-60" />
-                            </a>
                           ) : (
-                            <span className="text-slate-300 font-medium">None</span>
+                            <span className="text-slate-400 font-normal">-</span>
                           )}
                         </td>
 
+                        {/* 5. Cross Section */}
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-800 text-center">
+                          {(p.sqmm || p.coreSize || p.size) ? (
+                            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs">
+                              {p.sqmm || p.coreSize || p.size} SQ.MM
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">-</span>
+                          )}
+                        </td>
+
+                        {/* 6. UOM */}
+                        <td className="py-2.5 px-3 font-semibold text-slate-700 text-center">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 uppercase">
+                            {formatUom(p.uom || p.packSize || 'm')}
+                          </span>
+                        </td>
+
+                        {/* 7. Price (₹) */}
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-900 text-right">
+                          {p.price ? `₹${Number(p.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-slate-400 font-normal">Quote</span>}
+                        </td>
+
+                        {/* 8. Weight */}
+                        <td className="py-2.5 px-3 font-mono text-slate-700 text-center text-xs">
+                          {formatWeight(p.weight, p.name)}
+                        </td>
+
+                        {/* 9. (OD) */}
+                        <td className="py-2.5 px-3 font-mono text-slate-700 text-center text-xs">
+                          {formatOD(p.outerDiameter, p.name)}
+                        </td>
+
+                        {/* Actions */}
                         <td className="py-2.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button 
@@ -896,97 +1680,474 @@ export const AdminProducts: React.FC = () => {
 
       {/* TAB 2: CATEGORY MANAGEMENT */}
       {activeTab === 'Categories' && (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[500px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
-                <tr>
-                  <th className="py-3 px-6 font-semibold">Category Name</th>
-                  <th className="py-3 px-6 font-semibold">Description</th>
-                  {isAdmin && <th className="py-3 px-6 font-semibold text-right">Action</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {categories.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-500">No categories found.</td>
-                  </tr>
-                ) : (
-                  categories.map((c) => (
-                    <tr key={c._id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-6 font-bold text-slate-900">{c.name}</td>
-                      <td className="py-3 px-6 text-slate-500">{c.description || 'Standard Category'}</td>
-                      {isAdmin && (
-                        <td className="py-3 px-6 text-right">
-                          <button
-                            onClick={() => { setCurrentCat(c); setCatFormData({ name: c.name, description: c.description || '' }); setIsCatModalOpen(true); }}
-                            className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded mr-1 cursor-pointer"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCategory(c._id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  ))
+        <div className="space-y-3">
+          {/* Make Filter Pills & Header */}
+          <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Filter by Make:</span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {ALLOWED_MAKES.map((m) => {
+                    const count = categories.filter(c => (c.make || 'LAPP').toLowerCase() === m.toLowerCase()).length;
+                    const isActive = categoryMakeFilter === m;
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => {
+                          setCategoryMakeFilter(m);
+                          const firstCat = sortedCategories.find(c => (c.make || 'LAPP').toLowerCase() === m.toLowerCase());
+                          if (firstCat) setSelectedCategoryTab(firstCat.name);
+                        }}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                          isActive
+                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                      >
+                        {m} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                Showing {displayedCategories.length} categories · 6 Authorized Categories for {categoryMakeFilter}
+              </div>
+            </div>
+
+            {/* Category Selector Pills */}
+            <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Category / Group:</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {displayedCategories.map((c) => {
+                  const isCatActive = selectedCategoryTab.toLowerCase() === c.name.toLowerCase();
+                  return (
+                    <button
+                      key={c._id || c.name}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategoryTab(c.name);
+                        setSelectedSubSeries('all');
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                        isCatActive
+                          ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 4-SERIES PILL BAR FOR ALL LAPP CATEGORIES (Matching exact user screenshot) */}
+          {categoryMakeFilter.toLowerCase() === 'lapp' && currentCategoryConfig && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-xs space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-extrabold text-amber-700 uppercase tracking-wider font-mono flex items-center gap-1">
+                    <Zap size={14} className="text-amber-500 fill-amber-500" />
+                    {currentCategoryConfig.brandTitle}
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    · 4 Authorized German Series (LAPP Stuttgart)
+                  </span>
+                </div>
+                {selectedSubSeries !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveBrand('LAPP');
+                      setActiveCategory(selectedCategoryTab);
+                      setActiveSubCategory('All');
+                      setSearchQuery('');
+                      setActiveTab('Products');
+                    }}
+                    className="text-xs font-bold text-amber-700 hover:text-amber-900 hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    <span>View {selectedSubSeries} in Products Catalog</span>
+                    <ChevronRight size={13} />
+                  </button>
                 )}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Exact Pill Bar from User Screenshot */}
+              <div className="flex overflow-x-auto hide-scrollbar bg-slate-100/70 p-1.5 rounded-2xl border border-slate-200 gap-1.5 items-center">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubSeries('all')}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                    selectedSubSeries === 'all'
+                      ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  {currentCategoryConfig.allLabel} ({currentSubSeriesCounts.all || currentCategoryConfig.baselineTotal})
+                </button>
+
+                {currentCategoryConfig.series.map((series) => {
+                  const isActive = selectedSubSeries === series.id || selectedSubSeries === series.title;
+                  return (
+                    <button
+                      key={series.id}
+                      type="button"
+                      onClick={() => setSelectedSubSeries(series.title)}
+                      className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                      }`}
+                    >
+                      {series.title}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubSeries('Newly Added Products')}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                    selectedSubSeries === 'Newly Added Products'
+                      ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  Newly Added Products
+                </button>
+              </div>
+
+              {/* Series Description & Direct Catalog Link */}
+              {selectedSubSeries !== 'all' && (
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs text-amber-950">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-amber-900">{selectedSubSeries}:</span>
+                    <span className="text-amber-800">
+                      {currentCategoryConfig.series.find(s => s.title === selectedSubSeries)?.desc ||
+                       (selectedSubSeries === 'Newly Added Products' ? `Custom / newly added ${currentCategoryConfig.groupPrefix} products` : 'Standard LAPP Industrial Configuration')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveBrand('LAPP');
+                      setActiveCategory(selectedCategoryTab);
+                      setActiveSubCategory('All');
+                      setSearchQuery('');
+                      setActiveTab('Products');
+                    }}
+                    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                  >
+                    <span>Open in Products Catalog</span>
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[750px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
+                  <tr>
+                    <th className="py-3 px-6 font-semibold">Make</th>
+                    <th className="py-3 px-6 font-semibold">Product Category / Group</th>
+                    <th className="py-3 px-6 font-semibold">Subgroup</th>
+                    <th className="py-3 px-6 font-semibold">Description</th>
+                    <th className="py-3 px-6 font-semibold">Category Datasheet (PDF)</th>
+                    {isAdmin && <th className="py-3 px-6 font-semibold text-right">Action</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {displayedCategories.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-500">No categories found.</td>
+                    </tr>
+                  ) : (
+                    displayedCategories.map((c) => {
+                      const makeName = c.make || 'LAPP';
+                      const makeBadgeTheme = 
+                        makeName === 'LAPP' ? 'bg-red-50 text-red-700 border-red-200' :
+                        makeName === 'Eaton' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                        (makeName === 'Mennekes' || makeName === 'Minak') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        'bg-purple-50 text-purple-700 border-purple-200';
+                      const isSelectedRow = selectedCategoryTab.toLowerCase() === c.name.toLowerCase();
+                      const rowCatKey = getLappCategoryKey(c.name);
+                      const rowConfig = makeName.toLowerCase() === 'lapp' ? LAPP_CATEGORY_CONFIGS[rowCatKey] : null;
+
+                      return (
+                        <tr 
+                          key={c._id} 
+                          onClick={() => {
+                            setSelectedCategoryTab(c.name);
+                            setSelectedSubSeries('all');
+                          }}
+                          className={`transition-colors cursor-pointer ${
+                            isSelectedRow
+                              ? 'bg-amber-50/60 border-l-4 border-l-amber-500' 
+                              : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <td className="py-3 px-6">
+                            <span className={`px-2.5 py-0.5 rounded font-extrabold text-xs border ${makeBadgeTheme}`}>
+                              {makeName}
+                            </span>
+                          </td>
+                          <td className="py-3 px-6">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCategoryTab(c.name);
+                                  setSelectedSubSeries('all');
+                                }}
+                                className="text-left font-bold text-slate-900 hover:text-amber-600 hover:underline flex items-center gap-1.5 cursor-pointer group"
+                                title={`Select ${c.name} category`}
+                              >
+                                <span>{c.name}</span>
+                                {rowConfig && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                    4 {rowConfig.groupPrefix} Series
+                                  </span>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveBrand(makeName);
+                                  setActiveCategory(c.name);
+                                  setSelectedCategoryTab(c.name);
+                                  setActiveSubCategory('All');
+                                  setSearchQuery('');
+                                  if (selectedCategoryTab.toLowerCase() !== c.name.toLowerCase()) {
+                                    setSelectedSubSeries('all');
+                                  }
+                                  setActiveTab('Products');
+                                }}
+                                className="text-[11px] font-semibold text-slate-400 hover:text-red-600 flex items-center gap-0.5 transition-colors cursor-pointer ml-1"
+                                title={`View products in catalog`}
+                              >
+                                <span>Catalog</span>
+                                <ChevronRight size={11} />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-3 px-6 text-slate-600 font-medium">
+                            {c.subGroup ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveBrand(makeName);
+                                  setActiveCategory(c.name);
+                                  setActiveSubCategory(c.subGroup);
+                                  setActiveTab('Products');
+                                }}
+                                className="text-left text-slate-700 hover:text-red-600 hover:underline cursor-pointer font-medium flex items-center gap-1 group"
+                                title={`Filter products by sub-category: ${c.subGroup}`}
+                              >
+                                <span>{c.subGroup}</span>
+                                <ChevronRight size={12} className="text-slate-300 group-hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all" />
+                              </button>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
+                          <td className="py-3 px-6 text-slate-500">{c.description || 'Standard Category'}</td>
+                          <td className="py-3 px-6">
+                            {c.datasheetUrl ? (
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={c.datasheetUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-md font-bold text-xs"
+                                >
+                                  <FileText size={12} /> View PDF
+                                </a>
+                                {isAdmin && (
+                                  <label className="text-[11px] text-slate-500 hover:text-slate-800 cursor-pointer underline">
+                                    Replace
+                                    <input
+                                      type="file"
+                                      accept="application/pdf"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const f = e.target.files?.[0];
+                                        if (f) handleUploadCategoryDatasheet(c._id, f);
+                                      }}
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            ) : isAdmin ? (
+                              <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-md font-semibold text-xs cursor-pointer">
+                                <Upload size={12} /> Upload PDF
+                                <input
+                                  type="file"
+                                  accept="application/pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleUploadCategoryDatasheet(c._id, f);
+                                  }}
+                                />
+                              </label>
+                            ) : (
+                              <span className="text-slate-400 italic">No Datasheet</span>
+                            )}
+                          </td>
+                          {isAdmin && (
+                            <td className="py-3 px-6 text-right">
+                              <button
+                                onClick={() => {
+                                  setCurrentCat(c);
+                                  setCatFormData({
+                                    name: c.name,
+                                    description: c.description || '',
+                                    make: c.make || 'LAPP',
+                                    subGroup: c.subGroup || '',
+                                    imageUrl: c.imageUrl || '',
+                                    datasheetUrl: c.datasheetUrl || ''
+                                  });
+                                  setIsCatModalOpen(true);
+                                }}
+                                className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded mr-1 cursor-pointer"
+                                title="Edit Category"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(c._id)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                title="Delete Category"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: BRAND MANAGEMENT */}
-      {activeTab === 'Brands' && (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[500px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
-                <tr>
-                  <th className="py-3 px-6 font-semibold">Manufacturer Brand</th>
-                  <th className="py-3 px-6 font-semibold">Description</th>
-                  {isAdmin && <th className="py-3 px-6 font-semibold text-right">Action</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {brands.length === 0 ? (
+      {/* TAB 3: BRAND MANAGEMENT (4 Approved Manufacturers) */}
+      {(activeTab === 'Makes' || (activeTab as any) === 'Brands') && (
+        <div className="space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[700px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-500">No brands found.</td>
+                    <th className="py-3 px-6 font-semibold">Brand / Manufacturer</th>
+                    <th className="py-3 px-6 font-semibold">Description & Scope</th>
+                    <th className="py-3 px-6 font-semibold text-center">Brand Categories</th>
+                    <th className="py-3 px-6 font-semibold text-center">Mapped Products</th>
+                    {isAdmin && <th className="py-3 px-6 font-semibold text-right">Action</th>}
+                  </tr>
+                </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {sortedMakes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-500">No authorized brands found.</td>
                   </tr>
                 ) : (
-                  brands.map((b) => (
-                    <tr key={b._id} className="hover:bg-red-50/20 transition-colors">
-                      <td className="py-3 px-6 font-bold text-slate-900">{b.name}</td>
-                      <td className="py-3 px-6 text-slate-500">{b.description || 'Manufacturer Brand'}</td>
-                      {isAdmin && (
-                        <td className="py-3 px-6 text-right">
+                  sortedMakes.map((m) => {
+                    const catCount = categories.filter(c => (c.make || '').toLowerCase() === m.name.toLowerCase()).length;
+                    const prodCount = makeCountMap[m.name.toLowerCase()] ?? m.productCount ?? 0;
+                    
+                    const makeBadgeTheme = 
+                      m.name === 'LAPP' ? 'bg-red-50 text-red-700 border-red-200' :
+                      m.name === 'Eaton' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      m.name === 'Partex' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+                    return (
+                      <tr key={m._id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-6">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-1 rounded-md font-extrabold text-xs tracking-wide border shadow-2xs ${makeBadgeTheme}`}>
+                              {m.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-6 text-slate-600 font-medium">
+                          {m.description || 'Authorized Client Manufacturer'}
+                        </td>
+                        <td className="py-3 px-6 text-center">
                           <button
-                            onClick={() => { setCurrentBrand(b); setBrandFormData({ name: b.name, description: b.description || '' }); setIsBrandModalOpen(true); }}
-                            className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded mr-1 cursor-pointer"
+                            type="button"
+                            onClick={() => {
+                              setCategoryMakeFilter(m.name);
+                              setActiveTab('Categories');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
+                            title={`View categories assigned to ${m.name}`}
                           >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBrand(b._id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
-                          >
-                            <Trash2 size={14} />
+                            <Layers size={13} className="text-red-600" />
+                            {catCount} Categories
                           </button>
                         </td>
-                      )}
-                    </tr>
-                  ))
+                        <td className="py-3 px-6 text-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveBrand(m.name);
+                              setActiveCategory('All');
+                              setActiveSubCategory('All');
+                              setActiveTab('Products');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors cursor-pointer"
+                            title={`View ${prodCount} products mapped to ${m.name}`}
+                          >
+                            <ShoppingBag size={13} className="text-red-600" />
+                            {prodCount} Products
+                          </button>
+                        </td>
+                        {isAdmin && (
+                          <td className="py-3 px-6 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => { 
+                                  setCurrentMake(m); 
+                                  setMakeFormData({ name: m.name, description: m.description || '' }); 
+                                  setIsMakeModalOpen(true); 
+                                }}
+                                className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                title="Edit Make details"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMake(m._id, m.name)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                title={`Delete ${m.name} (only if 0 products mapped)`}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* PRODUCT ADD / EDIT MODAL - PORTAL-MOUNTED, FULLY RESPONSIVE */}
       {isModalOpen && createPortal(
@@ -1134,47 +2295,84 @@ export const AdminProducts: React.FC = () => {
 
                 {/* 3. Product Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="sm:col-span-2">
-                    <label className="block font-semibold text-slate-700 mb-1">Product Name *</label>
+                  {/* Hierarchy Step 1: Make (Manufacturer) */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      1. Make (Manufacturer) *
+                    </label>
+                    <select 
+                      name="brandName" 
+                      value={modalMake}
+                      onChange={(e) => {
+                        const newMake = e.target.value;
+                        setModalMake(newMake);
+                        const matchCats = sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === newMake.toLowerCase());
+                        if (matchCats.length > 0) {
+                          setModalCategory(matchCats[0].name);
+                          setModalSubGroup(matchCats[0].subGroup || '');
+                        }
+                      }}
+                      required
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white" 
+                    >
+                      {ALLOWED_MAKES.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Hierarchy Step 2: Product Category */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      2. Product Category / Group *
+                    </label>
+                    <select 
+                      name="categoryName" 
+                      value={modalCategory}
+                      onChange={(e) => {
+                        const newCat = e.target.value;
+                        setModalCategory(newCat);
+                        const found = sortedCategories.find(c => c.name.toLowerCase().trim() === newCat.toLowerCase().trim());
+                        if (found && found.subGroup) {
+                          setModalSubGroup(found.subGroup);
+                        }
+                      }}
+                      required 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                    >
+                      <option value="">Select Category...</option>
+                      {filteredFormCategories.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Hierarchy Step 3: Sub-category / Subgroup */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      3. Sub-category / Series
+                    </label>
+                    <input 
+                      type="text"
+                      name="subGroup"
+                      value={modalSubGroup}
+                      onChange={(e) => setModalSubGroup(e.target.value)}
+                      placeholder="e.g. ÖLFLEX® Power & Control or Series"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-slate-50/50" 
+                    />
+                  </div>
+
+                  {/* Hierarchy Step 4: Final Product Name */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">4. Product Name *</label>
                     <input 
                       type="text" 
                       name="name" 
                       defaultValue={currentProduct?.name || ''} 
                       required 
-                      placeholder="e.g. ÖLFLEX® CLASSIC 110"
+                      placeholder="e.g. ÖLFLEX® CLASSIC 110 3G1.5"
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Category *</label>
-                    <select 
-                      name="categoryName" 
-                      defaultValue={currentProduct?.category?.name || currentProduct?.categoryName || ''} 
-                      required 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
-                    >
-                      <option value="">Select Category...</option>
-                      {dropdownCategories.map((catName) => (
-                        <option key={catName} value={catName}>{catName}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Brand Name</label>
-                    <input 
-                      list="brand-list"
-                      name="brandName" 
-                      defaultValue={currentProduct?.brand?.name || currentProduct?.brandName || ''} 
-                      placeholder="e.g. LAPP, EATON"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
-                    <datalist id="brand-list">
-                      {brands.map((b) => (
-                        <option key={b._id} value={b.name} />
-                      ))}
-                    </datalist>
                   </div>
 
                   <div>
@@ -1189,73 +2387,175 @@ export const AdminProducts: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Price (₹)</label>
+                    <label className="block font-semibold text-slate-700 mb-1">List Price (₹) *</label>
                     <input 
                       type="number" 
                       step="0.01" 
                       name="price" 
                       defaultValue={currentProduct?.price || ''} 
                       placeholder="e.g. 150.00"
+                      required
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
                     />
+                  </div>
+
+                  {/* Core Size & Automatic SQMM Mapping */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Core Size (Number of Cores)
+                    </label>
+                    <select
+                      value={modalCore}
+                      onChange={(e) => handleCoreChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white font-medium"
+                    >
+                      <option value="">Select Core Size (or N/A)...</option>
+                      {AVAILABLE_CORES.map((c) => (
+                        <option key={c} value={c}>
+                          {c === '0' ? '0 / Accessories (Glands, Conduits)' : `${c} Core${c !== '1' ? 's' : ''}`}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Core / Cores</label>
-                    <input 
-                      type="text" 
-                      name="core" 
-                      defaultValue={currentProduct?.core || ''} 
-                      placeholder="e.g. 3G, 4G, 2"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-semibold text-slate-700">
+                        SQMM (Conductor Cross Section)
+                      </label>
+                      {modalCore && getValidSqmmOptions(modalCore).length === 1 && (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                          Auto-Selected
+                        </span>
+                      )}
+                    </div>
+                    {(() => {
+                      const coreOpts = modalCore ? getValidSqmmOptions(modalCore) : [];
+                      const opts = coreOpts.length > 0 ? coreOpts : [
+                        "0.14", "0.25", "0.34", "0.5", "0.75", "1", "1.5", "2", "2.5", "4", "6", 
+                        "10", "16", "25", "35", "50", "70", "95", "120", "150", "185", "240"
+                      ];
+                      const isPredefined = opts.includes(modalSqmm) || !modalSqmm;
+
+                      return (
+                        <div className="space-y-1.5">
+                          <select
+                            value={isPredefined ? modalSqmm : 'Other'}
+                            onChange={(e) => {
+                              if (e.target.value === 'Other') {
+                                if (isPredefined) setModalSqmm('');
+                              } else {
+                                handleSqmmChange(e.target.value);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white font-mono font-medium"
+                          >
+                            <option value="">
+                              {modalCore ? `Select valid SQMM for ${modalCore} Cores...` : 'Select SQMM Cross Section...'}
+                            </option>
+                            {opts.map((sq) => (
+                              <option key={sq} value={sq}>
+                                {sq} mm² (SQ.MM)
+                              </option>
+                            ))}
+                            <option value="Other">Other / Type Custom SQMM...</option>
+                          </select>
+
+                          {(!isPredefined || modalSqmm === 'Other') && (
+                            <input
+                              type="text"
+                              value={modalSqmm === 'Other' ? '' : modalSqmm}
+                              onChange={(e) => handleSqmmChange(e.target.value)}
+                              placeholder="Type custom SQMM (e.g. 1.5, 2.5, 120 SQ.MM)..."
+                              className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                          )}
+                        </div>
+                      );
+                    })()}
+                    {coreSqmmError && (
+                      <p className="text-[11px] text-red-600 font-semibold mt-1 flex items-center gap-1">
+                        <AlertCircle size={12} className="shrink-0" />
+                        {coreSqmmError}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Colour Selection with Visual Swatch */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Core Size</label>
-                    <input 
-                      type="text" 
-                      name="coreSize" 
-                      defaultValue={currentProduct?.coreSize || currentProduct?.size || ''} 
-                      placeholder="e.g. 1.5, 2.5 mm²"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Cable Colour
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={modalColour}
+                        onChange={(e) => setModalColour(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white font-medium"
+                      >
+                        <option value="">Select Colour (or Unspecified)...</option>
+                        {COLOUR_OPTIONS.map((col) => (
+                          <option key={col.code} value={col.code}>
+                            {col.label}
+                          </option>
+                        ))}
+                      </select>
+                      {modalColour && (
+                        <div className="shrink-0">
+                          <ColourSwatch colour={modalColour === 'Other' && customColour ? customColour : modalColour} size="md" showLabel={false} />
+                        </div>
+                      )}
+                    </div>
+                    {modalColour === 'Other' && (
+                      <input
+                        type="text"
+                        placeholder="Type custom colour name (e.g. Orange, White/Blue)..."
+                        value={customColour}
+                        onChange={(e) => setCustomColour(e.target.value)}
+                        className="mt-2 w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    )}
                   </div>
 
+                  {/* UOM (Unit of Measurement) Dropdown */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Colour</label>
-                    <input 
-                      type="text" 
-                      name="colour" 
-                      defaultValue={currentProduct?.colour || ''} 
-                      placeholder="e.g. Grey (RAL 7001), Black, Blue"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      UOM (Unit of Measurement) *
+                    </label>
+                    <select
+                      value={modalUom}
+                      onChange={(e) => setModalUom(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white font-medium"
+                    >
+                      <optgroup label="Length Units">
+                        <option value="Meter">Metre (m)</option>
+                        <option value="mm">Millimetre (mm)</option>
+                        <option value="cm">Centimetre (cm)</option>
+                        <option value="ft">Foot (ft)</option>
+                        <option value="in">Inch (in)</option>
+                      </optgroup>
+                      <optgroup label="Packaging / Bulk Units">
+                        <option value="Coil">Coil (100m bundle)</option>
+                        <option value="Drum">Drum (Bulk spool)</option>
+                        <option value="Pack">Pack / Box</option>
+                        <option value="Roll">Roll</option>
+                      </optgroup>
+                      <optgroup label="Piece / Unit">
+                        <option value="Piece">Piece (pc)</option>
+                        <option value="Set">Set</option>
+                      </optgroup>
+                      <optgroup label="Area">
+                        <option value="sqmm">Square millimetre (sqmm)</option>
+                      </optgroup>
+                    </select>
+                    {modalUom === 'sqmm' && (
+                      <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                        Notice: 'sqmm' is normally for conductor cross-section. Cable orders are usually billed per 'Meter', 'Coil', or 'Piece'.
+                      </p>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">UOM (Unit of Measurement)</label>
-                    <input 
-                      type="text" 
-                      name="uom" 
-                      defaultValue={currentProduct?.uom || currentProduct?.packSize || 'Meter'} 
-                      placeholder="e.g. Meter, 100 m, 500 m, Coil, Drum"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
-                  </div>
 
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">MRP (List Price ₹)</label>
-                    <input 
-                      type="number" 
-                      step="0.01" 
-                      name="mrp" 
-                      defaultValue={currentProduct?.mrp || ''} 
-                      placeholder="e.g. 200.00"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
-                    />
-                  </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">GST (%)</label>
@@ -1390,91 +2690,156 @@ export const AdminProducts: React.FC = () => {
                 </div>
               </div>
 
-              {/* Specs Table */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
-                <table className="w-full text-left text-xs">
-                  <tbody className="divide-y divide-slate-200">
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 w-1/3 bg-slate-100/50">Part Number</td>
-                      <td className="px-4 py-2.5 font-mono font-bold text-slate-800">{viewProduct.partNo || 'N/A'}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Price (Ex-GST)</td>
-                      <td className="px-4 py-2.5 font-mono font-bold text-red-700">
-                        {viewProduct.price ? `₹${Number(viewProduct.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'On Request / Quotation'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">UOM (Unit of Measurement)</td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-800">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-mono">
-                          {viewProduct.uom || viewProduct.packSize || 'Meter'}
-                        </span>
-                      </td>
-                    </tr>
-                    {viewProduct.mrp && (
-                      <tr>
-                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">MRP (List Price)</td>
-                        <td className="px-4 py-2.5 font-mono font-semibold text-slate-700">₹{Number(viewProduct.mrp).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                      </tr>
+              {/* 4-Level Hierarchy Flow: Make -> Product Category -> Sub-category -> Final Product */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <Layers size={13} className="text-red-600" />
+                    Product Hierarchy Flow (Make → Category → Sub-category → Final Product)
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-normal lowercase italic hidden sm:inline">
+                    (click any level to filter catalog)
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                  {/* Step 1: Make */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const makeVal = viewProduct.brand?.name || viewProduct.brandName || 'LAPP';
+                      setActiveBrand(makeVal);
+                      setActiveCategory('All');
+                      setActiveSubCategory('All');
+                      setViewProduct(null);
+                      setActiveTab('Products');
+                    }}
+                    className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-900 rounded-md font-bold text-[11px] border border-red-300 transition-all cursor-pointer hover:shadow-2xs flex items-center gap-1 group"
+                    title={`Filter catalog by Make: ${viewProduct.brand?.name || viewProduct.brandName || 'LAPP'}`}
+                  >
+                    <span>Make: {viewProduct.brand?.name || viewProduct.brandName || 'LAPP'}</span>
+                  </button>
+
+                  <ChevronRight size={13} className="text-slate-400 shrink-0" />
+
+                  {/* Step 2: Category */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const makeVal = viewProduct.brand?.name || viewProduct.brandName || 'LAPP';
+                      const catVal = viewProduct.categoryName || viewProduct.category?.name || 'Power and Control Cables';
+                      setActiveBrand(makeVal);
+                      setActiveCategory(catVal);
+                      setActiveSubCategory('All');
+                      setViewProduct(null);
+                      setActiveTab('Products');
+                    }}
+                    className="px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-md font-bold text-[11px] border border-sky-300 transition-all cursor-pointer hover:shadow-2xs flex items-center gap-1 group"
+                    title={`Filter catalog by Category: ${viewProduct.categoryName || viewProduct.category?.name || 'Power and Control Cables'}`}
+                  >
+                    <span>Category: {viewProduct.categoryName || viewProduct.category?.name || 'Power and Control Cables'}</span>
+                  </button>
+
+                  <ChevronRight size={13} className="text-slate-400 shrink-0" />
+
+                  {/* Step 3: Sub-category */}
+                  {(() => {
+                    const catVal = viewProduct.categoryName || viewProduct.category?.name || 'Power and Control Cables';
+                    const subVal = getProductSubCategory(viewProduct, catVal);
+                    return (
+                      <span
+                        className="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-md font-bold text-[11px] border border-amber-300"
+                        title={`Sub-category: ${subVal}`}
+                      >
+                        Sub-category: {subVal}
+                      </span>
+                    );
+                  })()}
+
+                  <ChevronRight size={13} className="text-slate-400 shrink-0" />
+
+                  {/* Step 4: Final Product */}
+                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-md font-bold text-[11px] border border-emerald-300 truncate max-w-[200px]" title={viewProduct.name}>
+                    Product: {viewProduct.name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Specs Side-by-Side Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* Left Column: Commercial & Core Specs */}
+                <div className="space-y-2 border border-slate-200 rounded-xl p-3.5 bg-slate-50/50">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">Part Number</span>
+                    <span className="font-mono font-bold text-slate-900">{viewProduct.partNo || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">List Price</span>
+                    <span className="font-mono font-bold text-red-700">
+                      {viewProduct.price ? `₹${Number(viewProduct.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'On Request'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">UOM</span>
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-semibold text-slate-800 uppercase">
+                      {formatUom(viewProduct.uom || viewProduct.packSize || 'm')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">Core</span>
+                    <span className="font-mono font-medium text-slate-800">
+                      {viewProduct.core ? `${viewProduct.core} Cores` : '-'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="font-semibold text-slate-500">Cross Section</span>
+                    <span className="font-mono font-bold text-slate-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                      {(viewProduct.sqmm || viewProduct.coreSize || viewProduct.size) ? `${viewProduct.sqmm || viewProduct.coreSize || viewProduct.size} SQ.MM` : '-'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Column: Physical & Technical Specs */}
+                <div className="space-y-2 border border-slate-200 rounded-xl p-3.5 bg-slate-50/50">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">Outer Diameter (OD)</span>
+                    <span className="font-mono font-semibold text-slate-800">
+                      {viewProduct.outerDiameter ? formatOD(viewProduct.outerDiameter, viewProduct.name) : '-'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">Weight</span>
+                    <span className="font-mono font-semibold text-slate-800">
+                      {viewProduct.weight ? formatWeight(viewProduct.weight, viewProduct.name) : '-'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                    <span className="font-semibold text-slate-500">Colour</span>
+                    <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      {viewProduct.colour ? (
+                        <>
+                          <ColourSwatch colour={viewProduct.colour} size="sm" />
+                          <span>{viewProduct.colour}</span>
+                        </>
+                      ) : 'Standard'}
+                    </span>
+                  </div>
+                  {viewProduct.copperIndex && (
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                      <span className="font-semibold text-slate-500">Copper Index</span>
+                      <span className="font-mono text-slate-800">{viewProduct.copperIndex} kg/km</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center py-1">
+                    <span className="font-semibold text-slate-500">Datasheet</span>
+                    {viewProduct.datasheetUrl ? (
+                      <a href={viewProduct.datasheetUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md font-bold text-xs cursor-pointer">
+                        <FileText size={12} /> View PDF
+                      </a>
+                    ) : (
+                      <span className="text-slate-400 italic">None</span>
                     )}
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Colour</td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-800">
-                        {viewProduct.colour ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-bold">
-                            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                            {viewProduct.colour}
-                          </span>
-                        ) : 'Standard / As per spec'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Cores / Configuration</td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.core || 'Standard'}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Core Size / Cross Section</td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.coreSize || viewProduct.size || 'N/A'}</td>
-                    </tr>
-                    {viewProduct.pe && (
-                      <tr>
-                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">PE (Packaging Unit)</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.pe}</td>
-                      </tr>
-                    )}
-                    {viewProduct.copperIndex && (
-                      <tr>
-                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Copper Index</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.copperIndex} kg/km</td>
-                      </tr>
-                    )}
-                    {viewProduct.outerDiameter && (
-                      <tr>
-                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Outer Diameter</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.outerDiameter}</td>
-                      </tr>
-                    )}
-                    {viewProduct.weight && (
-                      <tr>
-                        <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Weight / Specs</td>
-                        <td className="px-4 py-2.5 font-semibold text-slate-800">{viewProduct.weight}</td>
-                      </tr>
-                    )}
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold text-slate-500 bg-slate-100/50">Datasheet PDF</td>
-                      <td className="px-4 py-2.5">
-                        {viewProduct.datasheetUrl ? (
-                          <a href={viewProduct.datasheetUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md font-bold text-xs cursor-pointer">
-                            <FileText size={14} /> Open Datasheet PDF
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 italic">No PDF datasheet uploaded</span>
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1519,12 +2884,36 @@ export const AdminProducts: React.FC = () => {
             </div>
             <form onSubmit={handleSaveCategory} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Category Name *</label>
+                <label className="block font-semibold text-slate-700 mb-1">Make (Manufacturer) *</label>
+                <select
+                  value={catFormData.make}
+                  onChange={(e) => setCatFormData({ ...catFormData, make: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                >
+                  {ALLOWED_MAKES.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Product Category / Group Name *</label>
                 <input 
                   type="text" 
                   required 
                   value={catFormData.name} 
                   onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })} 
+                  placeholder="e.g. ÖLFLEX® Control Cables, Miniature Contactors"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Subgroup (Optional)</label>
+                <input 
+                  type="text" 
+                  value={catFormData.subGroup} 
+                  onChange={(e) => setCatFormData({ ...catFormData, subGroup: e.target.value })} 
+                  placeholder="e.g. Screened, Flexible, PVC / PUR"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
@@ -1534,12 +2923,13 @@ export const AdminProducts: React.FC = () => {
                   type="text" 
                   value={catFormData.description} 
                   onChange={(e) => setCatFormData({ ...catFormData, description: e.target.value })} 
+                  placeholder="Category description / application overview"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onClick={() => setIsCatModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold rounded-lg cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer">Save</button>
+                <button type="submit" className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer">Save Category</button>
               </div>
             </form>
           </div>
@@ -1547,44 +2937,70 @@ export const AdminProducts: React.FC = () => {
         document.body
       )}
 
-      {/* BRAND MODAL - Portal-Mounted */}
-      {isBrandModalOpen && createPortal(
+      {/* MAKE MODAL - Portal-Mounted */}
+      {isMakeModalOpen && createPortal(
         <div 
           className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setIsBrandModalOpen(false);
+            if (e.target === e.currentTarget) setIsMakeModalOpen(false);
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 border border-slate-200">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50">
-              <h3 className="font-bold text-slate-800">{currentBrand ? 'Edit Brand' : 'Add New Brand'}</h3>
-              <button onClick={() => setIsBrandModalOpen(false)} className="w-8 h-8 rounded-lg bg-slate-200/80 hover:bg-slate-300 flex items-center justify-center text-slate-600 cursor-pointer">
+              <div className="flex items-center gap-2">
+                <Building size={18} className="text-red-600" />
+                <h3 className="font-bold text-slate-800">
+                  {currentMake ? 'Edit Brand / Manufacturer' : 'Add Brand / Manufacturer'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsMakeModalOpen(false)} 
+                className="w-8 h-8 rounded-lg bg-slate-200/80 hover:bg-slate-300 flex items-center justify-center text-slate-600 cursor-pointer"
+              >
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleSaveBrand} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleSaveMake} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Brand Name *</label>
-                <input 
-                  type="text" 
+                <label className="block font-semibold text-slate-700 mb-1">Brand / Manufacturer *</label>
+                <select 
                   required 
-                  value={brandFormData.name} 
-                  onChange={(e) => setBrandFormData({ ...brandFormData, name: e.target.value })} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
+                  value={makeFormData.name} 
+                  onChange={(e) => setMakeFormData({ ...makeFormData, name: e.target.value })} 
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white font-medium text-slate-800"
+                >
+                  {ALLOWED_MAKES.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Only client-approved manufacturers: LAPP, Eaton, Partex, Mennekes.
+                </p>
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Description</label>
-                <input 
-                  type="text" 
-                  value={brandFormData.description} 
-                  onChange={(e) => setBrandFormData({ ...brandFormData, description: e.target.value })} 
+                <label className="block font-semibold text-slate-700 mb-1">Description & Scope</label>
+                <textarea 
+                  rows={3}
+                  value={makeFormData.description} 
+                  onChange={(e) => setMakeFormData({ ...makeFormData, description: e.target.value })} 
+                  placeholder="e.g. Authorized Global Manufacturer of Industrial Automation & Cable Systems"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button type="button" onClick={() => setIsBrandModalOpen(false)} className="px-4 py-2 text-slate-600 font-semibold rounded-lg cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer">Save</button>
+                <button 
+                  type="button" 
+                  onClick={() => setIsMakeModalOpen(false)} 
+                  className="px-4 py-2 text-slate-600 font-semibold rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer"
+                >
+                  Save Brand
+                </button>
               </div>
             </form>
           </div>

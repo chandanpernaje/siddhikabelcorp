@@ -127,6 +127,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           unit: product.unit,
           qty: isMeter ? Math.max(100, Math.ceil(validQty / 25) * 25) : validQty,
           hsnCode: product.hsnCode || "85444990",
+          core: product.core,
+          coreSize: product.coreSize,
+          sqmm: product.sqmm || product.coreSize,
+          uom: product.uom || product.unit,
+          weight: product.weight,
+          outerDiameter: product.outerDiameter,
         },
       ];
     });
@@ -185,6 +191,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           unit: "meter",
           qty: validQty,
           hsnCode: "85444990",
+          core: product.core,
+          coreSize: product.sqmm ? String(product.sqmm) : (product.size ? String(product.size) : undefined),
+          sqmm: product.sqmm ? String(product.sqmm) : (product.size ? String(product.size) : undefined),
+          uom: product.uom || "m",
+          weight: product.weight ? String(product.weight) : undefined,
+          outerDiameter: product.outerDia ? String(product.outerDia) : undefined,
         },
       ];
     });

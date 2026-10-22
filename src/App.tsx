@@ -29,6 +29,7 @@ import { AboutEaton } from "./pages/AboutEaton";
 import { AboutMennekes } from "./pages/AboutMennekes";
 import { AboutPartex } from "./pages/AboutPartex";
 import { Industries } from "./pages/Industries";
+import { Products } from "./pages/Products";
 
 // Admin Imports
 import { AdminLayout } from "./components/admin/AdminLayout";
@@ -91,6 +92,7 @@ export const App: React.FC = () => {
               {/* Public Website Routes */}
               <Route path="/" element={<MainLayout />}>
                 <Route index element={<Home />} />
+                <Route path="products" element={<Navigate to="/#brands" replace />} />
                 <Route path="olflex-cables" element={<OlflexCables />} />
                 <Route path="eaton-products" element={<EatonProducts />} />
                 <Route path="product-detail" element={<ProductDetail />} />

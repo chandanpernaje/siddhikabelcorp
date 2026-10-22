@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Zap, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { RFQModal } from "../components/ui/RFQModal";
+import { ColourSwatch } from "../components/ui/ColourSwatch";
 import { API_BASE_URL } from "../config/api";
 import type { OlflexProduct } from "../types";
 import {
@@ -81,20 +82,66 @@ const CompactCableCard = ({ product, image, onQuote }: { product: any, image: st
             {typeof product.brand === 'object' ? (product.brand?.name || 'LAPP') : (product.brand || 'LAPP')}
           </span>
         </div>
-                <Link to={`/product/${product.partNo}`} className="block w-full">
+        <Link to={`/product/${product.partNo}`} className="block w-full">
           <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-orange-700 transition-colors line-clamp-2 leading-snug">
             {product.name}
           </h4>
         </Link>
-        {product.size ? (
-          <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md mt-1 border border-slate-200">
-            {product.core ? `${product.core}X${product.size}` : product.size}
+        {(product.size || product.coreSize || product.sqmm) ? (
+          <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+            {product.core ? `${product.core} Cores × ${product.sqmm || product.coreSize || product.size} mm²` : `${product.sqmm || product.coreSize || product.size} mm²`}
+          </div>
+        ) : null}
+        {product.colour && (
+          <div className="pt-0.5">
+            <ColourSwatch colour={product.colour} size="xs" />
+          </div>
+        )}
+        {product.price ? (
+          <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-900 pt-0.5">
+            ₹{Number(product.price).toLocaleString('en-IN')}{' '}
+            <span className="text-[10px] text-slate-500 font-normal">
+              / {product.uom || product.unit || 'Meter'}
+            </span>
           </div>
         ) : null}
       </div>
     </div>
   )
 }
+
+// Normalization Helpers to eliminate duplicate options and cards
+const normalizeCore = (val: any, name?: string): number | null => {
+  if (val !== null && val !== undefined && String(val).trim() !== '') {
+    const cleanStr = String(val).replace(/cores?/gi, '').trim();
+    const num = parseInt(cleanStr, 10);
+    if (!isNaN(num) && num > 0) return num;
+  }
+  if (name) {
+    const m = String(name).match(/(\d+)\s*[xXgG]\s*([0-9]+(?:[.,][0-9]+)?)/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > 0) return n;
+    }
+  }
+  return null;
+};
+
+const normalizeCrossSection = (val: any, name?: string): number | null => {
+  if (val !== null && val !== undefined && String(val).trim() !== '') {
+    const cleanStr = String(val).replace(/,/g, '.').replace(/mm²|sqmm|sq\.?\s*mm/gi, '').trim();
+    const num = parseFloat(cleanStr);
+    if (!isNaN(num) && num > 0) return num;
+  }
+  if (name) {
+    const m = String(name).match(/(\d+)\s*[xXgG]\s*([0-9]+(?:[.,][0-9]+)?)/);
+    if (m) {
+      const n = parseFloat(m[2].replace(',', '.'));
+      if (!isNaN(n) && n > 0) return n;
+    }
+  }
+  return null;
+};
 
 export const OlflexCables: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,47 +150,124 @@ export const OlflexCables: React.FC = () => {
   const [dbProducts, setDbProducts] = useState<any[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
     fetch(`${API_BASE_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
-        setDbProducts(data);
+        if (isMounted && Array.isArray(data)) {
+          setDbProducts(data);
+        }
       })
       .catch(err => console.error("Failed to fetch products:", err));
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Fallback to static data by default
-  let SECTIONS: any[] = [];
-  if (groupParam === "unitronic") SECTIONS = [...UNITRONIC_SECTIONS];
-  else if (groupParam === "skintop") SECTIONS = [...SKINTOP_SECTIONS];
-  else if (groupParam === "silvyn") SECTIONS = [...SILVYN_SECTIONS];
-  else if (groupParam === "uniplus") SECTIONS = [...UNIPLUS_SECTIONS];
-  else if (groupParam === "infra") SECTIONS = [...INFRA_SECTIONS];
-  else SECTIONS = [...OLFLEX_SECTIONS];
+  // Build SECTIONS with deduplication and update static products with fresh DB data
+  const SECTIONS = useMemo(() => {
+    let baseSections: any[] = [];
+    if (groupParam === "unitronic") baseSections = UNITRONIC_SECTIONS.map(s => ({ ...s, data: [...s.data] }));
+    else if (groupParam === "skintop") baseSections = SKINTOP_SECTIONS.map(s => ({ ...s, data: [...s.data] }));
+    else if (groupParam === "silvyn") baseSections = SILVYN_SECTIONS.map(s => ({ ...s, data: [...s.data] }));
+    else if (groupParam === "uniplus") baseSections = UNIPLUS_SECTIONS.map(s => ({ ...s, data: [...s.data] }));
+    else if (groupParam === "infra") baseSections = INFRA_SECTIONS.map(s => ({ ...s, data: [...s.data] }));
+    else baseSections = OLFLEX_SECTIONS.map(s => ({ ...s, data: [...s.data] }));
 
-  if (dbProducts.length > 0) {
-    const newItems = dbProducts.filter((p: any) => {
-      const cat = p.category?.name || p.categoryName || '';
-      if (groupParam === "olflex" && cat === "Power and Control Cables") return true;
-      if (groupParam === "unitronic" && cat === "Data Communication Cables") return true;
-      if (groupParam === "skintop" && cat === "Cable Glands & Counter Nuts") return true;
-      if (groupParam === "silvyn" && cat === "Rill, Conduit & Klick") return true;
-      if (groupParam === "uniplus" && cat === "Control Cabinet Single Cores") return true;
-      return false;
+    // Track existing part numbers and names to prevent duplicate product cards
+    const existingPartNos = new Set<string>();
+    const existingNames = new Set<string>();
+    baseSections.forEach(sec => {
+      sec.data.forEach((p: any) => {
+        if (p.partNo) existingPartNos.add(String(p.partNo).trim().toLowerCase());
+        if (p.name) existingNames.add(String(p.name).trim().toLowerCase());
+      });
     });
 
-    if (newItems.length > 0) {
-      SECTIONS.push({
-        id: 'new-db-items',
-        title: 'Newly Added Products',
-        image: '/images/cable-olflex-cores.png',
-        data: newItems.map((p: any) => ({
-          ...p,
-          brand: p.brand?.name || p.brandName || 'LAPP',
-          size: p.coreSize
-        }))
+    // If database products exist, update matching static products in-place and collect genuinely new products
+    if (dbProducts.length > 0) {
+      const dbMap = new Map<string, any>();
+      dbProducts.forEach(p => {
+        if (p.partNo) dbMap.set(String(p.partNo).trim().toLowerCase(), p);
       });
+
+      // Update static items with any fresh database data
+      baseSections = baseSections.map(sec => ({
+        ...sec,
+        data: sec.data.map((item: any) => {
+          const key = item.partNo ? String(item.partNo).trim().toLowerCase() : null;
+          if (key && dbMap.has(key)) {
+            const dbP = dbMap.get(key);
+            return {
+              ...item,
+              ...dbP,
+              core: item.core ?? dbP.core,
+              size: item.size ?? dbP.size
+            };
+          }
+          return item;
+        })
+      }));
+
+      // Filter genuinely new items for the current category group
+      const newItems = dbProducts.filter((p: any) => {
+        const cat = (p.category?.name || p.categoryName || '').toLowerCase();
+        const matchCategory = (
+          (groupParam === "olflex" && (cat.includes("power") || cat.includes("control") || cat.includes("cables"))) ||
+          (groupParam === "unitronic" && (cat.includes("data") || cat.includes("communication") || cat.includes("unitronic"))) ||
+          (groupParam === "skintop" && (cat.includes("gland") || cat.includes("skintop"))) ||
+          (groupParam === "silvyn" && (cat.includes("conduit") || cat.includes("silvyn") || cat.includes("rill"))) ||
+          (groupParam === "uniplus" && (cat.includes("cabinet") || cat.includes("single core") || cat.includes("uniplus")))
+        );
+        if (!matchCategory) return false;
+
+        const pNo = p.partNo ? String(p.partNo).trim().toLowerCase() : null;
+        const pName = p.name ? String(p.name).trim().toLowerCase() : null;
+
+        // Skip if already present in any static section (prevents duplicate product cards)
+        if (pNo && existingPartNos.has(pNo)) return false;
+        if (pName && existingNames.has(pName)) return false;
+        return true;
+      });
+
+      // Deduplicate newItems among themselves
+      const uniqueNewItemsMap = new Map<string, any>();
+      newItems.forEach((p: any) => {
+        const key = p.partNo ? String(p.partNo).trim().toLowerCase() : p.name?.trim().toLowerCase();
+        if (key && !uniqueNewItemsMap.has(key)) {
+          uniqueNewItemsMap.set(key, {
+            ...p,
+            brand: p.brand?.name || p.brandName || (typeof p.brand === 'string' ? p.brand : 'LAPP'),
+            size: typeof p.size === 'number' ? p.size : (p.coreSize ? parseFloat(p.coreSize) : null)
+          });
+        }
+      });
+
+      const uniqueNewList = Array.from(uniqueNewItemsMap.values());
+      if (uniqueNewList.length > 0) {
+        baseSections.push({
+          id: 'new-db-items',
+          title: 'Newly Added Products',
+          image: '/images/cable-olflex-cores.png',
+          data: uniqueNewList
+        });
+      }
     }
-  }
+
+    // Deduplicate products within each section to prevent any duplicate cards
+    return baseSections.map(sec => {
+      const seen = new Set<string>();
+      const uniqueData = sec.data.filter((p: any) => {
+        const key = p.partNo ? String(p.partNo).trim().toLowerCase() : (p.name ? String(p.name).trim().toLowerCase() : null);
+        if (!key) return true;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return { ...sec, data: uniqueData };
+    });
+  }, [groupParam, dbProducts]);
+
   const groupTitle = groupParam === "unitronic" ? "UNITRONIC® Data Cables" 
                    : groupParam === "skintop" ? "SKINTOP® Cable Glands"
                    : groupParam === "silvyn" ? "SILVYN® Conduits"
@@ -177,26 +301,60 @@ export const OlflexCables: React.FC = () => {
     setRfqModalOpen(true);
   };
 
-  // Extract unique cores and sizes from all products
-  const allProducts = SECTIONS.flatMap(s => s.data);
-  const uniqueCores = Array.from(new Set(allProducts.map(p => p.core))).filter(Boolean).sort((a, b) => Number(a) - Number(b));
-  const uniqueSizes = Array.from(new Set(allProducts.map(p => p.size))).filter(Boolean).sort((a, b) => Number(a) - Number(b));
+  // Extract unique cores and sizes from all products (strictly deduplicated and sorted numerically)
+  const allProducts = useMemo(() => SECTIONS.flatMap(s => s.data), [SECTIONS]);
 
-  const filteredSections = SECTIONS.map(section => {
-    if (activeFilter !== 'all' && section.id !== activeFilter) return null;
-    
-    const filteredData = section.data.filter((p: OlflexProduct) => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch = p.name.toLowerCase().includes(q) || (p.partNo && p.partNo.toLowerCase().includes(q));
-      const matchCore = coreFilter ? p.core?.toString() === coreFilter : true;
-      const matchSize = sqmmFilter ? p.size?.toString() === sqmmFilter : true;
-      return matchSearch && matchCore && matchSize;
+  const uniqueCores = useMemo(() => {
+    const coreSet = new Set<number>();
+    allProducts.forEach(p => {
+      const c = normalizeCore(p.core, p.name);
+      if (c !== null && c > 0) coreSet.add(c);
     });
+    return Array.from(coreSet).sort((a, b) => a - b);
+  }, [allProducts]);
 
-    return { ...section, data: filteredData };
-  }).filter(Boolean) as typeof SECTIONS;
+  const uniqueSizes = useMemo(() => {
+    const sizeSet = new Set<number>();
+    allProducts.forEach(p => {
+      const s = normalizeCrossSection(
+        p.size !== undefined && p.size !== null && p.size !== 0 ? p.size : (p.sqmm || p.coreSize),
+        p.name
+      );
+      if (s !== null && s > 0) sizeSet.add(s);
+    });
+    return Array.from(sizeSet).sort((a, b) => a - b);
+  }, [allProducts]);
 
-  const totalFilteredCount = filteredSections.reduce((acc, curr) => acc + curr.data.length, 0);
+  const filteredSections = useMemo(() => {
+    return SECTIONS.map(section => {
+      if (activeFilter !== 'all' && section.id !== activeFilter) return null;
+      
+      const filteredData = section.data.filter((p: OlflexProduct) => {
+        const q = searchQuery.toLowerCase().trim();
+        const matchSearch = !q || (
+          (p.name && p.name.toLowerCase().includes(q)) || 
+          (p.partNo && String(p.partNo).toLowerCase().includes(q))
+        );
+
+        const pCore = normalizeCore(p.core, p.name);
+        const matchCore = !coreFilter || (pCore !== null && pCore.toString() === coreFilter);
+
+        const pSize = normalizeCrossSection(
+          p.size !== undefined && p.size !== null && p.size !== 0 ? p.size : (p.sqmm || p.coreSize),
+          p.name
+        );
+        const matchSize = !sqmmFilter || (pSize !== null && pSize.toString() === sqmmFilter);
+
+        return matchSearch && matchCore && matchSize;
+      });
+
+      return { ...section, data: filteredData };
+    }).filter(Boolean) as typeof SECTIONS;
+  }, [SECTIONS, activeFilter, searchQuery, coreFilter, sqmmFilter]);
+
+  const totalFilteredCount = useMemo(() => {
+    return filteredSections.reduce((acc, curr) => acc + curr.data.length, 0);
+  }, [filteredSections]);
 
   const resetFilters = () => {
     setSearchQuery('');

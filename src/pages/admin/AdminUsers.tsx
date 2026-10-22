@@ -272,12 +272,14 @@ export const AdminUsers: React.FC = () => {
                         )}
                       </td>
                       <td className="py-4 px-6">
-                        {user.gstin ? (
+                        {user.gstin && user.gstin.trim() && user.gstin.toUpperCase() !== 'UNREGISTERED' ? (
                           <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-800 rounded border border-slate-200">
                             {user.gstin}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">Not provided</span>
+                          <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">
+                            Unregistered (Non-GST)
+                          </span>
                         )}
                       </td>
                       <td className="py-4 px-6 text-xs text-slate-600">
@@ -449,7 +451,11 @@ export const AdminUsers: React.FC = () => {
 
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">GSTIN Number</p>
-                <p className="font-mono font-bold text-slate-800 mt-1 text-base">{selectedCustomer.gstin || 'Unregistered / Not Provided'}</p>
+                <p className="font-mono font-bold text-slate-800 mt-1 text-base">
+                  {selectedCustomer.gstin && selectedCustomer.gstin.trim() && selectedCustomer.gstin.toUpperCase() !== 'UNREGISTERED'
+                    ? selectedCustomer.gstin
+                    : 'Unregistered (Consumer / Non-GST Corporate)'}
+                </p>
               </div>
 
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">

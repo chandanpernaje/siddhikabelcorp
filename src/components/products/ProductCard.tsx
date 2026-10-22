@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Plus, Eye, Check, ShieldCheck, Zap } from "lucide-react";
 import type { Product } from "../../types";
 import { useCart } from "../../context/CartContext";
+import { ColourSwatch } from "../ui/ColourSwatch";
 
 interface ProductCardProps {
   product: Product;
@@ -159,11 +160,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Card Content & Metadata */}
-      <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-2">
+      <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-1.5">
         {/* Brand pill/logo equivalent */}
         <div>
           <span className={`px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold ${style.badge}`}>
-            {product.brand}
+            {typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand}
           </span>
         </div>
 
@@ -191,6 +192,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.name}
           </Link>
         )}
+
+        {/* Specifications: Core x SQMM */}
+        {(product.core || product.sqmm || product.size) && (
+          <div className="flex flex-wrap items-center justify-center gap-1 pt-0.5">
+            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+              {product.core ? `${product.core} Cores` : ''}
+              {product.core && (product.sqmm || product.size) ? ' × ' : ''}
+              {product.sqmm || product.size ? `${product.sqmm || product.size} mm²` : ''}
+            </span>
+          </div>
+        )}
+
+        {/* Colour Display with Visual Swatch */}
+        {product.colour && (
+          <div className="pt-0.5">
+            <ColourSwatch colour={product.colour} size="xs" />
+          </div>
+        )}
+
+        {/* Price & UOM */}
+        {product.price ? (
+          <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-900 pt-0.5">
+            ₹{Number(product.price).toLocaleString('en-IN')}{' '}
+            <span className="text-[10px] text-slate-500 font-normal">
+              / {product.uom || product.unit || 'Meter'}
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   );

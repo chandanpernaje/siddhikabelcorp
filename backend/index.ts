@@ -6,6 +6,7 @@ import * as xlsx from 'xlsx';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import { validateCoreSqmm } from './cableSpecs';
 
 dotenv.config();
 
@@ -22,7 +23,46 @@ const upload = multer({ storage: multer.memoryStorage() });
 // --- MongoDB Connection ---
 const mongoURI = process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/siddhicorp';
 mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 5000 })
-  .then(() => console.log('✅ Successfully connected to MongoDB!'))
+  .then(async () => {
+    console.log('✅ Successfully connected to MongoDB!');
+    // Safe one-time backfill of sqmm for legacy products
+    try {
+      await mongoose.connection.collection('products').updateMany(
+        { sqmm: { $in: [null, undefined, ''] }, coreSize: { $ne: null } },
+        [{ $set: { sqmm: '$coreSize' } }]
+      );
+      // Migrate legacy "Minak" -> "Mennekes"
+      await mongoose.connection.collection('brands').updateMany(
+        { name: 'Minak' },
+        { $set: { name: 'Mennekes' } }
+      );
+      await mongoose.connection.collection('categories').updateMany(
+        { make: 'Minak' },
+        { $set: { make: 'Mennekes' } }
+      );
+      await mongoose.connection.collection('products').updateMany(
+        { brandName: 'Minak' },
+        { $set: { brandName: 'Mennekes' } }
+      );
+      // Migrate Solar Cables to Domestic / House Wiring for LAPP if present
+      await mongoose.connection.collection('categories').updateOne(
+        { name: 'Solar Cables', make: 'LAPP' },
+        { 
+          $set: { 
+            name: 'Domestic / House Wiring', 
+            subGroup: 'Building Wires / Single Cores',
+            description: 'Flame-retardant FR-LSH building wires, copper conductor house wiring cables for residential and commercial installations'
+          } 
+        }
+      );
+      await mongoose.connection.collection('products').updateMany(
+        { categoryName: 'Solar Cables' },
+        { $set: { categoryName: 'Domestic / House Wiring' } }
+      );
+    } catch (e: any) {
+      console.warn('sqmm/brand backfill notice:', e?.message);
+    }
+  })
   .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
 
@@ -38,10 +78,13 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, default: null },
   mrp: { type: Number, default: null },
   gst: { type: Number, default: null },
+  validFrom: { type: String, default: null },
+  expiryDate: { type: String, default: null },
   uom: { type: String, default: 'Meter' },
   colour: { type: String, default: null },
   core: { type: String, default: null },
   coreSize: { type: String, default: null },
+  sqmm: { type: String, default: null },
   pe: { type: String, default: null },
   size: { type: Number, default: null },
   outerDiameter: { type: String, default: null },
@@ -55,7 +98,11 @@ const productSchema = new mongoose.Schema({
 
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
+  make: { type: String, default: 'LAPP' },
+  subGroup: { type: String, default: '' },
   description: { type: String, default: '' },
+  imageUrl: { type: String, default: null },
+  datasheetUrl: { type: String, default: null },
 }, { timestamps: true });
 
 const brandSchema = new mongoose.Schema({
@@ -74,7 +121,9 @@ const userSchema = new mongoose.Schema({
   address: { type: String, default: '' },
   city: { type: String, default: '' },
   state: { type: String, default: '' },
-  gstin: { type: String, default: '' }
+  pincode: { type: String, default: '' },
+  gstin: { type: String, default: '' },
+  isCompanyMaster: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const rfqSchema = new mongoose.Schema({
@@ -85,14 +134,34 @@ const rfqSchema = new mongoose.Schema({
   email: String,
   phone: String,
   address: String,
+  billingAddress: { type: String, default: '' },
+  deliveryAddress: { type: String, default: '' },
+  deliveryLocation: { type: String, default: '' },
+  specialInstructions: { type: String, default: '' },
   city: String,
   state: String,
+  pincode: String,
+  lostReason: { type: String, default: null },
+  lostReasonDetails: { type: String, default: null },
+  assignedAt: { type: Date, default: null },
+  expiredAt: { type: Date, default: null },
+  validityDays: { type: Number, default: 7 },
+  validUntil: { type: Date, default: null },
+  expiryComments: { type: String, default: '' },
   items: [{
     partNo: String,
     name: String,
+    description: String,
     brand: String,
     hsnCode: String,
     unit: String,
+    uom: String,
+    core: String,
+    coreSize: String,
+    sqmm: String,
+    weight: String,
+    outerDiameter: String,
+    validity: String,
     qty: Number,
     unitPrice: Number,
     totalBeforeTax: Number,
@@ -107,7 +176,7 @@ const rfqSchema = new mongoose.Schema({
   notes: { type: String, default: '' },
   deliveryTerms: { type: String, default: '' },
   paymentTerms: { type: String, default: '' },
-  status: { type: String, default: "New" },
+  status: { type: String, default: "Pending" },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedToName: { type: String, default: null }
@@ -632,11 +701,210 @@ app.patch('/api/admin/users/:id/status', verifyAdmin, async (req, res) => {
 // Create User API (Super Admin/Admin only)
 app.post('/api/admin/users', verifyAdmin, async (req, res) => {
   try {
-    const newUser = await User.create(req.body);
+    const data = { ...req.body };
+    if (!data.status) data.status = 'Active'; // Requirement 4.3: do not require active/inactive status during initial creation
+    const newUser = await User.create(data);
     res.status(201).json(newUser);
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Update User / Customer / Staff API (Admin only)
+app.put('/api/admin/users/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { name, email, role, status, company, phone, address, city, state, pincode, gstin, password } = req.body;
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (role !== undefined) updateData.role = role;
+    if (status !== undefined) updateData.status = status;
+    if (company !== undefined) updateData.company = company;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+    if (city !== undefined) updateData.city = city;
+    if (state !== undefined) updateData.state = state;
+    if (pincode !== undefined) updateData.pincode = pincode;
+    if (gstin !== undefined) updateData.gstin = gstin;
+    if (password) updateData.password = password;
+
+    const updated = await User.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' }).select('-password');
+    if (!updated) return res.status(404).json({ error: 'Record not found' });
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update record', details: error.message });
+  }
+});
+
+// Customer Master Auto-Suggestions (Requirement 3.4: Suggest existing companies while typing company name)
+app.get('/api/customers/suggestions', async (req, res) => {
+  try {
+    const q = (req.query.q || '').toString().trim();
+    if (!q) return res.json([]);
+
+    const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const users = await User.find({
+      role: 'Customer',
+      $or: [
+        { company: regex },
+        { gstin: regex },
+        { name: regex }
+      ]
+    }).limit(10).select('name company gstin address city state pincode phone email');
+
+    // Also deduplicate company records
+    const seen = new Set();
+    const suggestions = [];
+    for (const u of users) {
+      const compName = (u.company || u.name || '').trim();
+      if (compName && !seen.has(compName.toLowerCase())) {
+        seen.add(compName.toLowerCase());
+        suggestions.push({
+          id: u._id,
+          company: compName,
+          name: u.name,
+          gstin: u.gstin || '',
+          address: u.address || '',
+          city: u.city || '',
+          state: u.state || '',
+          pincode: (u as any).pincode || '',
+          phone: u.phone || '',
+          email: u.email || ''
+        });
+      }
+    }
+
+    res.json(suggestions);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get customer suggestions' });
+  }
+});
+
+// Customer Master Excel Import (Requirement 3.2 & 6.2)
+app.post('/api/admin/customers/import', verifyAdmin, upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No Excel file uploaded' });
+  }
+
+  try {
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) return res.status(400).json({ error: 'Excel file has no sheets' });
+    const worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) return res.status(400).json({ error: 'Empty sheet' });
+
+    const rows = xlsx.utils.sheet_to_json(worksheet) as any[];
+    let successCount = 0;
+    let updatedCount = 0;
+
+    for (const row of rows) {
+      const company = (row['Company Name'] || row['Company'] || row['Customer Name'] || row['Customer'] || '').toString().trim();
+      const name = (row['Contact Person'] || row['Customer Name'] || row['Name'] || company || 'Corporate Customer').toString().trim();
+      const gstin = (row['GST Number'] || row['GST'] || row['GSTIN'] || '').toString().trim().toUpperCase();
+      const address = (row['Address'] || '').toString().trim();
+      const city = (row['City'] || '').toString().trim();
+      const state = (row['State'] || '').toString().trim();
+      const pincode = (row['PIN Code'] || row['Pincode'] || row['Pin'] || '').toString().trim();
+      const phone = (row['Phone'] || row['Mobile'] || '').toString().trim();
+      const email = (row['Email'] || row['Email Address'] || (gstin ? `${gstin.toLowerCase()}@client.siddhikabel.com` : `cust_${Date.now()}@siddhikabel.com`)).toString().trim().toLowerCase();
+
+      if (!company && !name && !gstin) continue;
+
+      const customerPayload = {
+        name,
+        company: company || name,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        pincode,
+        gstin: gstin || 'UNREGISTERED',
+        role: 'Customer',
+        status: 'Active' as const,
+        isCompanyMaster: true
+      };
+
+      // Upsert: First match by GSTIN if provided (preferred identifier per Req 3.5), else by Email or Company
+      let existing = null;
+      if (gstin && gstin !== 'UNREGISTERED') {
+        existing = await User.findOne({ gstin });
+      }
+      if (!existing && email) {
+        existing = await User.findOne({ email });
+      }
+      if (!existing && company) {
+        existing = await User.findOne({ company: new RegExp(`^${company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'), role: 'Customer' });
+      }
+
+      if (existing) {
+        await User.findByIdAndUpdate(existing._id, customerPayload);
+        updatedCount++;
+      } else {
+        await User.create({
+          ...customerPayload,
+          password: 'Password@123'
+        });
+        successCount++;
+      }
+    }
+
+    res.json({
+      message: `Customer import complete: ${successCount} new records created, ${updatedCount} existing records updated.`,
+      successCount,
+      updatedCount
+    });
+  } catch (error: any) {
+    console.error('Customer import failed:', error);
+    res.status(500).json({ error: 'Customer import failed', details: error.message });
+  }
+});
+
+// Send password creation link / account activation (Requirement 3.6)
+app.post('/api/customers/create-password-link', async (req, res) => {
+  try {
+    const { email, customerId } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) return res.status(404).json({ error: 'No customer account found with this email' });
+
+    // Generate password creation reset token
+    const resetToken = jwt.sign({ id: user._id, email: user.email, purpose: 'password_creation' }, JWT_SECRET, { expiresIn: '48h' });
+    const creationLink = `http://localhost:3000/set-password?token=${resetToken}`;
+
+    console.log(`✅ [Password Creation Link Generated for ${user.email}]: ${creationLink}`);
+    
+    // Attempt sending email if transporter configured
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        await mailTransporter.sendMail({
+          from: `"Siddhi Kabel Corp" <${process.env.SMTP_USER}>`,
+          to: user.email,
+          subject: 'Set Your Siddhi Kabel Portal Account Password',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Welcome to Siddhi Kabel Corporation</h2>
+              <p>Dear ${user.name || 'Valued Customer'},</p>
+              <p>Your corporate account for <strong>${user.company || 'your organization'}</strong> has been registered on our customer portal.</p>
+              <p>Please click the button below to set your account password and access B2B pricing, RFQ submissions, and order tracking:</p>
+              <p><a href="${creationLink}" style="background: #c52328; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Set Password</a></p>
+              <p style="color: #666; font-size: 12px; margin-top: 20px;">This link is valid for 48 hours.</p>
+            </div>
+          `
+        });
+      }
+    } catch (mailErr) {
+      console.warn('Mail send notice:', mailErr);
+    }
+
+    res.json({
+      message: `Password setup link dispatched to ${user.email}.`,
+      link: creationLink
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to generate password creation link' });
   }
 });
 
@@ -792,16 +1060,51 @@ app.post('/api/rfqs', async (req, res) => {
       return res.status(403).json({ error: 'Your account is deactivated. Please contact support.' });
     }
 
+    let enrichedItems = Array.isArray(req.body.items) ? req.body.items : [];
+    if (enrichedItems.length > 0) {
+      try {
+        const partNos = enrichedItems.map((it: any) => it.partNo).filter(Boolean);
+        const dbProducts = await Product.find({ partNo: { $in: partNos } }).lean();
+        const pMap = new Map();
+        dbProducts.forEach(p => pMap.set(p.partNo, p));
+        enrichedItems = enrichedItems.map((it: any) => {
+          const prod = it.partNo ? pMap.get(it.partNo) : null;
+          return {
+            ...it,
+            core: it.core || prod?.core || '',
+            coreSize: it.coreSize || prod?.coreSize || prod?.sqmm || '',
+            sqmm: it.sqmm || prod?.sqmm || prod?.coreSize || '',
+            uom: it.uom || prod?.uom || it.unit || 'm',
+            weight: it.weight || prod?.weight || '',
+            outerDiameter: it.outerDiameter || prod?.outerDiameter || '',
+            description: it.description || it.name || prod?.name || '',
+            validity: it.validity || '7 Days'
+          };
+        });
+      } catch (enrichErr) {
+        console.warn('Item enrichment error:', enrichErr);
+      }
+    }
+
     const rfqPayload = {
       ...req.body,
+      items: enrichedItems,
       customerId: user._id,
       customerName: req.body.customerName || user.name,
       companyName: req.body.companyName || user.company || user.name,
       email: req.body.email || user.email,
       phone: req.body.phone || user.phone,
-      address: req.body.address || user.address,
+      address: req.body.address || req.body.billingAddress || user.address || '',
+      billingAddress: req.body.billingAddress || req.body.address || user.address || '',
+      deliveryAddress: req.body.deliveryAddress || req.body.deliveryLocation || req.body.address || user.address || '',
+      deliveryLocation: req.body.deliveryLocation || req.body.city || user.city || '',
+      specialInstructions: req.body.specialInstructions || req.body.notes || '',
       city: req.body.city || user.city,
       state: req.body.state || user.state,
+      pincode: req.body.pincode || (user as any).pincode || '',
+      status: 'Pending',
+      validityDays: 7,
+      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     };
 
     const newRfq = await RFQ.create(rfqPayload);
@@ -810,7 +1113,7 @@ app.post('/api/rfqs', async (req, res) => {
     try {
       await Notification.create({
         title: 'New RFQ Received',
-        message: `Quotation ${newRfq.quoteNo} submitted by ${newRfq.companyName || newRfq.customerName || 'Customer'} (Total: ₹${(newRfq.grandTotal || 0).toLocaleString('en-IN')}).`,
+        message: `Estimate ${newRfq.quoteNo} submitted by ${newRfq.companyName || newRfq.customerName || 'Customer'} (Total: ₹${(newRfq.grandTotal || 0).toLocaleString('en-IN')}).`,
         type: 'rfq',
         referenceId: newRfq._id.toString()
       });
@@ -828,31 +1131,24 @@ app.post('/api/rfqs', async (req, res) => {
 // Notifications API
 app.get('/api/notifications', async (req, res) => {
   try {
-    let notifications = await Notification.find().sort({ createdAt: -1 }).limit(30);
-    // If empty, auto-generate initial contextual notifications from latest RFQs and users
-    if (notifications.length === 0) {
+    const pendingOnly = req.query.pendingOnly === 'true';
+    const query = pendingOnly ? { read: false } : {};
+    let notifications = await Notification.find(query).sort({ createdAt: -1 }).limit(30);
+
+    // If empty and not filtering by pendingOnly, auto-generate initial contextual notifications
+    if (notifications.length === 0 && !pendingOnly) {
       try {
         const latestRfqs = await RFQ.find().sort({ createdAt: -1 }).limit(3);
         for (const r of latestRfqs) {
           await Notification.create({
             title: 'New RFQ Received',
-            message: `Quotation ${r.quoteNo} generated for ${r.companyName || r.customerName || 'Client'}.`,
+            message: `Estimate ${r.quoteNo} generated for ${r.companyName || r.customerName || 'Client'}.`,
             type: 'rfq',
             referenceId: r._id.toString(),
             read: false
           });
         }
-        const latestUsers = await User.find({ role: 'Customer' }).sort({ createdAt: -1 }).limit(2);
-        for (const u of latestUsers) {
-          await Notification.create({
-            title: 'New Customer Registered',
-            message: `${u.name} (${u.company || u.email || 'Customer'}) registered an account.`,
-            type: 'customer',
-            referenceId: u._id.toString(),
-            read: false
-          });
-        }
-        notifications = await Notification.find().sort({ createdAt: -1 }).limit(30);
+        notifications = await Notification.find(query).sort({ createdAt: -1 }).limit(30);
       } catch (e) {}
     }
 
@@ -870,6 +1166,24 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+app.delete('/api/notifications/:id', async (req, res) => {
+  try {
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notification cleared' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
+app.delete('/api/notifications/clear-read', async (req, res) => {
+  try {
+    const result = await Notification.deleteMany({ read: true });
+    res.json({ message: 'Cleared read notifications', count: result.deletedCount });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to clear read notifications' });
   }
 });
 
@@ -946,6 +1260,33 @@ app.get('/api/rfqs', async (req, res) => {
       } catch (e) {}
     }
 
+    // Requirement 2.5: Automatic 7-day expiry for RFQs in Pending or Under Review
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    try {
+      const toExpire = await RFQ.find({
+        status: { $in: ['Pending', 'Under Review', 'New', 'Assigned', 'Process by Sales', 'Processing'] },
+        $or: [
+          { assignedAt: { $lte: sevenDaysAgo } },
+          { assignedAt: null, createdAt: { $lte: sevenDaysAgo } }
+        ]
+      });
+
+      if (toExpire.length > 0) {
+        await RFQ.updateMany(
+          { _id: { $in: toExpire.map(r => r._id) } },
+          { 
+            $set: { 
+              status: 'Expired', 
+              expiredAt: new Date(),
+              expiryComments: 'Automatically expired: 7 days quotation validity period elapsed without conversion. Price revalidation required.'
+            } 
+          }
+        );
+      }
+    } catch (expErr) {
+      console.warn('Auto-expiry error:', expErr);
+    }
+
     const { assignedTo } = req.query;
     const isSalesExec = (userRole.toLowerCase().includes('executive') || userRole.toLowerCase().includes('salesman')) && !userRole.toLowerCase().includes('admin') && !userRole.toLowerCase().includes('manager');
     
@@ -958,28 +1299,72 @@ app.get('/api/rfqs', async (req, res) => {
 
     const rfqs = await RFQ.find(filter).populate('assignedTo', 'name email role').sort({ createdAt: -1 });
     
-    // Normalize assignedTo and assignedToName for seamless frontend binding
+    // Normalize assignedTo, assignedToName and clean statuses
     const normalized = rfqs.map((r: any) => {
       const obj = r.toObject ? r.toObject() : { ...r };
       if (obj.assignedTo && typeof obj.assignedTo === 'object') {
         obj.assignedToName = obj.assignedTo.name || obj.assignedToName;
         obj.assignedTo = obj.assignedTo._id?.toString() || obj.assignedTo;
       }
+      // Preserve the 4 primary statuses: Pending, Under Review, PO Received, Closed (plus Lost, Expired)
+      if (obj.status === 'New' || obj.status === 'Assigned' || obj.status === 'Open' || obj.status === 'Processing' || obj.status === 'Process by Sales') {
+        obj.status = 'Pending';
+      } else if (obj.status === 'Approved' || obj.status === 'Completed') {
+        obj.status = 'PO Received';
+      } else if (obj.status === 'Closed') {
+        obj.status = 'Closed';
+      }
       return obj;
     });
+
+    // Bulk enrich items with specs from Product database if missing
+    const allPartNos = new Set<string>();
+    normalized.forEach((r: any) => {
+      if (r.items && Array.isArray(r.items)) {
+        r.items.forEach((it: any) => {
+          if (it.partNo) allPartNos.add(it.partNo);
+        });
+      }
+    });
+
+    if (allPartNos.size > 0) {
+      try {
+        const dbProducts = await Product.find({ partNo: { $in: Array.from(allPartNos) } }).lean();
+        const pMap = new Map();
+        dbProducts.forEach(p => pMap.set(p.partNo, p));
+
+        normalized.forEach((r: any) => {
+          if (r.items && Array.isArray(r.items)) {
+            r.items = r.items.map((it: any) => {
+              const p = it.partNo ? pMap.get(it.partNo) : null;
+              return {
+                ...it,
+                core: it.core || p?.core || '',
+                coreSize: it.coreSize || p?.coreSize || p?.sqmm || '',
+                sqmm: it.sqmm || p?.sqmm || p?.coreSize || '',
+                uom: it.uom || p?.uom || it.unit || 'm',
+                weight: it.weight || p?.weight || '',
+                outerDiameter: it.outerDiameter || p?.outerDiameter || '',
+                description: it.description || it.name || p?.name || '',
+                validity: it.validity || '7 Days'
+              };
+            });
+          }
+        });
+      } catch (enrichErr) {}
+    }
 
     res.json(normalized);
   } catch (error) {
     console.error('DB fetch RFQs failed, using fallback');
     res.json([
-      { _id: 'mock-rfq-1', quoteNo: '#RFQ-001', companyName: 'Ramesh Engineering', customerName: 'Ramesh', status: 'New', date: 'Oct 8, 2026', grandTotal: 15400, items: [] },
-      { _id: 'mock-rfq-2', quoteNo: '#RFQ-002', companyName: 'TechCorp Solutions', customerName: 'Suresh', status: 'Assigned', date: 'Oct 7, 2026', grandTotal: 25000, items: [] },
-      { _id: 'mock-rfq-3', quoteNo: '#RFQ-003', companyName: 'Global Industries', customerName: 'Rakesh', status: 'Under Review', date: 'Oct 7, 2026', grandTotal: 12500, items: [] },
+      { _id: 'mock-rfq-1', quoteNo: '#RFQ-001', companyName: 'Ramesh Engineering', customerName: 'Ramesh', status: 'Pending', date: 'Oct 8, 2026', grandTotal: 15400, items: [] },
+      { _id: 'mock-rfq-2', quoteNo: '#RFQ-002', companyName: 'TechCorp Solutions', customerName: 'Suresh', status: 'Under Review', date: 'Oct 7, 2026', grandTotal: 25000, items: [] },
     ]);
   }
 });
 
-// Update RFQ Status API (Phase 1 Statuses: New, Assigned, Under Review, Process by Sales, Closed)
+// Update RFQ Status API (Agreed Statuses: Pending, Under Review, PO Received, Closed, Lost, Expired)
 app.patch('/api/rfqs/:id/status', async (req, res) => {
   try {
     const token = req.headers['authorization']?.split(' ')[1];
@@ -1007,16 +1392,35 @@ app.patch('/api/rfqs/:id/status', async (req, res) => {
       }
     }
 
-    const { status, notes } = req.body;
-    const updateFields: any = { status };
-    if (notes !== undefined) {
-      updateFields.notes = notes;
+    const { status, notes, lostReason, lostReasonDetails, expiryComments } = req.body;
+    const updateFields: any = {};
+    if (status !== undefined) updateFields.status = status;
+    if (notes !== undefined) updateFields.notes = notes;
+    if (lostReason !== undefined) updateFields.lostReason = lostReason;
+    if (lostReasonDetails !== undefined) updateFields.lostReasonDetails = lostReasonDetails;
+    if (expiryComments !== undefined) updateFields.expiryComments = expiryComments;
+    
+    if (status === 'Expired') {
+      updateFields.expiredAt = new Date();
+      if (!expiryComments && !updateFields.expiryComments) {
+        updateFields.expiryComments = 'Quotation expired after 7 days validity period. Rate reconfirmation required before processing.';
+      }
     }
+
     const updatedRfq = await RFQ.findByIdAndUpdate(req.params.id, updateFields, { returnDocument: 'after' }).populate('assignedTo', 'name email role');
     if (!updatedRfq) return res.status(404).json({ error: 'RFQ not found' });
 
-    // Return to Sales notification
-    if (notes && (status === 'Pending' || status === 'Assigned')) {
+    // Notification for status transitions
+    if (status === 'Lost') {
+      try {
+        await Notification.create({
+          title: `RFQ ${updatedRfq.quoteNo} Marked as Lost`,
+          message: `Reason: ${lostReason || 'Not specified'} ${lostReasonDetails ? `(${lostReasonDetails})` : ''}`,
+          type: 'rfq',
+          referenceId: updatedRfq._id.toString()
+        });
+      } catch (nErr) {}
+    } else if (notes && status === 'Pending') {
       try {
         await Notification.create({
           title: `RFQ ${updatedRfq.quoteNo} Returned to Sales`,
@@ -1038,7 +1442,7 @@ app.patch('/api/rfqs/:id/status', async (req, res) => {
   }
 });
 
-// Assign RFQ API (Allowed for Super Admin, Admin, and Sales Manager as per Phase 1 Matrix)
+// Assign RFQ API (Allowed for Super Admin, Admin, and Sales Manager)
 app.patch('/api/rfqs/:id/assign', verifyManagerOrAdmin, async (req, res) => {
   try {
     const { assignedTo, assignedToName } = req.body;
@@ -1048,7 +1452,8 @@ app.patch('/api/rfqs/:id/assign', verifyManagerOrAdmin, async (req, res) => {
       updateData = { 
         assignedTo: null, 
         assignedToName: null, 
-        status: 'New' 
+        assignedAt: null,
+        status: 'Pending' 
       };
     } else {
       let resolvedName = assignedToName;
@@ -1059,7 +1464,8 @@ app.patch('/api/rfqs/:id/assign', verifyManagerOrAdmin, async (req, res) => {
       updateData = { 
         assignedTo, 
         assignedToName: resolvedName || 'Assigned Staff',
-        status: 'Assigned' // Auto update status to Assigned
+        assignedAt: new Date(),
+        status: 'Pending' // Retain Pending status with assigned staff name
       };
     }
 
@@ -1149,43 +1555,179 @@ app.post('/api/rfqs/bulk-delete', verifyAdmin, async (req, res) => {
   }
 });
 
-// --- Categories API ---
+// --- Categories API (Strict 24 Categories Mapped to 4 Manufacturers, 6 Categories Each) ---
+const OFFICIAL_24_CATEGORIES = [
+  // 1. LAPP (6 Categories - strictly in client specified order)
+  {
+    name: 'Power and Control Cables',
+    make: 'LAPP',
+    subGroup: 'ÖLFLEX® Power & Control',
+    description: 'Flexible control cables, oil-resistant PVC/PUR cables, and heat-resistant power cables'
+  },
+  {
+    name: 'Data Communication Cables',
+    make: 'LAPP',
+    subGroup: 'UNITRONIC® / ETHERLINE®',
+    description: 'Shielded data transmission cables, industrial ethernet cables, and bus system cables'
+  },
+  {
+    name: 'Control Cabinet Single Cores',
+    make: 'LAPP',
+    subGroup: 'Single Core Panel Wires',
+    description: 'Hook-up wires, panel single cores, halogen-free and high-temperature single conductor wires'
+  },
+  {
+    name: 'Cable Glands & Counter Nuts',
+    make: 'LAPP',
+    subGroup: 'SKINTOP® Cable Glands',
+    description: 'Polyamide, brass, and stainless steel strain relief cable glands and locknuts'
+  },
+  {
+    name: 'Rill, Conduit & Klick',
+    make: 'LAPP',
+    subGroup: 'SILVYN® Protective Conduits',
+    description: 'Protective cable conduits, spiral hoses, and quick-click conduit connectors'
+  },
+  {
+    name: 'Domestic / House Wiring',
+    make: 'LAPP',
+    subGroup: 'Building Wires / Single Cores',
+    description: 'Flame-retardant FR-LSH building wires, copper conductor house wiring cables for residential and commercial installations'
+  },
+
+  // 2. Eaton (6 Categories)
+  {
+    name: 'Switchgear & Protection',
+    make: 'Eaton',
+    subGroup: 'Motor Starters, Contactors & Breakers',
+    description: 'Industrial motor control, power distribution switchgear, and safety isolators'
+  },
+  {
+    name: 'Motor Protection Breakers',
+    make: 'Eaton',
+    subGroup: 'PKZM0 Motor Breakers',
+    description: 'Rotary motor protection with overload & short circuit release up to 150 kA'
+  },
+  {
+    name: 'Molded Case Circuit Breakers',
+    make: 'Eaton',
+    subGroup: 'NZM Compact MCCBs',
+    description: 'Electronic trip molded case circuit breakers up to 1600A for industrial distribution'
+  },
+  {
+    name: 'Miniature Circuit Breakers & RCDs',
+    make: 'Eaton',
+    subGroup: 'FAZ DIN-Rail MCBs',
+    description: '10kA and 15kA breaking capacity DIN rail miniature circuit breakers and residual current devices'
+  },
+  {
+    name: 'Power Contactors & Relays',
+    make: 'Eaton',
+    subGroup: 'DILM Power Contactors',
+    description: 'Heavy-duty 3-pole and 4-pole contactors with electronic coils and auxiliary relays'
+  },
+  {
+    name: 'Power Quality & UPS',
+    make: 'Eaton',
+    subGroup: 'Capacitors & APFC Systems',
+    description: 'Automatic power factor correction panels, harmonic filters, and industrial UPS systems'
+  },
+
+  // 3. Mennekes (6 Categories)
+  {
+    name: 'Industrial Plugs & Sockets',
+    make: 'Mennekes',
+    subGroup: 'Heavy Duty CEE Plugs & Sockets',
+    description: 'CEE-norm 16A to 125A industrial plugs, couplers, and switched interlocked receptacles'
+  },
+  {
+    name: 'AMAXX® & Distribution Enclosures',
+    make: 'Mennekes',
+    subGroup: 'Modular Distribution Units',
+    description: 'Combination receptacle distribution enclosures in high-impact AMAPLAST housing'
+  },
+  {
+    name: 'Panel Mounted Receptacle Sockets',
+    make: 'Mennekes',
+    subGroup: 'Watertight Receptacles',
+    description: 'Straight and angled panel mounted receptacles with nickel-plated contacts'
+  },
+  {
+    name: 'Chemical Earthing Electrodes',
+    make: 'Mennekes',
+    subGroup: 'Maintenance-Free Chemical Electrodes',
+    description: 'High corrosion-resistant chemical earthing electrodes with crystalline earth compound'
+  },
+  {
+    name: 'Copper Clad Earth Rods & Accessories',
+    make: 'Mennekes',
+    subGroup: 'Earth Rods & Clamps',
+    description: 'Molecularly bonded copper clad steel earth rods, driving heads, and bronze couplers'
+  },
+  {
+    name: 'Earthing Solutions',
+    make: 'Mennekes',
+    subGroup: 'Chemical Electrodes & Earthing Accessories',
+    description: 'Low-impedance industrial earthing solutions and lightning protection grounding pits'
+  },
+
+  // 4. Partex (6 Categories)
+  {
+    name: 'Cable Marking Systems',
+    make: 'Partex',
+    subGroup: 'PA Markers & ProMark Printers',
+    description: 'Pre-printed interlocking cable markers, chevron-cut wire tags, and carrier strips'
+  },
+  {
+    name: 'Profile Marking Sleeves',
+    make: 'Partex',
+    subGroup: 'PO/POZ Profile Sleeves',
+    description: 'Oval profile marking sleeves and halogen-free printable tubing for wire identification'
+  },
+  {
+    name: 'Stainless Steel Cable Markers',
+    make: 'Partex',
+    subGroup: 'PKS Embossed Steel Markers',
+    description: 'Acid-proof AISI 316 stainless steel cable markers for harsh marine and chemical environments'
+  },
+  {
+    name: 'Component & Terminal Block Marking',
+    make: 'Partex',
+    subGroup: 'Snap-On Terminal Markers',
+    description: 'Snap-on terminal block markers and component identification tags for switchboards'
+  },
+  {
+    name: 'Industrial Thermal Printers & Ribbons',
+    make: 'Partex',
+    subGroup: 'ProMark T-1000 Printers',
+    description: 'Portable high-speed thermal transfer profile and label printers with resin ribbons'
+  },
+  {
+    name: 'Industrial Cable Ties & Fasteners',
+    make: 'Partex',
+    subGroup: 'Polyamide & Steel Cable Ties',
+    description: 'UV-resistant nylon cable ties, stainless steel ball-lock ties, and fastening mounts'
+  }
+];
+
 app.get('/api/categories', async (req, res) => {
   try {
-    // Standard catalog categories
-    const standardCategories = [
-      'Power and Control Cables',
-      'Control Cabinet Single Cores',
-      'Data Communication Cables',
-      'Cable Glands & Counter Nuts',
-      'Rill, Conduit & Klick',
-      'Cable Marking Systems',
-      'Industrial Plugs & Sockets',
-      'Switchgear & Protection',
-      'Solar Cables',
-      'Power Quality & UPS',
-      'Earthing Solutions'
-    ];
-
-    // Also get all distinct categories actively used in Product collection
-    const distinctProductCats: string[] = await Product.distinct('categoryName');
-    const allTargetNames = Array.from(new Set([
-      ...standardCategories,
-      ...distinctProductCats.filter(Boolean)
-    ]));
-
-    // Ensure all target categories exist in the Category collection
-    for (const catName of allTargetNames) {
-      if (typeof catName === 'string' && catName.trim()) {
-        const trimmed = catName.trim();
-        const exists = await Category.findOne({ name: trimmed });
-        if (!exists) {
-          await Category.create({ name: trimmed, description: 'Catalog Product Category' });
-        }
-      }
+    // Ensure all 24 official categories exist with proper make and subgroup mappings
+    for (const catDef of OFFICIAL_24_CATEGORIES) {
+      await Category.findOneAndUpdate(
+        { name: catDef.name },
+        { 
+          $set: { 
+            make: catDef.make,
+            subGroup: catDef.subGroup,
+            description: catDef.description
+          } 
+        },
+        { upsert: true, returnDocument: 'after' }
+      );
     }
 
-    // Clean up empty placeholder categories that have zero products
+    // Clean up empty obsolete placeholder names if any
     const obsoleteNames = ['Control Cables', 'Power Cables', 'Data & Communication', 'Cable Accessories'];
     for (const oldName of obsoleteNames) {
       const prodsWithOld = await Product.countDocuments({ categoryName: oldName });
@@ -1194,26 +1736,43 @@ app.get('/api/categories', async (req, res) => {
       }
     }
 
-    const categories = await Category.find().sort({ name: 1 });
-    res.json(categories);
+    // Fetch all categories and sort in canonical client order: LAPP (Cables first) -> Eaton -> Mennekes -> Partex
+    const allCategories = await Category.find();
+    
+    // Sort map based on OFFICIAL_24_CATEGORIES order
+    const orderMap = new Map<string, number>();
+    OFFICIAL_24_CATEGORIES.forEach((c, index) => {
+      orderMap.set(c.name.toLowerCase().trim(), index);
+    });
+
+    const sortedCategories = allCategories.sort((a, b) => {
+      const keyA = (a.name || '').toLowerCase().trim();
+      const keyB = (b.name || '').toLowerCase().trim();
+      const orderA = orderMap.has(keyA) ? (orderMap.get(keyA) as number) : 999;
+      const orderB = orderMap.has(keyB) ? (orderMap.get(keyB) as number) : 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return keyA.localeCompare(keyB);
+    });
+
+    res.json(sortedCategories);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    res.json([
-      { _id: 'cat1', name: 'Power and Control Cables' },
-      { _id: 'cat2', name: 'Control Cabinet Single Cores' },
-      { _id: 'cat3', name: 'Data Communication Cables' },
-      { _id: 'cat4', name: 'Cable Glands & Counter Nuts' },
-      { _id: 'cat5', name: 'Rill, Conduit & Klick' },
-      { _id: 'cat6', name: 'Industrial Plugs & Sockets' }
-    ]);
+    res.json(OFFICIAL_24_CATEGORIES.map((c, idx) => ({ _id: `cat_${idx}`, ...c })));
   }
 });
 
 app.post('/api/categories', verifyAdmin, async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, make, subGroup, imageUrl, datasheetUrl } = req.body;
     if (!name) return res.status(400).json({ error: 'Category name is required' });
-    const category = await Category.create({ name: name.trim(), description: description || '' });
+    const category = await Category.create({ 
+      name: name.trim(), 
+      description: description || '',
+      make: make || 'LAPP',
+      subGroup: subGroup || '',
+      imageUrl: imageUrl || null,
+      datasheetUrl: datasheetUrl || null
+    });
     res.status(201).json(category);
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to create category' });
@@ -1222,12 +1781,48 @@ app.post('/api/categories', verifyAdmin, async (req, res) => {
 
 app.put('/api/categories/:id', verifyAdmin, async (req, res) => {
   try {
-    const { name, description } = req.body;
-    const updated = await Category.findByIdAndUpdate(req.params.id, { name: name?.trim(), description }, { returnDocument: 'after' });
+    const { name, description, make, subGroup, imageUrl, datasheetUrl } = req.body;
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name?.trim();
+    if (description !== undefined) updateData.description = description;
+    if (make !== undefined) updateData.make = make;
+    if (subGroup !== undefined) updateData.subGroup = subGroup;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (datasheetUrl !== undefined) updateData.datasheetUrl = datasheetUrl;
+
+    const updated = await Category.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
     if (!updated) return res.status(404).json({ error: 'Category not found' });
     res.json(updated);
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to update category' });
+  }
+});
+
+// Upload Category Datasheet (PDF) - Requirement 5.5
+app.post('/api/categories/:id/datasheet', verifyAdmin, upload.single('datasheet'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No datasheet uploaded' });
+    const base64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    const updated = await Category.findByIdAndUpdate(req.params.id, { datasheetUrl: base64 }, { returnDocument: 'after' });
+    if (!updated) return res.status(404).json({ error: 'Category not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upload category datasheet' });
+  }
+});
+
+// Upload Category Image - Requirement 5.6
+app.post('/api/categories/:id/image', verifyAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No image uploaded' });
+    const base64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    const updated = await Category.findByIdAndUpdate(req.params.id, { imageUrl: base64 }, { returnDocument: 'after' });
+    if (!updated) return res.status(404).json({ error: 'Category not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upload category image' });
   }
 });
 
@@ -1241,106 +1836,236 @@ app.delete('/api/categories/:id', verifyAdmin, async (req, res) => {
 });
 
 // --- Brands API ---
-app.get('/api/brands', async (req, res) => {
-  try {
-    // Auto-sync brands from Product collection
-    const distinctBrands: string[] = await Product.distinct('brandName');
-    const targetBrands = Array.from(new Set([
-      'LAPP KABEL', 'ÖLFLEX', 'UNITRONIC', 'SKINTOP', 'SILVYN', 
-      'EATON - MOELLER', 'MENNEKES', 'PARTEX SWEDEN',
-      ...distinctBrands.filter(Boolean)
-    ]));
+// --- Make / Brand Management APIs (Strictly 4 Approved Makes: LAPP, Eaton, Partex, Mennekes) ---
+const APPROVED_MAKES_LIST = ['LAPP', 'Eaton', 'Partex', 'Mennekes'] as const;
 
-    for (const bName of targetBrands) {
-      if (typeof bName === 'string' && bName.trim()) {
-        const trimmed = bName.trim();
-        const exists = await Brand.findOne({ name: trimmed });
-        if (!exists) {
-          await Brand.create({ name: trimmed, description: 'Authorized Industrial Brand' });
-        }
+const getMakesHandler = async (req: express.Request, res: express.Response) => {
+  try {
+    // Ensure all 4 approved makes exist
+    const defaultDescriptions: Record<string, string> = {
+      'LAPP': "Global pioneer in flexible control cables, industrial data systems & cable glands (ÖLFLEX®, UNITRONIC®, SKINTOP®)",
+      'Eaton': "Intelligent power management, industrial switchgear, motor protection breakers & contactors (PKZM0, DILM, NZM)",
+      'Partex': "Swedish precision wire, cable and component marking systems, interlocking markers & portable thermal printers",
+      'Mennekes': "Industrial earthing solutions, chemical electrodes, heavy-duty industrial plugs, sockets & distribution accessories (AMAPLAST, AMAXX®)"
+    };
+
+    for (const makeName of APPROVED_MAKES_LIST) {
+      const exists = await Brand.findOne({ name: makeName });
+      if (!exists) {
+        await Brand.create({ name: makeName, description: defaultDescriptions[makeName] || 'Authorized Manufacturer Make' });
       }
     }
 
-    const brands = await Brand.find().sort({ name: 1 });
-    res.json(brands);
+    // Fetch only approved makes
+    const makes = await Brand.find({ name: { $in: APPROVED_MAKES_LIST } }).sort({ name: 1 });
+    
+    // Attach live product count and category count
+    const enrichedMakes = await Promise.all(makes.map(async (m) => {
+      const productCount = await Product.countDocuments({ brandName: m.name });
+      const categoryCount = await Category.countDocuments({ make: m.name });
+      return {
+        _id: m._id,
+        name: m.name,
+        description: m.description,
+        productCount,
+        categoryCount,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt
+      };
+    }));
+
+    const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
+    enrichedMakes.sort((a, b) => {
+      const idxA = brandOrder.indexOf(a.name);
+      const idxB = brandOrder.indexOf(b.name);
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    });
+
+    res.json(enrichedMakes);
   } catch (error) {
-    console.error('Error fetching brands:', error);
+    console.error('Error fetching makes:', error);
     res.json([
-      { _id: 'b1', name: 'LAPP KABEL' },
-      { _id: 'b2', name: 'EATON - MOELLER' },
-      { _id: 'b3', name: 'MENNEKES' },
-      { _id: 'b4', name: 'PARTEX SWEDEN' }
+      { _id: 'm1', name: 'LAPP', description: 'Cables & Connection Technology', productCount: 822, categoryCount: 8 },
+      { _id: 'm2', name: 'Eaton', description: 'Switchgear & Motor Control', productCount: 8, categoryCount: 2 },
+      { _id: 'm3', name: 'Partex', description: 'Wire Marking Systems', productCount: 6, categoryCount: 1 },
+      { _id: 'm4', name: 'Mennekes', description: 'Earthing & Distribution Accessories', productCount: 7, categoryCount: 2 }
     ]);
   }
-});
+};
 
-app.post('/api/brands', verifyAdmin, async (req, res) => {
+app.get('/api/makes', getMakesHandler);
+app.get('/api/brands', getMakesHandler);
+
+const createMakeHandler = async (req: express.Request, res: express.Response) => {
   try {
     const { name, description } = req.body;
-    if (!name) return res.status(400).json({ error: 'Brand name is required' });
-    const brand = await Brand.create({ name: name.trim(), description: description || '' });
-    res.status(201).json(brand);
+    if (!name) return res.status(400).json({ error: 'Make / Manufacturer name is required' });
+    const cleanName = name.trim();
+    if (!APPROVED_MAKES_LIST.includes(cleanName as any)) {
+      return res.status(400).json({ 
+        error: `Invalid make '${cleanName}'. Only the four approved manufacturers are permitted: ${APPROVED_MAKES_LIST.join(', ')}.` 
+      });
+    }
+    const make = await Brand.findOneAndUpdate(
+      { name: cleanName },
+      { $set: { description: description || '' } },
+      { upsert: true, returnDocument: 'after' }
+    );
+    res.status(201).json(make);
   } catch (error: any) {
-    res.status(400).json({ error: error.message || 'Failed to create brand' });
+    res.status(400).json({ error: error.message || 'Failed to create make' });
   }
-});
+};
 
-app.put('/api/brands/:id', verifyAdmin, async (req, res) => {
+app.post('/api/makes', verifyAdmin, createMakeHandler);
+app.post('/api/brands', verifyAdmin, createMakeHandler);
+
+const updateMakeHandler = async (req: express.Request, res: express.Response) => {
   try {
     const { name, description } = req.body;
-    const updated = await Brand.findByIdAndUpdate(req.params.id, { name: name?.trim(), description }, { returnDocument: 'after' });
-    if (!updated) return res.status(404).json({ error: 'Brand not found' });
+    const updateData: any = {};
+    if (description !== undefined) updateData.description = description;
+    if (name) {
+      const cleanName = name.trim();
+      if (!APPROVED_MAKES_LIST.includes(cleanName as any)) {
+        return res.status(400).json({ 
+          error: `Invalid make '${cleanName}'. Allowed makes are: ${APPROVED_MAKES_LIST.join(', ')}.` 
+        });
+      }
+      updateData.name = cleanName;
+    }
+    const updated = await Brand.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
+    if (!updated) return res.status(404).json({ error: 'Make not found' });
     res.json(updated);
   } catch (error: any) {
-    res.status(400).json({ error: error.message || 'Failed to update brand' });
+    res.status(400).json({ error: error.message || 'Failed to update make' });
   }
-});
+};
 
-app.delete('/api/brands/:id', verifyAdmin, async (req, res) => {
+app.put('/api/makes/:id', verifyAdmin, updateMakeHandler);
+app.put('/api/brands/:id', verifyAdmin, updateMakeHandler);
+
+const deleteMakeHandler = async (req: express.Request, res: express.Response) => {
   try {
+    const make = await Brand.findById(req.params.id);
+    if (!make) return res.status(404).json({ error: 'Make not found' });
+    
+    // Check if products exist for this make
+    const prodsCount = await Product.countDocuments({ brandName: make.name });
+    if (prodsCount > 0) {
+      return res.status(400).json({ 
+        error: `Cannot delete make '${make.name}' because ${prodsCount} products are mapped to it. Please reassign products first.` 
+      });
+    }
     await Brand.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Brand deleted successfully' });
+    res.json({ message: 'Make deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete brand' });
+    res.status(500).json({ error: 'Failed to delete make' });
   }
-});
+};
+
+app.delete('/api/makes/:id', verifyAdmin, deleteMakeHandler);
+app.delete('/api/brands/:id', verifyAdmin, deleteMakeHandler);
 
 // Get Products API
 app.get('/api/products', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    // Map data to match frontend expectations
-    const formatted = products.map((p: any) => ({
-      id: p._id.toString(),
-      partNo: p.partNo,
-      name: p.name,
-      category: { name: p.categoryName },
-      categoryName: p.categoryName,
-      brand: { name: p.brandName },
-      brandName: p.brandName,
-      core: p.core,
-      coreSize: p.coreSize,
-      size: p.size,
-      colour: p.colour,
-      uom: p.uom || 'Meter',
-      outerDiameter: p.outerDiameter,
-      weight: p.weight,
-      copperIndex: p.copperIndex,
-      testVoltage: p.testVoltage,
-      flameRetardancy: p.flameRetardancy,
-      price: p.price,
-      mrp: p.mrp,
-      gst: p.gst,
-      imageUrl: p.imageUrl,
-      datasheetUrl: p.datasheetUrl,
-      description: p.description,
-      application: p.description || p.name
-    }));
+    const [products, allCategories] = await Promise.all([
+      Product.find().sort({ createdAt: -1 }),
+      Category.find()
+    ]);
+    const catMap = new Map(allCategories.map(c => [c.name?.toLowerCase().trim(), c.datasheetUrl]));
+
+    // Deduplicate database records (latest created wins since sorted by createdAt: -1)
+    const seenKeys = new Set<string>();
+    const deduplicatedProducts: any[] = [];
+    for (const p of products) {
+      const pNo = p.partNo ? String(p.partNo).trim().toLowerCase() : null;
+      const key = pNo || (p.name ? String(p.name).trim().toLowerCase() : p._id.toString());
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      deduplicatedProducts.push(p);
+    }
+
+    // Map data to match frontend expectations with strict core & sqmm normalization
+    const formatted = deduplicatedProducts.map((p: any) => {
+      const catKey = p.categoryName ? p.categoryName.toLowerCase().trim() : '';
+      const fallbackDatasheet = catKey ? catMap.get(catKey) : null;
+
+      // Normalize core
+      let cleanCore: string | null = null;
+      if (p.core !== undefined && p.core !== null && String(p.core).trim() !== '') {
+        const coreNum = parseInt(String(p.core).replace(/cores?/gi, '').trim(), 10);
+        if (!isNaN(coreNum) && coreNum > 0) cleanCore = coreNum.toString();
+      }
+
+      // Normalize sqmm / cross section
+      const rawSqmm = p.sqmm || p.coreSize || (p.size !== null && p.size !== undefined ? String(p.size) : null);
+      let cleanSqmm: string | null = null;
+      let numericSize: number | null = null;
+      if (rawSqmm !== null && rawSqmm !== undefined && String(rawSqmm).trim() !== '') {
+        const cleanedStr = String(rawSqmm).replace(/,/g, '.').replace(/mm²|sqmm|sq\.?\s*mm/gi, '').trim();
+        const parsedFloat = parseFloat(cleanedStr);
+        if (!isNaN(parsedFloat) && parsedFloat > 0) {
+          cleanSqmm = parsedFloat.toString();
+          numericSize = parsedFloat;
+        }
+      }
+
+      // Fallback: extract core and sqmm from product name (e.g. 3G1.5, 4X2,5)
+      if ((!cleanCore || !cleanSqmm) && p.name) {
+        const nameMatch = String(p.name).match(/(\d+)\s*[xXgG]\s*([0-9]+(?:[.,][0-9]+)?)/);
+        if (nameMatch) {
+          if (!cleanCore) {
+            const parsedC = parseInt(nameMatch[1], 10);
+            if (!isNaN(parsedC) && parsedC > 0) cleanCore = parsedC.toString();
+          }
+          if (!cleanSqmm) {
+            const parsedS = parseFloat(nameMatch[2].replace(',', '.'));
+            if (!isNaN(parsedS) && parsedS > 0) {
+              cleanSqmm = parsedS.toString();
+              if (numericSize === null) numericSize = parsedS;
+            }
+          }
+        }
+      }
+
+      return {
+        id: p._id.toString(),
+        partNo: p.partNo,
+        name: p.name,
+        category: { name: p.categoryName },
+        categoryName: p.categoryName,
+        brand: { name: p.brandName },
+        brandName: p.brandName,
+        core: cleanCore || p.core,
+        coreSize: cleanSqmm || p.coreSize,
+        sqmm: cleanSqmm || p.sqmm || (numericSize ? String(numericSize) : null),
+        size: numericSize !== null ? numericSize : (typeof p.size === 'number' ? p.size : null),
+        colour: p.colour,
+        uom: p.uom || 'Meter',
+        outerDiameter: p.outerDiameter,
+        weight: p.weight,
+        copperIndex: p.copperIndex,
+        testVoltage: p.testVoltage,
+        flameRetardancy: p.flameRetardancy,
+        price: p.price,
+        mrp: p.mrp,
+        gst: p.gst,
+        validFrom: p.validFrom || null,
+        expiryDate: p.expiryDate || null,
+        imageUrl: p.imageUrl,
+        datasheetUrl: p.datasheetUrl || fallbackDatasheet || null,
+        categoryDatasheetUrl: fallbackDatasheet || null,
+        description: p.description,
+        application: p.description || p.name
+      };
+    });
     res.json(formatted);
   } catch (error) {
     console.error('DB fetch products failed, using fallback', error);
     res.json([
-      { id: 'prod1', partNo: 'LAPP001', name: 'ÖLFLEX® CLASSIC 110', category: { name: 'Control Cables' }, brand: { name: 'LAPP' }, price: 45, uom: 'Meter', colour: 'Grey' },
+      { id: 'prod1', partNo: 'LAPP001', name: 'ÖLFLEX® CLASSIC 110', category: { name: 'Control Cables' }, brand: { name: 'LAPP' }, price: 45, uom: 'Meter', colour: 'Grey', core: '3', sqmm: '1.5' },
       { id: 'prod2', partNo: 'EATON101', name: 'Eaton 5P UPS', category: { name: 'Power Quality' }, brand: { name: 'Eaton' }, price: 12500, uom: 'Piece', colour: 'Black' }
     ]);
   }
@@ -1359,6 +2084,15 @@ app.get('/api/products/:id', async (req, res) => {
     
     const p: any = product;
     
+    // Fall back to category datasheet if product does not have an individual one (Requirement 5.5)
+    let resolvedDatasheet = p.datasheetUrl;
+    if (!resolvedDatasheet && p.categoryName) {
+      try {
+        const cat = await Category.findOne({ name: p.categoryName });
+        if (cat?.datasheetUrl) resolvedDatasheet = cat.datasheetUrl;
+      } catch (catErr) {}
+    }
+
     res.json({
       id: p._id.toString(),
       partNo: p.partNo,
@@ -1369,6 +2103,7 @@ app.get('/api/products/:id', async (req, res) => {
       brandName: p.brandName,
       core: p.core,
       coreSize: p.coreSize,
+      sqmm: p.sqmm || p.coreSize || (p.size ? String(p.size) : null),
       size: p.size,
       colour: p.colour,
       uom: p.uom || 'Meter',
@@ -1380,8 +2115,10 @@ app.get('/api/products/:id', async (req, res) => {
       price: p.price,
       mrp: p.mrp,
       gst: p.gst,
+      validFrom: p.validFrom || null,
+      expiryDate: p.expiryDate || null,
       imageUrl: p.imageUrl,
-      datasheetUrl: p.datasheetUrl,
+      datasheetUrl: resolvedDatasheet,
       description: p.description,
       application: p.description || p.name
     });
@@ -1468,6 +2205,29 @@ app.post('/api/products', verifyAdmin, async (req, res) => {
     if (!data.categoryId) delete data.categoryId;
     if (!data.brandId) delete data.brandId;
 
+    // Validate Core Size & SQMM Combination
+    const coreVal = data.core ? String(data.core).trim() : null;
+    const sqmmVal = data.sqmm ? String(data.sqmm).trim() : (data.coreSize ? String(data.coreSize).trim() : null);
+    if (coreVal && sqmmVal) {
+      const validation = validateCoreSqmm(coreVal, sqmmVal);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+    }
+
+    // Synchronize core, sqmm, coreSize, and numerical size
+    if (coreVal) data.core = coreVal;
+    if (sqmmVal) {
+      data.sqmm = sqmmVal;
+      data.coreSize = sqmmVal;
+      const parsedNum = parseFloat(sqmmVal);
+      if (!isNaN(parsedNum)) {
+        data.size = parsedNum;
+      }
+    }
+    if (data.colour) data.colour = String(data.colour).trim();
+    if (data.uom) data.uom = String(data.uom).trim();
+
     // Auto-link Category and Brand ObjectIds if categoryName / brandName provided
     if (data.categoryName && !data.categoryId) {
       const cat = await Category.findOne({ name: data.categoryName.trim() });
@@ -1477,6 +2237,9 @@ app.post('/api/products', verifyAdmin, async (req, res) => {
       const br = await Brand.findOne({ name: data.brandName.trim() });
       if (br) data.brandId = br._id;
     }
+
+    if (data.validFrom !== undefined) data.validFrom = data.validFrom ? String(data.validFrom).trim() : null;
+    if (data.expiryDate !== undefined) data.expiryDate = data.expiryDate ? String(data.expiryDate).trim() : null;
 
     const newProduct = await Product.create(data);
     res.status(201).json(newProduct);
@@ -1503,6 +2266,8 @@ app.put('/api/products/:id', verifyAdmin, async (req, res) => {
     if (data.gst !== undefined && data.gst !== '') {
       data.gst = Number(data.gst);
     }
+    if (data.validFrom !== undefined) data.validFrom = data.validFrom ? String(data.validFrom).trim() : null;
+    if (data.expiryDate !== undefined) data.expiryDate = data.expiryDate ? String(data.expiryDate).trim() : null;
     if (data.imageUrl === '') {
       data.imageUrl = null;
     }
@@ -1511,6 +2276,36 @@ app.put('/api/products/:id', verifyAdmin, async (req, res) => {
     }
     if (!data.categoryId) delete data.categoryId;
     if (!data.brandId) delete data.brandId;
+
+    // Validate Core Size & SQMM Combination
+    const coreVal = data.core !== undefined ? (data.core ? String(data.core).trim() : null) : undefined;
+    const sqmmVal = data.sqmm !== undefined ? (data.sqmm ? String(data.sqmm).trim() : null) : (data.coreSize !== undefined ? (data.coreSize ? String(data.coreSize).trim() : null) : undefined);
+    
+    if (coreVal !== undefined || sqmmVal !== undefined) {
+      const existing = await Product.findById(req.params.id);
+      const effectiveCore = coreVal !== undefined ? coreVal : existing?.core;
+      const effectiveSqmm = sqmmVal !== undefined ? sqmmVal : (existing?.sqmm || existing?.coreSize);
+      if (effectiveCore && effectiveSqmm) {
+        const validation = validateCoreSqmm(effectiveCore, effectiveSqmm);
+        if (!validation.valid) {
+          return res.status(400).json({ error: validation.error });
+        }
+      }
+    }
+
+    if (data.sqmm !== undefined) {
+      data.sqmm = data.sqmm ? String(data.sqmm).trim() : null;
+      data.coreSize = data.sqmm;
+      const parsedNum = data.sqmm ? parseFloat(data.sqmm) : NaN;
+      data.size = !isNaN(parsedNum) ? parsedNum : null;
+    } else if (data.coreSize !== undefined) {
+      data.sqmm = data.coreSize ? String(data.coreSize).trim() : null;
+      const parsedNum = data.coreSize ? parseFloat(data.coreSize) : NaN;
+      data.size = !isNaN(parsedNum) ? parsedNum : null;
+    }
+
+    if (data.colour !== undefined) data.colour = data.colour ? String(data.colour).trim() : null;
+    if (data.uom !== undefined) data.uom = data.uom ? String(data.uom).trim() : 'Meter';
 
     if (data.categoryName && !data.categoryId) {
       const cat = await Category.findOne({ name: data.categoryName.trim() });
@@ -1574,15 +2369,14 @@ app.post('/api/products/bulk-delete', verifyAdmin, async (req, res) => {
   }
 });
 
-// Excel Bulk Import API
+// Excel Bulk Import API (Supports full catalog import AND price-only updates per Requirement 5.8)
 app.post('/api/products/import', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
   try {
-    // Parse Excel file
-    // Parse Excel file and process all sheets
+    const isPriceOnly = req.query.mode === 'price_only' || req.body?.mode === 'price_only';
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
       return res.status(400).json({ error: 'Excel file has no sheets' });
@@ -1619,13 +2413,30 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
             continue; // Skip blank or header sub-rows
           }
 
-          const resolvedName = String(productName || (partNo ? `LAPP Product ${partNo}` : 'Industrial Cable'));
-          const categoryName = row['Category'] || row['Category Name'] ? String(row['Category'] || row['Category Name']).trim() : defaultCategory;
-          const brandName = row['Brand'] || row['Brand Name'] ? String(row['Brand'] || row['Brand Name']).trim() : 'LAPP KABEL';
-
           // Extract Price / LP
           const rawPrice = row['Price'] || row['Current LP'] || row['New LP'] || row[' LP '] || row['LP'] || row['Rate'] || row['List Price'];
           const price = rawPrice !== undefined && rawPrice !== null && rawPrice !== '' ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) : null;
+
+          // Extract Price Validity (Requirement 5.9)
+          const validFrom = row['Valid From'] || row['validFrom'] || row['Valid from'] ? String(row['Valid From'] || row['validFrom'] || row['Valid from']).trim() : null;
+          const expiryDate = row['Expiry Date'] || row['expiryDate'] || row['Valid To'] || row['validTo'] ? String(row['Expiry Date'] || row['expiryDate'] || row['Valid To'] || row['validTo']).trim() : null;
+
+          // Requirement 5.8: Price-only update mode
+          if (isPriceOnly) {
+            if (!partNo) continue;
+            if (price !== null && !isNaN(price)) {
+              const priceUpdate: any = { price };
+              if (validFrom) priceUpdate.validFrom = validFrom;
+              if (expiryDate) priceUpdate.expiryDate = expiryDate;
+              await Product.findOneAndUpdate({ partNo }, { $set: priceUpdate });
+              successCount++;
+            }
+            continue;
+          }
+
+          const resolvedName = String(productName || (partNo ? `LAPP Product ${partNo}` : 'Industrial Cable'));
+          const categoryName = row['Category'] || row['Category Name'] ? String(row['Category'] || row['Category Name']).trim() : defaultCategory;
+          const brandName = row['Brand'] || row['Brand Name'] ? String(row['Brand'] || row['Brand Name']).trim() : 'LAPP KABEL';
 
           // Extract MRP / SP
           const rawMrp = row['MRP'] || row['Current SP'] || row['New SP'] || row['SP'] || row['Selling Price'];
@@ -1635,11 +2446,13 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
           const rawGst = row['GST'] || row['Tax'];
           const gst = rawGst !== undefined && rawGst !== null && rawGst !== '' ? parseFloat(String(rawGst).replace(/[^0-9.]/g, '')) : 18;
 
-          // Extract Specs: Core, Core Size, Colour, PE, UOM
-          const core = row['Core'] || row['Cores'] !== undefined ? String(row['Core'] || row['Cores']) : null;
-          const coreSize = row['Core Size'] || row['Core size'] || row['Size'] !== undefined ? String(row['Core Size'] || row['Core size'] || row['Size']) : null;
-          const parsedSize = coreSize ? parseFloat(coreSize) : null;
-          const colour = row['Colour'] || row['Color'] || row['colour'] || row['color'] ? String(row['Colour'] || row['Color'] || row['colour'] || row['color']) : null;
+          // Extract Specs: Core, Core Size, SQMM, Colour, PE, UOM
+          const core = row['Core'] || row['Cores'] !== undefined ? String(row['Core'] || row['Cores']).trim() : null;
+          const rawSqmm = row['SQMM'] || row['sqmm'] || row['Sqmm'] || row['Core Size'] || row['Core size'] || row['Size'] !== undefined ? String(row['SQMM'] || row['sqmm'] || row['Sqmm'] || row['Core Size'] || row['Core size'] || row['Size']).trim() : null;
+          const coreSize = rawSqmm;
+          const sqmm = rawSqmm;
+          const parsedSize = rawSqmm ? parseFloat(rawSqmm) : null;
+          const colour = row['Colour'] || row['Color'] || row['colour'] || row['color'] ? String(row['Colour'] || row['Color'] || row['colour'] || row['color']).trim() : null;
           const pe = row['PE'] || row['pe'] ? String(row['PE'] || row['pe']) : null;
           const uom = row['Pack size'] || row['Pack Size'] || row['UOM'] || row['Unit'] || (snLower.includes('skintop') || snLower.includes('silvyn') ? 'Piece' : 'Meter');
 
@@ -1659,10 +2472,13 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
             price: isNaN(price as number) ? null : price,
             mrp: isNaN(mrp as number) ? null : mrp,
             gst: isNaN(gst as number) ? 18 : gst,
+            validFrom,
+            expiryDate,
             uom: String(uom).trim(),
             colour,
             core,
             coreSize,
+            sqmm,
             pe,
             size: parsedSize && !isNaN(parsedSize) ? parsedSize : null,
             outerDiameter,
@@ -1687,7 +2503,9 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
     }
 
     res.json({
-      message: `Import completed across all sheets. ${successCount} products imported/updated successfully.`,
+      message: isPriceOnly 
+        ? `Price-only update completed: ${successCount} product rates updated.`
+        : `Import completed across all sheets. ${successCount} products imported/updated successfully.`,
       successCount,
       failedCount,
       errors: errors.slice(0, 10)

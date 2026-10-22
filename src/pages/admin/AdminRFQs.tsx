@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  FileText, Eye, RefreshCw, AlertCircle, CheckCircle, UserPlus, Trash2, X, 
-  Download, Printer, Search, ArrowLeft, Clock, Tag, Percent, Edit3, Save, 
+import {
+  FileText, Eye, RefreshCw, AlertCircle, CheckCircle, UserPlus, Trash2, X,
+  Download, Printer, Search, ArrowLeft, Clock, Tag, Percent, Edit3, Save,
   FileSpreadsheet, Check, ArrowUpDown, ArrowUp, ArrowDown, User as UserIcon
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -18,9 +18,17 @@ interface User {
 interface RFQItem {
   partNo?: string;
   name?: string;
+  description?: string;
   brand?: string;
   hsnCode?: string;
   unit?: string;
+  uom?: string;
+  core?: string | number;
+  coreSize?: string;
+  sqmm?: string;
+  weight?: string;
+  outerDiameter?: string;
+  validity?: string;
   qty: number;
   unitPrice: number;
   totalBeforeTax?: number;
@@ -37,8 +45,23 @@ interface RFQ {
   companyName: string;
   email: string;
   phone: string;
+  address?: string;
+  billingAddress?: string;
+  deliveryAddress?: string;
+  deliveryLocation?: string;
+  specialInstructions?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   grandTotal: number;
   status: string;
+  lostReason?: string | null;
+  lostReasonDetails?: string | null;
+  assignedAt?: string | null;
+  expiredAt?: string | null;
+  validityDays?: number;
+  validUntil?: string | null;
+  expiryComments?: string | null;
   assignedTo?: string | null;
   assignedToName: string | null;
   createdAt: string;
@@ -51,10 +74,110 @@ interface RFQ {
   paymentTerms?: string;
 }
 
+// UOM Abbreviation formatter - Show UOM in abbreviated form only, retain SQ.MM
+export function formatUom(uom?: string | null): string {
+  if (!uom) return 'm';
+  const norm = uom.toLowerCase().trim();
+  if (norm === 'meter' || norm === 'metre' || norm === 'm' || norm === 'mtr' || norm === 'meters') return 'm';
+  if (norm.includes('millimeter') || norm.includes('millimetre') || norm === 'mm') return 'mm';
+  if (norm.includes('centimeter') || norm.includes('centimetre') || norm === 'cm') return 'cm';
+  if (norm === 'piece' || norm === 'pc' || norm === 'pcs' || norm === 'pieces') return 'pc';
+  if (norm === 'coil' || norm === 'coils') return 'coil';
+  if (norm === 'drum' || norm === 'drums' || norm === 'spool' || norm.includes('bulk')) return 'drum';
+  if (norm === 'pack' || norm === 'packs' || norm === 'box' || norm === 'boxes' || norm.includes('packaging')) return 'pack';
+  if (norm === 'roll' || norm === 'rolls') return 'roll';
+  if (norm === 'sqmm' || norm === 'sq.mm' || norm === 'sq mm' || norm === 'mm²') return 'SQ.MM';
+  if (norm === 'km') return 'km';
+  if (norm === 'ft' || norm === 'foot' || norm === 'feet') return 'ft';
+  if (norm === 'in' || norm === 'inch' || norm === 'inches') return 'in';
+  if (norm === 'set' || norm === 'sets') return 'set';
+  if (norm === 'lot' || norm === 'lots') return 'lot';
+  return uom;
+}
+
+// Core / Cross Section Formatter - Retains SQ.MM unit
+export function formatCoreSqmm(core?: string | number | null, sqmm?: string | number | null, name?: string): string {
+  let c = core ? String(core).trim() : '';
+  let s = sqmm ? String(sqmm).trim() : '';
+
+  if ((!c || !s) && name) {
+    const matchG = name.match(/(\d+)\s*[Ggx]\s*([0-9.]+)/i);
+    if (matchG) {
+      if (!c) c = matchG[1];
+      if (!s) s = matchG[2];
+    } else {
+      const matchCore = name.match(/(\d+)\s*(?:core|cores)/i);
+      const matchSqmm = name.match(/([0-9.]+)\s*(?:sq\.?mm|mm²)/i);
+      if (matchCore && !c) c = matchCore[1];
+      if (matchSqmm && !s) s = matchSqmm[1];
+    }
+  }
+
+  if (c && s) return `${c} Core x ${s} SQ.MM`;
+  if (c) return `${c} Core`;
+  if (s) return `${s} SQ.MM`;
+  return '-';
+}
+
+// Outer Diameter (OD) Formatter
+export function formatOD(od?: string | number | null, name?: string): string {
+  if (od) {
+    const s = String(od).trim();
+    return s.toLowerCase().includes('mm') ? s : `${s} mm`;
+  }
+  if (name) {
+    const match = name.match(/OD[:\s]*([0-9.]+\s*mm)/i);
+    if (match) return match[1];
+  }
+  return '-';
+}
+
+// Weight Formatter
+export function formatWeight(w?: string | number | null, name?: string): string {
+  if (w) {
+    const s = String(w).trim();
+    return s.toLowerCase().includes('kg') ? s : `${s} kg/km`;
+  }
+  if (name) {
+    const match = name.match(/([0-9.]+\s*kg(?:\/km)?)/i);
+    if (match) return match[1];
+  }
+  return '-';
+}
+
+// Automatic 7-Day Validity & Countdown Calculator (No manual date entry required)
+export function getQuotationValidityInfo(rfq: { createdAt?: string; date?: string; validUntil?: string | null; status?: string; validityDays?: number }) {
+  const baseDateStr = rfq.createdAt || rfq.date || new Date().toISOString();
+  const baseTime = new Date(baseDateStr).getTime();
+  const totalDays = rfq.validityDays || 7;
+  const expiryTime = rfq.validUntil ? new Date(rfq.validUntil).getTime() : baseTime + (totalDays * 24 * 60 * 60 * 1000);
+  const now = Date.now();
+  const diffMs = expiryTime - now;
+  const isExpired = rfq.status === 'Expired' || diffMs <= 0;
+
+  const remainingDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+  const remainingHours = Math.max(0, Math.ceil(diffMs / (60 * 60 * 1000)));
+
+  return {
+    isExpired,
+    validityTotalDays: totalDays,
+    remainingDays: Math.max(0, remainingDays),
+    remainingHours,
+    expiryDate: new Date(expiryTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+    countdownLabel: isExpired
+      ? 'Expired (0d left)'
+      : remainingDays > 1
+        ? `7 Days (${remainingDays}d left)`
+        : remainingHours > 0
+          ? `Expires today (${remainingHours}h left)`
+          : 'Expires today'
+  };
+}
+
 export const AdminRFQs: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParam = searchParams.get('filter') || searchParams.get('status') || 'All';
-  const [statusFilter, setStatusFilter] = useState<string>(filterParam === 'pending' ? 'Pending Actions' : 'All');
+  const [statusFilter, setStatusFilter] = useState<string>(filterParam === 'pending' ? 'Pending' : 'All');
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get('search') || '');
 
   const [rfqs, setRfqs] = useState<RFQ[]>([]);
@@ -65,6 +188,12 @@ export const AdminRFQs: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateSortOrder, setDateSortOrder] = useState<'desc' | 'asc'>('desc');
 
+  // Lost Reason Modal State (Requirement 2.6)
+  const [lostModalRfq, setLostModalRfq] = useState<RFQ | null>(null);
+  const [selectedLostReason, setSelectedLostReason] = useState<string>('Price too high / Competitor cheaper');
+  const [otherLostReasonDetails, setOtherLostReasonDetails] = useState<string>('');
+  const [isSubmittingLost, setIsSubmittingLost] = useState(false);
+
   // Pricing & Special Discount Editor State
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [editItems, setEditItems] = useState<RFQItem[]>([]);
@@ -73,6 +202,11 @@ export const AdminRFQs: React.FC = () => {
   const [editNotes, setEditNotes] = useState<string>('');
   const [isSavingPrice, setIsSavingPrice] = useState(false);
   const [priceSuccessMsg, setPriceSuccessMsg] = useState('');
+
+  // Expiry Comments State
+  const [isEditingExpiryComments, setIsEditingExpiryComments] = useState(false);
+  const [expiryCommentInput, setExpiryCommentInput] = useState('');
+  const [isSavingExpiryComment, setIsSavingExpiryComment] = useState(false);
 
   // Retrieve current admin/sales details
   const currentAdminStr = localStorage.getItem('siddhi_admin_user');
@@ -115,7 +249,7 @@ export const AdminRFQs: React.FC = () => {
       const token = localStorage.getItem('token');
       const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-      const url = canViewAll 
+      const url = canViewAll
         ? `${API_BASE_URL}/api/rfqs`
         : `${API_BASE_URL}/api/rfqs?assignedTo=${currentAdmin?._id}`;
 
@@ -123,7 +257,7 @@ export const AdminRFQs: React.FC = () => {
         fetch(url, { headers }),
         fetch(`${API_BASE_URL}/api/admin/assign-staff`, { headers })
       ]);
-      
+
       if (rfqRes.ok) {
         const fetchedRfqs: RFQ[] = await rfqRes.json();
         setRfqs(fetchedRfqs);
@@ -196,25 +330,56 @@ export const AdminRFQs: React.FC = () => {
   // When selected RFQ changes, sync edit fields
   useEffect(() => {
     if (selectedRfq) {
-      const initialItems = (selectedRfq.items && selectedRfq.items.length > 0) 
+      const initialItems = (selectedRfq.items && selectedRfq.items.length > 0)
         ? selectedRfq.items.map(it => ({ ...it }))
         : [{
-            partNo: 'STD-KABEL-01',
-            name: 'Standard Industrial Cable',
-            brand: 'Polycab',
-            qty: 1,
-            unit: 'm',
-            unitPrice: selectedRfq.subtotal || selectedRfq.grandTotal || 1000,
-            totalBeforeTax: selectedRfq.subtotal || selectedRfq.grandTotal || 1000
-          }];
+          partNo: 'STD-KABEL-01',
+          name: 'Standard Industrial Cable',
+          brand: 'Polycab',
+          qty: 1,
+          unit: 'm',
+          unitPrice: selectedRfq.subtotal || selectedRfq.grandTotal || 1000,
+          totalBeforeTax: selectedRfq.subtotal || selectedRfq.grandTotal || 1000
+        }];
       setEditItems(initialItems);
       setEditDiscountType('percent');
       setEditDiscountValue(selectedRfq.discountRate || 0);
       setEditNotes(selectedRfq.notes || '');
+      setExpiryCommentInput(selectedRfq.expiryComments || '');
+      setIsEditingExpiryComments(false);
       setIsEditingPrice(false);
       setPriceSuccessMsg('');
     }
   }, [selectedRfq?._id]);
+
+  // Save Expiry Comments Handler
+  const handleSaveExpiryComment = async () => {
+    if (!selectedRfq) return;
+    setIsSavingExpiryComment(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+      const res = await fetch(`${API_BASE_URL}/api/rfqs/${selectedRfq._id}/status`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          expiryComments: expiryCommentInput
+        })
+      });
+      if (res.ok) {
+        setSelectedRfq(prev => prev ? { ...prev, expiryComments: expiryCommentInput } : null);
+        setRfqs(prev => prev.map(r => r._id === selectedRfq._id ? { ...r, expiryComments: expiryCommentInput } : r));
+        setIsEditingExpiryComments(false);
+      }
+    } catch (e) {
+      console.error('Failed to save expiry comments', e);
+    } finally {
+      setIsSavingExpiryComment(false);
+    }
+  };
 
   // Live pricing calculator
   const pricingCalc = useMemo(() => {
@@ -257,13 +422,13 @@ export const AdminRFQs: React.FC = () => {
         targetUserId = selectedUser._id;
       }
     }
-    
+
     // Instant Optimistic Update
-    setRfqs(prev => prev.map(r => r._id === rfqId ? { 
-      ...r, 
-      assignedTo: targetUserId, 
-      assignedToName: assignedName, 
-      status: targetUserId ? 'Assigned' : 'New' 
+    setRfqs(prev => prev.map(r => r._id === rfqId ? {
+      ...r,
+      assignedTo: targetUserId,
+      assignedToName: assignedName,
+      status: targetUserId ? 'Assigned' : 'New'
     } : r));
 
     if (selectedRfq && selectedRfq._id === rfqId) {
@@ -274,12 +439,12 @@ export const AdminRFQs: React.FC = () => {
         status: targetUserId ? 'Assigned' : 'New'
       } : null);
     }
-    
+
     try {
       const token = localStorage.getItem('token');
       await fetch(`${API_BASE_URL}/api/rfqs/${rfqId}/assign`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -292,18 +457,18 @@ export const AdminRFQs: React.FC = () => {
     }
   };
 
-  // Update status with optional revision notes (Supports Return-to-Sales workflow)
+  // Update status with optional revision notes
   const handleStatusChange = async (rfqId: string, newStatus: string, returnNotes?: string) => {
     // Instant Optimistic Update
-    setRfqs(prev => prev.map(r => r._id === rfqId ? { 
-      ...r, 
+    setRfqs(prev => prev.map(r => r._id === rfqId ? {
+      ...r,
       status: newStatus,
       notes: returnNotes !== undefined ? returnNotes : r.notes
     } : r));
-    
+
     if (selectedRfq && selectedRfq._id === rfqId) {
-      setSelectedRfq(prev => prev ? { 
-        ...prev, 
+      setSelectedRfq(prev => prev ? {
+        ...prev,
         status: newStatus,
         notes: returnNotes !== undefined ? returnNotes : prev.notes
       } : null);
@@ -313,7 +478,7 @@ export const AdminRFQs: React.FC = () => {
       const token = localStorage.getItem('token');
       await fetch(`${API_BASE_URL}/api/rfqs/${rfqId}/status`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -322,6 +487,66 @@ export const AdminRFQs: React.FC = () => {
       fetchData(true);
     } catch (err) {
       console.error('Status change error', err);
+    }
+  };
+
+  // Requirement 2.6: Initiate status change with Lost Reason popup trigger
+  const handleInitiateStatusChange = (rfqId: string, newStatus: string, rfqObj?: RFQ) => {
+    if (newStatus === 'Lost') {
+      const target = rfqObj || rfqs.find(r => r._id === rfqId) || (selectedRfq?._id === rfqId ? selectedRfq : null);
+      if (target) {
+        setLostModalRfq(target);
+        setSelectedLostReason('Price too high / Competitor cheaper');
+        setOtherLostReasonDetails('');
+        return;
+      }
+    }
+    handleStatusChange(rfqId, newStatus);
+  };
+
+  // Requirement 2.6: Save Lost Reason
+  const handleConfirmLostReason = async () => {
+    if (!lostModalRfq) return;
+    setIsSubmittingLost(true);
+    const reason = selectedLostReason === 'Others' ? (otherLostReasonDetails.trim() || 'Others') : selectedLostReason;
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_BASE_URL}/api/rfqs/${lostModalRfq._id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          status: 'Lost',
+          lostReason: reason,
+          lostReasonDetails: otherLostReasonDetails.trim()
+        })
+      });
+
+      setRfqs(prev => prev.map(r => r._id === lostModalRfq._id ? {
+        ...r,
+        status: 'Lost',
+        lostReason: reason,
+        lostReasonDetails: otherLostReasonDetails.trim()
+      } : r));
+
+      if (selectedRfq?._id === lostModalRfq._id) {
+        setSelectedRfq(prev => prev ? {
+          ...prev,
+          status: 'Lost',
+          lostReason: reason,
+          lostReasonDetails: otherLostReasonDetails.trim()
+        } : null);
+      }
+
+      setLostModalRfq(null);
+      fetchData(true);
+    } catch (e) {
+      console.error('Failed to mark as lost', e);
+    } finally {
+      setIsSubmittingLost(false);
     }
   };
 
@@ -386,7 +611,7 @@ export const AdminRFQs: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this RFQ?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/rfqs/${id}`, { 
+      const res = await fetch(`${API_BASE_URL}/api/rfqs/${id}`, {
         method: 'DELETE',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
@@ -408,7 +633,7 @@ export const AdminRFQs: React.FC = () => {
   };
 
   const handleSelectOne = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -419,7 +644,7 @@ export const AdminRFQs: React.FC = () => {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/rfqs/bulk-delete`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -445,7 +670,7 @@ export const AdminRFQs: React.FC = () => {
       const phone = rfq.phone || '';
       const assignedTo = rfq.assignedToName || 'Sales Team';
       const status = rfq.status || 'Under Review';
-      
+
       const subtotal = rfq.subtotal ?? (rfq.items ? rfq.items.reduce((s, it) => s + ((it.qty || 1) * (it.unitPrice || 0)), 0) : 0);
       const discountRate = rfq.discountRate || 0;
       const discountAmount = rfq.discountAmount || (discountRate > 0 ? (subtotal * discountRate) / 100 : 0);
@@ -453,86 +678,100 @@ export const AdminRFQs: React.FC = () => {
       const gstAmount = taxableAmount * 0.18;
       const grandTotal = rfq.grandTotal || (taxableAmount + gstAmount);
 
+      const valInfo = getQuotationValidityInfo(rfq);
+
       const rows: (string | number)[][] = [
         ['SIDDHI KABEL CORP PVT LTD'],
         ['Plot 42, Peenya Industrial Area, 2nd Stage, Bangalore, Karnataka 560058'],
         ['GSTIN: 29AABCU9603R1ZM | Phone: +91 80 2839 0000 | Email: sales@siddhikabel.com | Web: www.siddhikabel.com'],
         [],
-        ['OFFICIAL QUOTATION / ESTIMATE'],
+        ['ESTIMATE'],
         [],
-        ['Quotation No:', quoteNo, '', 'Date:', dateStr],
-        ['Status:', status, '', 'Processed By:', assignedTo],
+        ['Estimate Ref No:', quoteNo, '', 'Date:', dateStr],
+        ['Status:', status, '', 'Assigned Executive:', assignedTo],
+        ['Validity Period:', '7 Days', '', 'Expiry Status:', valInfo.countdownLabel],
+      ];
+
+      if (rfq.expiryComments) {
+        rows.push(['Expiry Comments:', rfq.expiryComments]);
+      }
+
+      rows.push(
         [],
-        ['CUSTOMER DETAILS / BILLED TO:'],
+        ['BILLED TO (CUSTOMER MASTER):'],
         ['Company Name:', companyName],
         ['Contact Person:', customerName],
-        ['Email:', email],
-        ['Phone:', phone],
-        [],
-        ['QUOTED ITEMS'],
-        ['#', 'Part Number', 'Item Description', 'Brand', 'HSN Code', 'Qty', 'Unit', 'Unit Rate (₹)', 'Taxable Amount (₹)']
-      ];
+        ['Billing Address:', rfq.billingAddress || rfq.address || 'Registered Office'],
+        ['Delivery Address:', rfq.deliveryAddress || rfq.billingAddress || 'Standard Factory Gate'],
+        ['Email:', email, '', 'Phone:', phone],
+      );
+
+      if (rfq.deliveryLocation || rfq.specialInstructions) {
+        rows.push(['Delivery Bay / Instructions:', `${rfq.deliveryLocation ? `Bay: ${rfq.deliveryLocation} | ` : ''}${rfq.specialInstructions || ''}`]);
+      }
+
+      rows.push([]);
+      rows.push(['ESTIMATED ITEMS']);
+      rows.push(['#', 'Part Number', 'Description', 'Core/Cross Section', 'UOM', 'Price (₹)', 'Weight', 'Outer Diameter (OD)', 'Validity', 'Brand', 'Qty', 'Amount (₹)']);
 
       if (rfq.items && rfq.items.length > 0) {
         rfq.items.forEach((item: any, idx: number) => {
           const qty = Number(item.qty) || 1;
           const rate = Number(item.unitPrice) || 0;
           const lineTotal = item.totalBeforeTax ? Number(item.totalBeforeTax) : (qty * rate);
+          const itemVal = getQuotationValidityInfo(rfq, item);
           rows.push([
             idx + 1,
             item.partNo || '',
-            item.name || '',
-            item.brand || '',
-            item.hsnCode || '8544',
-            qty,
-            item.unit || 'nos',
+            item.description || item.name || '',
+            formatCoreSqmm(item.core, item.sqmm || item.coreSize, item.name),
+            formatUom(item.uom || item.unit),
             rate,
+            formatWeight(item.weight, item.name),
+            formatOD(item.outerDiameter, item.name),
+            itemVal.countdownLabel,
+            item.brand || 'LAPP',
+            qty,
             lineTotal
           ]);
         });
       } else {
-        rows.push([1, 'STANDARD-ITEM', 'Industrial Cables & Wires', 'Polycab', '8544', 1, 'lot', subtotal, subtotal]);
+        rows.push([1, 'STANDARD-ITEM', 'Industrial Cables & Wires', '-', 'm', subtotal, '-', '-', valInfo.countdownLabel, 'LAPP', 1, subtotal]);
       }
 
       rows.push([]);
-      rows.push(['', '', '', '', '', '', 'Subtotal (₹):', subtotal]);
+      rows.push(['', '', '', '', '', '', '', '', '', 'Subtotal (₹):', subtotal]);
       if (discountAmount > 0) {
-        rows.push(['', '', '', '', '', '', `Special Project Discount (${discountRate}%):`, -discountAmount]);
-        rows.push(['', '', '', '', '', '', 'Taxable Amount (₹):', taxableAmount]);
+        rows.push(['', '', '', '', '', `Discount (${discountRate}%):`, -discountAmount]);
+        rows.push(['', '', '', '', '', 'Taxable Amount (₹):', taxableAmount]);
       }
-      rows.push(['', '', '', '', '', '', 'GST (18%):', gstAmount]);
-      rows.push(['', '', '', '', '', '', 'Grand Total (₹):', grandTotal]);
-      rows.push([]);
+      rows.push(['', '', '', '', '', 'GST (18%):', gstAmount]);
+      rows.push(['', '', '', '', '', 'Estimate Total (₹):', grandTotal]);
+
       if (rfq.notes) {
-        rows.push(['Special Notes:', rfq.notes]);
         rows.push([]);
+        rows.push(['Notes / Remarks:', rfq.notes]);
       }
-      rows.push(['TERMS & CONDITIONS:']);
-      rows.push(['1. Validity: 30 Days from date of quotation.']);
-      rows.push(['2. Delivery: Ex-Stock Bangalore / 7-10 days for manufacturing items.']);
-      rows.push(['3. Payment: 30 Days Credit against approved Purchase Order.']);
-      rows.push(['4. Subject to Bangalore Jurisdiction.']);
 
       const ws = XLSX.utils.aoa_to_sheet(rows);
       ws['!cols'] = [
         { wch: 6 },
         { wch: 22 },
-        { wch: 38 },
+        { wch: 40 },
         { wch: 15 },
-        { wch: 12 },
-        { wch: 8 },
+        { wch: 10 },
         { wch: 8 },
         { wch: 16 },
-        { wch: 20 },
+        { wch: 18 },
       ];
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Quotation');
+      XLSX.utils.book_append_sheet(wb, ws, 'Estimate');
       const cleanQuoteNo = quoteNo.replace(/[^a-zA-Z0-9_-]/g, '_');
-      XLSX.writeFile(wb, `Quotation_${cleanQuoteNo}.xlsx`);
+      XLSX.writeFile(wb, `Estimate_${cleanQuoteNo}.xlsx`);
     } catch (e) {
-      console.error('Failed to export single quotation Excel', e);
-      alert('Failed to generate Excel quotation.');
+      console.error('Failed to export estimate Excel', e);
+      alert('Failed to generate Excel estimate.');
     }
   };
 
@@ -589,45 +828,57 @@ export const AdminRFQs: React.FC = () => {
     }
   };
 
-  // Status Badge rendering for 5 core statuses: New, Assigned, Pending, Under Review, Closed
-  const renderStatusBadge = (status: string) => {
-    const norm = (status || 'New').trim();
-    if (norm === 'Closed' || norm === 'Completed') {
+  // Status Badge rendering for preserved statuses: Pending, Under Review, PO Received, Closed, Lost, Expired
+  const renderStatusBadge = (status: string, rfqItem?: RFQ) => {
+    const norm = (status || 'Pending').trim();
+    if (norm === 'Closed') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs">
+          <CheckCircle size={13} className="text-slate-600" />
+          Closed
+        </span>
+      );
+    }
+    if (norm === 'PO Received' || norm === 'Approved' || norm === 'Completed') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
           <CheckCircle size={13} className="text-emerald-600" />
-          Closed
+          PO Received
         </span>
       );
     }
     if (norm === 'Under Review') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-orange-50 text-orange-700 border border-orange-300 shadow-2xs">
-          <AlertCircle size={13} className="text-orange-600" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-50 text-sky-700 border border-sky-300 shadow-2xs">
+          <Eye size={13} className="text-sky-600" />
           Under Review
         </span>
       );
     }
-    if (norm === 'Pending' || norm === 'Process by Sales' || norm === 'Processing') {
+    if (norm === 'Lost') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs">
-          <Clock size={13} className="text-amber-600" />
-          Pending
+        <span
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs cursor-help"
+          title={rfqItem?.lostReason ? `Reason: ${rfqItem.lostReason}` : 'Marked as Lost'}
+        >
+          <X size={13} className="text-slate-500" />
+          Lost {rfqItem?.lostReason ? `(${rfqItem.lostReason.slice(0, 14)}...)` : ''}
         </span>
       );
     }
-    if (norm === 'Assigned') {
+    if (norm === 'Expired') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-50 text-sky-700 border border-sky-300 shadow-2xs">
-          <UserPlus size={13} className="text-sky-600" />
-          Assigned
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-800 border border-red-300 shadow-2xs">
+          <AlertCircle size={13} className="text-red-600 animate-pulse" />
+          Expired (7d)
         </span>
       );
     }
+    // Pending (Default)
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-red-50 text-red-700 border border-red-300 shadow-2xs">
-        <Clock size={13} className="text-red-600" />
-        {status || 'New'}
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs">
+        <Clock size={13} className="text-amber-600" />
+        Pending
       </span>
     );
   };
@@ -638,27 +889,28 @@ export const AdminRFQs: React.FC = () => {
       // 1. Text Search Filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matches = 
+        const matches =
           (r.quoteNo && r.quoteNo.toLowerCase().includes(q)) ||
           (r.customerName && r.customerName.toLowerCase().includes(q)) ||
           (r.companyName && r.companyName.toLowerCase().includes(q)) ||
           (r.email && r.email.toLowerCase().includes(q)) ||
           (r.phone && r.phone.includes(q)) ||
-          (r.assignedToName && r.assignedToName.toLowerCase().includes(q));
+          (r.assignedToName && r.assignedToName.toLowerCase().includes(q)) ||
+          (r.lostReason && r.lostReason.toLowerCase().includes(q)) ||
+          (r.expiryComments && r.expiryComments.toLowerCase().includes(q));
         if (!matches) return false;
       }
 
-      // 2. Status Pipeline Filter: New, Assigned, Pending, Under Review, Closed
+      // 2. Status Pipeline Filter: Pending, Under Review, PO Received, Closed, Lost, Expired
       if (statusFilter === 'All') return true;
-      if (statusFilter === 'New') {
-        return r.status === 'New' || r.status === 'Open' || r.status === 'RFQ Submitted' || r.status === 'Generated';
-      }
-      if (statusFilter === 'Assigned') return r.status === 'Assigned';
       if (statusFilter === 'Pending') {
-        return r.status === 'Pending' || r.status === 'Process by Sales' || r.status === 'Processing';
+        return r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing';
       }
       if (statusFilter === 'Under Review') return r.status === 'Under Review';
-      if (statusFilter === 'Closed') return r.status === 'Closed' || r.status === 'Completed';
+      if (statusFilter === 'PO Received') return r.status === 'PO Received' || r.status === 'Approved' || r.status === 'Completed';
+      if (statusFilter === 'Closed') return r.status === 'Closed';
+      if (statusFilter === 'Lost') return r.status === 'Lost';
+      if (statusFilter === 'Expired') return r.status === 'Expired';
       return true;
     });
 
@@ -671,23 +923,25 @@ export const AdminRFQs: React.FC = () => {
     });
   }, [rfqs, searchQuery, statusFilter, dateSortOrder]);
 
+  const expiredCount = useMemo(() => rfqs.filter(r => r.status === 'Expired').length, [rfqs]);
+
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            RFQ & Quotation Management
+            RFQ & Estimate Management
             {isRefreshing && <RefreshCw size={14} className="animate-spin text-red-500" />}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            {isAdmin 
-              ? 'Assign quotation requests to sales staff, review quotations, and monitor review pipeline progress.' 
-              : 'Review your assigned RFQs, apply customer discounts, and transition through to closure.'}
+            {isAdmin
+              ? 'Assign RFQs to sales executives, monitor 7-day expiry, and track commercial estimates.'
+              : 'Review your assigned RFQs, move active quotes to Under Review, apply customer discounts, and update closure status.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {isAdmin && selectedIds.length > 0 && (
-            <button 
+            <button
               onClick={handleBulkDelete}
               className="flex-shrink-0 flex items-center px-3.5 py-1.5 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors border border-red-200 text-xs cursor-pointer"
             >
@@ -695,7 +949,7 @@ export const AdminRFQs: React.FC = () => {
               Delete Selected ({selectedIds.length})
             </button>
           )}
-          <button 
+          <button
             onClick={handleExportAllExcel}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-semibold text-xs shadow-sm cursor-pointer"
             title="Download full RFQ spreadsheet summary"
@@ -703,7 +957,7 @@ export const AdminRFQs: React.FC = () => {
             <FileSpreadsheet size={14} />
             Export All (Excel)
           </button>
-          <button 
+          <button
             onClick={() => fetchData(true)}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-semibold text-xs cursor-pointer"
             title="Sync data in background"
@@ -714,6 +968,29 @@ export const AdminRFQs: React.FC = () => {
         </div>
       </div>
 
+      {/* Requirement 2.5: Automatic 7-Day Expiry Notification Banner in RFQ Area */}
+      {expiredCount > 0 && (
+        <div className="bg-red-50 border border-red-300 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-red-950 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <span className="font-extrabold text-red-900">
+                {expiredCount} RFQ(s) have Expired automatically (7 days reached since assignment).
+              </span>
+              <span className="block text-[11px] text-red-700 mt-0.5">
+                Requirement 2.5: Sales executives must take action before expiry by transitioning active quotes to Under Review or marking Lost/PO Received.
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setStatusFilter('Expired')}
+            className="self-start sm:self-auto px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shrink-0 cursor-pointer shadow-xs transition-colors"
+          >
+            Filter Expired RFQs ({expiredCount})
+          </button>
+        </div>
+      )}
+
       {/* Search Input Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-xs">
         <div className="relative flex-1">
@@ -722,11 +999,11 @@ export const AdminRFQs: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search RFQs by quote #, customer, company, email, phone, salesperson..."
+            placeholder="Search RFQs by quote #, customer, company, email, phone, salesperson, lost reason..."
             className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all font-medium"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
               title="Clear search"
@@ -742,22 +1019,22 @@ export const AdminRFQs: React.FC = () => {
         )}
       </div>
 
-      {/* Status Pipeline Filter Tabs: New, Assigned, Pending, Under Review, Closed */}
+      {/* Status Filter Tabs: Pending, Under Review, PO Received, Closed, Lost, Expired */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
         {[
           { key: 'All', label: `All (${rfqs.length})`, active: 'bg-slate-800 text-white font-bold', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
-          { key: 'New', label: `New (${rfqs.filter(r => r.status === 'New' || r.status === 'Open' || r.status === 'RFQ Submitted' || r.status === 'Generated').length})`, active: 'bg-red-600 text-white font-bold shadow-xs', inactive: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' },
-          { key: 'Assigned', label: `Assigned (${rfqs.filter(r => r.status === 'Assigned').length})`, active: 'bg-sky-600 text-white font-bold shadow-xs', inactive: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100' },
-          { key: 'Pending', label: `Pending (${rfqs.filter(r => r.status === 'Pending' || r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
-          { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-orange-600 text-white font-bold shadow-xs', inactive: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100' },
-          { key: 'Closed', label: `Closed (${rfqs.filter(r => r.status === 'Closed' || r.status === 'Completed').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
+          { key: 'Pending', label: `Pending (${rfqs.filter(r => r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
+          { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-sky-600 text-white font-bold shadow-xs', inactive: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100' },
+          { key: 'PO Received', label: `PO Received (${rfqs.filter(r => r.status === 'PO Received' || r.status === 'Approved' || r.status === 'Completed').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
+          { key: 'Closed', label: `Closed (${rfqs.filter(r => r.status === 'Closed').length})`, active: 'bg-slate-700 text-white font-bold shadow-xs', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
+          { key: 'Lost', label: `Lost (${rfqs.filter(r => r.status === 'Lost').length})`, active: 'bg-slate-600 text-white font-bold shadow-xs', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
+          { key: 'Expired', label: `Expired (${rfqs.filter(r => r.status === 'Expired').length})`, active: 'bg-red-600 text-white font-bold shadow-xs', inactive: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' },
         ].map(({ key, label, active, inactive }) => (
           <button
             key={key}
             onClick={() => setStatusFilter(key)}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${
-              statusFilter === key ? active : inactive
-            }`}
+            className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-all border shadow-2xs cursor-pointer ${statusFilter === key ? active : inactive
+              }`}
           >
             {label}
           </button>
@@ -771,8 +1048,8 @@ export const AdminRFQs: React.FC = () => {
               <tr>
                 {isAdmin && (
                   <th className="py-3 px-3 w-10 text-center font-semibold shrink-0">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={sortedRfqs.length > 0 && selectedIds.length === sortedRfqs.length}
                       onChange={handleSelectAll}
                       className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
@@ -782,14 +1059,14 @@ export const AdminRFQs: React.FC = () => {
                 <th className="py-3 px-3 w-14 text-center font-bold text-slate-600 shrink-0">S.No.</th>
                 <th className="py-3 px-4 font-semibold w-44 shrink-0">RFQ Number</th>
                 <th className="py-3 px-4 font-semibold min-w-[220px]">Client Name</th>
-                <th className="py-3 px-4 font-semibold w-36 shrink-0">
+                <th className="py-3 px-4 font-semibold w-48 shrink-0">
                   <button
                     type="button"
                     onClick={() => setDateSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
                     className="inline-flex items-center gap-1.5 hover:text-slate-900 font-bold transition-colors cursor-pointer group"
                     title={`Sort by Date (${dateSortOrder === 'desc' ? 'Newest First' : 'Oldest First'})`}
                   >
-                    <span>Date</span>
+                    <span>Date &amp; Validity</span>
                     {dateSortOrder === 'desc' ? (
                       <ArrowDown size={14} className="text-red-600" />
                     ) : (
@@ -820,153 +1097,171 @@ export const AdminRFQs: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                sortedRfqs.map((rfq, index) => (
-                  <tr key={rfq._id} className="hover:bg-red-50/20 transition-colors group">
-                    {isAdmin && (
-                      <td className="py-3 px-3 text-center align-middle">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedIds.includes(rfq._id)}
-                          onChange={() => handleSelectOne(rfq._id)}
-                          className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
-                        />
-                      </td>
-                    )}
-                    <td className="py-3 px-3 text-center font-bold text-slate-500 text-xs align-middle">
-                      {index + 1}
-                    </td>
-                    <td 
-                      className="py-3 px-4 font-mono font-bold text-sky-700 hover:text-sky-900 cursor-pointer align-middle"
-                      onClick={() => setSelectedRfq(rfq)}
-                    >
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold hover:bg-sky-100 transition-colors shadow-2xs font-mono text-xs">
-                        <FileText size={12} className="text-sky-600 shrink-0" />
-                        {rfq.quoteNo}
-                      </span>
-                    </td>
-                    <td 
-                      className="py-3 px-4 cursor-pointer align-middle"
-                      onClick={() => setSelectedRfq(rfq)}
-                    >
-                      <div className="font-semibold text-slate-900 group-hover:text-red-700 transition-colors leading-snug">
-                        {rfq.companyName || rfq.customerName || 'Direct Client'}
-                      </div>
-                      {rfq.companyName && rfq.customerName && rfq.companyName !== rfq.customerName && (
-                        <div className="text-xs text-slate-500 mt-0.5">{rfq.customerName}</div>
+                sortedRfqs.map((rfq, index) => {
+                  const val = getQuotationValidityInfo(rfq);
+                  return (
+                    <tr key={rfq._id} className="hover:bg-red-50/20 transition-colors group">
+                      {isAdmin && (
+                        <td className="py-3 px-3 text-center align-middle">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(rfq._id)}
+                            onChange={() => handleSelectOne(rfq._id)}
+                            className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
+                          />
+                        </td>
                       )}
-                    </td>
-                    <td className="py-3 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">
-                      {rfq.createdAt ? (
+                      <td className="py-3 px-3 text-center font-bold text-slate-500 text-xs align-middle">
+                        {index + 1}
+                      </td>
+                      <td
+                        className="py-3 px-4 font-mono font-bold text-sky-700 hover:text-sky-900 cursor-pointer align-middle"
+                        onClick={() => setSelectedRfq(rfq)}
+                      >
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold hover:bg-sky-100 transition-colors shadow-2xs font-mono text-xs">
+                          <FileText size={12} className="text-sky-600 shrink-0" />
+                          {rfq.quoteNo}
+                        </span>
+                      </td>
+                      <td
+                        className="py-3 px-4 cursor-pointer align-middle"
+                        onClick={() => setSelectedRfq(rfq)}
+                      >
+                        <div className="font-semibold text-slate-900 group-hover:text-red-700 transition-colors leading-snug">
+                          {rfq.companyName || rfq.customerName || 'Direct Client'}
+                        </div>
+                        {rfq.companyName && rfq.customerName && rfq.companyName !== rfq.customerName && (
+                          <div className="text-xs text-slate-500 mt-0.5">{rfq.customerName}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">
                         <div>
                           <div className="font-bold text-slate-800">
-                            {new Date(rfq.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {new Date(rfq.createdAt || rfq.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </div>
-                          <div className="text-[10px] text-slate-400">
-                            {new Date(rfq.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${val.isExpired
+                                ? 'bg-red-100 text-red-800 border border-red-200'
+                                : val.remainingDays <= 2
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              }`}>
+                              <Clock size={10} />
+                              {val.countdownLabel}
+                            </span>
                           </div>
+                          {/* Show comments when quotation expires */}
+                          {val.isExpired && (
+                            <div
+                              className="mt-1 text-[10px] text-red-900 bg-red-50/90 border border-red-200 px-1.5 py-0.5 rounded line-clamp-1 max-w-[160px] cursor-help"
+                              title={rfq.expiryComments || 'Quotation expired after 7 days validity period.'}
+                            >
+                              💬 {rfq.expiryComments || 'Expired: 7-day validity limit'}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <span>{rfq.date || 'Recent'}</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-800 align-middle">
-                      <div>
-                        ₹{Number(rfq.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </div>
-                      {Boolean(rfq.discountAmount && rfq.discountAmount > 0) && (
-                        <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                          <Tag size={10} /> -{rfq.discountRate || ''}% off
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-800 align-middle">
+                        <div>
+                          ₹{Number(rfq.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                      )}
-                    </td>
+                        {Boolean(rfq.discountAmount && rfq.discountAmount > 0) && (
+                          <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                            <Tag size={10} /> -{rfq.discountRate || ''}% off
+                          </div>
+                        )}
+                      </td>
 
-                    <td className="py-3 px-4 align-middle">
-                      {isAdmin ? (
-                        renderStatusBadge(rfq.status)
-                      ) : (
-                        <div className="w-full max-w-[135px]">
-                          <select 
+                      <td className="py-3 px-4 align-middle">
+                        <div className="w-full max-w-[145px]">
+                          <select
                             value={rfq.status}
-                            onChange={(e) => handleStatusChange(rfq._id, e.target.value)}
-                            className={`w-full text-xs font-bold rounded-lg px-2.5 py-1.5 border outline-none cursor-pointer shadow-2xs transition-all ${
-                              rfq.status === 'Closed' || rfq.status === 'Completed'
-                                ? 'border-emerald-300 bg-emerald-50 text-emerald-800' 
-                                : rfq.status === 'Under Review'
-                                ? 'border-orange-300 bg-orange-50 text-orange-800'
-                                : rfq.status === 'Pending' || rfq.status === 'Process by Sales' || rfq.status === 'Processing'
-                                ? 'border-amber-300 bg-amber-50 text-amber-800'
-                                : rfq.status === 'Assigned'
-                                ? 'border-sky-300 bg-sky-50 text-sky-800'
-                                : 'border-slate-300 bg-white text-slate-800'
-                            } focus:ring-2 focus:ring-red-500`}
+                            onChange={(e) => handleInitiateStatusChange(rfq._id, e.target.value, rfq)}
+                            className={`w-full text-xs font-bold rounded-lg px-2.5 py-1.5 border outline-none cursor-pointer shadow-2xs transition-all ${rfq.status === 'PO Received' || rfq.status === 'Completed' || rfq.status === 'Approved'
+                                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                                : rfq.status === 'Closed'
+                                  ? 'border-slate-400 bg-slate-200 text-slate-900 font-extrabold'
+                                  : rfq.status === 'Under Review'
+                                    ? 'border-sky-300 bg-sky-50 text-sky-800'
+                                    : rfq.status === 'Lost'
+                                      ? 'border-slate-300 bg-slate-100 text-slate-800'
+                                      : rfq.status === 'Expired'
+                                        ? 'border-red-300 bg-red-100 text-red-900 font-extrabold'
+                                        : 'border-amber-300 bg-amber-50 text-amber-800'
+                              } focus:ring-2 focus:ring-red-500`}
                           >
-                            {rfq.status === 'New' && <option value="New">New</option>}
-                            <option value="Assigned">Assigned</option>
                             <option value="Pending">Pending</option>
                             <option value="Under Review">Under Review</option>
+                            <option value="PO Received">PO Received</option>
                             <option value="Closed">Closed</option>
+                            <option value="Lost">Lost</option>
+                            {rfq.status === 'Expired' && <option value="Expired">Expired</option>}
                           </select>
+                          {rfq.status === 'Lost' && rfq.lostReason && (
+                            <div className="text-[10px] text-slate-500 truncate mt-0.5" title={rfq.lostReason}>
+                              {rfq.lostReason}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Assigned Salesperson Column (Admin assigns, Sales views) */}
-                    <td className="py-3 px-4 align-middle">
-                      {canAssign ? (
-                        <select 
-                          className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer max-w-[170px]"
-                          value={getAssignedUserId(rfq.assignedTo, rfq.assignedToName)}
-                          onChange={(e) => handleAssign(rfq._id, e.target.value)}
-                        >
-                          <option value="">-- Assign Salesperson --</option>
-                          {users.map(u => (
-                            <option key={u._id} value={u._id}>
-                              {u.name} ({u.role?.replace('Sales ', '')})
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                          rfq.assignedToName 
-                            ? 'bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs' 
-                            : 'bg-slate-50 text-slate-400 border border-slate-200'
-                        }`}>
-                          <UserIcon size={12} className="text-slate-500 shrink-0" />
-                          <span className="truncate max-w-[120px]">{rfq.assignedToName || 'Unassigned'}</span>
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Actions: View Details, Return to Sales, Excel, Delete */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap align-middle">
-                      <div className="flex items-center justify-center gap-1">
-                        <button 
-                          onClick={() => setSelectedRfq(rfq)}
-                          className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
-                          title="View Full Quotation Details"
-                        >
-                          <Eye size={17} />
-                        </button>
-                        <button 
-                          onClick={() => handleExportSingleRfqExcel(rfq)}
-                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer" 
-                          title="Download Individual Quotation Excel (.xlsx)"
-                        >
-                          <FileSpreadsheet size={17} />
-                        </button>
-                        {isAdmin && (
-                          <button 
-                            onClick={() => handleDelete(rfq._id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
-                            title="Delete RFQ"
+                      {/* Assigned Salesperson Column (Admin assigns, Sales views) */}
+                      <td className="py-3 px-4 align-middle">
+                        {canAssign ? (
+                          <select
+                            className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer max-w-[170px]"
+                            value={getAssignedUserId(rfq.assignedTo, rfq.assignedToName)}
+                            onChange={(e) => handleAssign(rfq._id, e.target.value)}
                           >
-                            <Trash2 size={17} />
-                          </button>
+                            <option value="">-- Assign Salesperson --</option>
+                            {users.map(u => (
+                              <option key={u._id} value={u._id}>
+                                {u.name} ({u.role?.replace('Sales ', '')})
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${rfq.assignedToName
+                              ? 'bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs'
+                              : 'bg-slate-50 text-slate-400 border border-slate-200'
+                            }`}>
+                            <UserIcon size={12} className="text-slate-500 shrink-0" />
+                            <span className="truncate max-w-[120px]">{rfq.assignedToName || 'Unassigned'}</span>
+                          </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+
+                      {/* Actions: View Details, Return to Sales, Excel, Delete */}
+                      <td className="py-3 px-4 text-center whitespace-nowrap align-middle">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => setSelectedRfq(rfq)}
+                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="View Full Quotation Details"
+                          >
+                            <Eye size={17} />
+                          </button>
+                          <button
+                            onClick={() => handleExportSingleRfqExcel(rfq)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                            title="Download Individual Quotation Excel (.xlsx)"
+                          >
+                            <FileSpreadsheet size={17} />
+                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDelete(rfq._id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete RFQ"
+                            >
+                              <Trash2 size={17} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -974,465 +1269,682 @@ export const AdminRFQs: React.FC = () => {
       </div>
 
       {/* RFQ Detail & Quotation Modal: Portal-Mounted, Permanently Pinned Top Header */}
-      {selectedRfq && createPortal(
-        <div 
-          id="rfq-print-overlay"
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 sm:p-4 md:p-6 overflow-hidden print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isEditingPrice) handleCloseModal();
-          }}
-        >
-          <div id="rfq-print-card" className="bg-white shadow-2xl w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col relative my-0 animate-in zoom-in-95 duration-150 print:w-full print:h-auto print:max-h-none print:shadow-none print:m-0 print:p-0 rounded-2xl overflow-hidden border border-slate-200">
-            
-            {/* Top Toolbar: Fitted on a Single Line with X pinned at the far end (Hidden on Print) */}
-            <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2 sm:gap-3 print:hidden shrink-0 z-30 shadow-2xs overflow-x-auto custom-scrollbar">
-              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
-                {/* Back Button */}
-                <button
-                  onClick={handleCloseModal}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
-                  title="Return to RFQ List"
-                >
-                  <ArrowLeft size={14} />
-                  <span>Back</span>
-                </button>
+      {selectedRfq && (() => {
+        const modalValInfo = getQuotationValidityInfo(selectedRfq);
+        return createPortal(
+          <div
+            id="rfq-print-overlay"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 sm:p-4 md:p-6 overflow-hidden print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isEditingPrice) handleCloseModal();
+            }}
+          >
+            <div id="rfq-print-card" className="bg-white shadow-2xl w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col relative my-0 animate-in zoom-in-95 duration-150 print:w-full print:h-auto print:max-h-none print:shadow-none print:m-0 print:p-0 rounded-2xl overflow-hidden border border-slate-200">
 
-                {/* Status: Admin views status badge. Sales updates status */}
-                {isAdmin ? (
-                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
-                    {renderStatusBadge(selectedRfq.status)}
-                  </div>
-                ) : (
-                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${
-                    selectedRfq.status === 'Closed' || selectedRfq.status === 'Completed'
-                      ? 'bg-emerald-50 border-emerald-300' 
-                      : 'bg-white border-slate-200'
-                  }`}>
+              {/* Top Toolbar: Fitted on a Single Line with X pinned at the far end (Hidden on Print) */}
+              <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2 sm:gap-3 print:hidden shrink-0 z-30 shadow-2xs overflow-x-auto custom-scrollbar">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0">
+                  {/* Back Button */}
+                  <button
+                    onClick={handleCloseModal}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
+                    title="Return to RFQ List"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back</span>
+                  </button>
+
+                  {/* Status: Admin & Sales can manage status with preserved statuses: Pending, Under Review, PO Received, Closed, Lost, Expired */}
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : selectedRfq.status === 'Closed'
+                        ? 'bg-slate-200 border-slate-400'
+                        : selectedRfq.status === 'Under Review'
+                          ? 'bg-sky-50 border-sky-300'
+                          : selectedRfq.status === 'Lost'
+                            ? 'bg-slate-100 border-slate-300'
+                            : selectedRfq.status === 'Expired'
+                              ? 'bg-red-50 border-red-300'
+                              : 'bg-white border-slate-200'
+                    }`}>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
                     <select
                       value={selectedRfq.status}
-                      onChange={(e) => handleStatusChange(selectedRfq._id, e.target.value)}
-                      className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${
-                        selectedRfq.status === 'Closed' || selectedRfq.status === 'Completed' ? 'text-emerald-800 font-extrabold' : 'text-amber-700'
-                      }`}
+                      onChange={(e) => handleInitiateStatusChange(selectedRfq._id, e.target.value, selectedRfq)}
+                      className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
+                          ? 'text-emerald-800 font-extrabold'
+                          : selectedRfq.status === 'Closed'
+                            ? 'text-slate-900 font-extrabold'
+                            : selectedRfq.status === 'Under Review'
+                              ? 'text-sky-800 font-extrabold'
+                              : selectedRfq.status === 'Lost'
+                                ? 'text-slate-700 font-bold'
+                                : selectedRfq.status === 'Expired'
+                                  ? 'text-red-700 font-extrabold'
+                                  : 'text-amber-700'
+                        }`}
                     >
-                      {selectedRfq.status === 'New' && <option value="New" className="bg-white text-slate-900">New</option>}
-                      <option value="Assigned" className="bg-white text-slate-900">Assigned</option>
                       <option value="Pending" className="bg-white text-slate-900">Pending</option>
                       <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
+                      <option value="PO Received" className="bg-white text-slate-900">PO Received</option>
                       <option value="Closed" className="bg-white text-slate-900">Closed</option>
+                      <option value="Lost" className="bg-white text-slate-900">Lost</option>
+                      {selectedRfq.status === 'Expired' && <option value="Expired" className="bg-white text-slate-900">Expired</option>}
                     </select>
                   </div>
-                )}
 
-                {/* Assignment: Admin assigns salesperson. Sales views assigned name */}
-                {canAssign ? (
-                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Assign:</span>
-                    <select
-                      value={getAssignedUserId(selectedRfq.assignedTo, selectedRfq.assignedToName)}
-                      onChange={(e) => handleAssign(selectedRfq._id, e.target.value)}
-                      className="text-xs font-bold bg-transparent text-red-600 outline-none cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
-                    >
-                      <option value="" className="bg-white text-slate-900">-- Assign --</option>
-                      {users.map(u => (
-                        <option key={u._id} value={u._id} className="bg-white text-slate-900">
-                          {u.name} ({u.role?.replace('Sales ', '')})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs shrink-0 flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Staff:</span>
-                    <span className="font-bold text-slate-900 truncate max-w-[110px]">{selectedRfq.assignedToName || 'Sales Team'}</span>
-                  </div>
-                )}
+                  {/* Assignment: Admin assigns salesperson. Sales views assigned name */}
+                  {canAssign ? (
+                    <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Assign:</span>
+                      <select
+                        value={getAssignedUserId(selectedRfq.assignedTo, selectedRfq.assignedToName)}
+                        onChange={(e) => handleAssign(selectedRfq._id, e.target.value)}
+                        className="text-xs font-bold bg-transparent text-red-600 outline-none cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
+                      >
+                        <option value="" className="bg-white text-slate-900">-- Assign --</option>
+                        {users.map(u => (
+                          <option key={u._id} value={u._id} className="bg-white text-slate-900">
+                            {u.name} ({u.role?.replace('Sales ', '')})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs shrink-0 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Staff:</span>
+                      <span className="font-bold text-slate-900 truncate max-w-[110px]">{selectedRfq.assignedToName || 'Sales Team'}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons: Edit Price & Discount, Download Excel, Print, Close */}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                  {/* Special Discount & Price Edit Toggle */}
+                  <button
+                    onClick={() => setIsEditingPrice(!isEditingPrice)}
+                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer shrink-0 ${isEditingPrice
+                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                        : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
+                      }`}
+                    title="Edit quotation item rates and special customer discount"
+                  >
+                    <Tag size={13} />
+                    <span>{isEditingPrice ? 'Close Editor' : 'Price / Discount'}</span>
+                  </button>
+
+                  {/* Individual Excel Download */}
+                  <button
+                    onClick={() => handleExportSingleRfqExcel(selectedRfq)}
+                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
+                    title="Download this quotation as Microsoft Excel (.xlsx)"
+                  >
+                    <FileSpreadsheet size={14} />
+                    <span>Excel</span>
+                  </button>
+
+                  {/* Print Button */}
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-red-600 via-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
+                    title="Print Quotation"
+                  >
+                    <Printer size={14} />
+                    <span>Print</span>
+                  </button>
+
+                  {/* Divider before Close */}
+                  <div className="h-5 w-px bg-slate-200 mx-0.5 sm:mx-1 shrink-0" />
+
+                  {/* Close Button - At the far right end */}
+                  <button
+                    onClick={handleCloseModal}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-red-600 hover:text-white text-slate-600 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs hover:border-red-600"
+                    title="Close Quotation View (Esc)"
+                    aria-label="Close Modal"
+                  >
+                    <X size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
 
-              {/* Action Buttons: Edit Price & Discount, Download Excel, Print, Close */}
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-                {/* Special Discount & Price Edit Toggle */}
-                <button
-                  onClick={() => setIsEditingPrice(!isEditingPrice)}
-                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer shrink-0 ${
-                    isEditingPrice 
-                      ? 'bg-amber-500 text-white border-amber-600 shadow-sm' 
-                      : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
-                  }`}
-                  title="Edit quotation item rates and special customer discount"
-                >
-                  <Tag size={13} />
-                  <span>{isEditingPrice ? 'Close Editor' : 'Price / Discount'}</span>
-                </button>
+              {/* Price & Special Discount Editor Drawer */}
+              {isEditingPrice && (
+                <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 border-b border-amber-200 p-4 sm:p-5 shrink-0 animate-in slide-in-from-top-3 duration-200 print:hidden overflow-y-auto max-h-[48vh] custom-scrollbar">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-amber-200/80 mb-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <Tag size={16} className="text-amber-600" />
+                        Quotation Price & Special Discount Management
+                      </h3>
+                      <p className="text-xs text-slate-600">
+                        Revise unit rates and apply customer project discounts before finalizing quotation.
+                      </p>
+                    </div>
+                    {priceSuccessMsg && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold animate-in fade-in">
+                        <Check size={14} />
+                        {priceSuccessMsg}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Individual Excel Download */}
-                <button 
-                  onClick={() => handleExportSingleRfqExcel(selectedRfq)}
-                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
-                  title="Download this quotation as Microsoft Excel (.xlsx)"
-                >
-                  <FileSpreadsheet size={14} />
-                  <span>Excel</span>
-                </button>
+                  {/* Editable Items Table with Technical Specs */}
+                  <div className="bg-white rounded-xl border border-amber-200 overflow-hidden mb-4 shadow-2xs">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left min-w-[750px]">
+                        <thead className="bg-slate-100/80 text-slate-700 border-b border-slate-200">
+                          <tr>
+                            <th className="py-2 px-3 font-semibold">Part Number &amp; Description</th>
+                            <th className="py-2 px-3 font-semibold">Core / Cross Section</th>
+                            <th className="py-2 px-3 font-semibold text-center w-16">UOM</th>
+                            <th className="py-2 px-3 font-semibold text-center w-20">Weight</th>
+                            <th className="py-2 px-3 font-semibold text-center w-20">OD</th>
+                            <th className="py-2 px-3 font-semibold w-24">Qty</th>
+                            <th className="py-2 px-3 font-semibold w-32">Unit Rate (₹)</th>
+                            <th className="py-2 px-3 font-semibold text-right w-32">Line Total (₹)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {editItems.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-amber-50/40">
+                              <td className="py-2 px-3">
+                                <span className="font-bold text-slate-800 font-mono">{item.partNo || `Item #${idx + 1}`}</span>
+                                <span className="text-slate-500 block text-[11px] truncate max-w-xs">{item.description || item.name}</span>
+                              </td>
+                              <td className="py-2 px-3 font-mono text-[11px] text-slate-700">
+                                {formatCoreSqmm(item.core || item.coreSize, item.sqmm, item.name)}
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-xs uppercase border border-slate-200">
+                                  {formatUom(item.uom || item.unit)}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3 text-center text-slate-600 font-mono text-[11px]">
+                                {formatWeight(item.weight, item.name)}
+                              </td>
+                              <td className="py-2 px-3 text-center text-slate-600 font-mono text-[11px]">
+                                {formatOD(item.outerDiameter, item.name)}
+                              </td>
+                              <td className="py-2 px-3">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.qty}
+                                  onChange={(e) => {
+                                    const val = Math.max(1, Number(e.target.value) || 1);
+                                    setEditItems(prev => prev.map((it, i) => i === idx ? { ...it, qty: val } : it));
+                                  }}
+                                  className="w-20 px-2 py-1 border border-slate-200 rounded-md bg-white font-mono font-medium focus:ring-1 focus:ring-amber-500 outline-none"
+                                />
+                              </td>
+                              <td className="py-2 px-3">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={item.unitPrice}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, Number(e.target.value) || 0);
+                                    setEditItems(prev => prev.map((it, i) => i === idx ? { ...it, unitPrice: val } : it));
+                                  }}
+                                  className="w-28 px-2 py-1 border border-slate-200 rounded-md bg-white font-mono font-semibold text-red-700 focus:ring-1 focus:ring-red-500 outline-none"
+                                />
+                              </td>
+                              <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                                ₹{((item.qty || 1) * (item.unitPrice || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
 
-                {/* Print Button */}
-                <button 
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-red-600 via-red-600 to-rose-600 hover:opacity-95 text-white rounded-xl transition-all font-bold text-xs shadow-sm cursor-pointer shrink-0"
-                  title="Print Quotation"
-                >
-                  <Printer size={14} />
-                  <span>Print</span>
-                </button>
+                  {/* Special Discount Controls & Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Discount Input */}
+                    <div className="bg-white p-3.5 rounded-xl border border-amber-200 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <Tag size={13} className="text-amber-600" />
+                          Special Customer Discount
+                        </label>
+                        <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setEditDiscountType('percent')}
+                            className={`px-2 py-0.5 font-bold cursor-pointer ${editDiscountType === 'percent' ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-600'
+                              }`}
+                          >
+                            % Percent
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditDiscountType('amount')}
+                            className={`px-2 py-0.5 font-bold cursor-pointer ${editDiscountType === 'amount' ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-600'
+                              }`}
+                          >
+                            ₹ Flat Amount
+                          </button>
+                        </div>
+                      </div>
 
-                {/* Divider before Close */}
-                <div className="h-5 w-px bg-slate-200 mx-0.5 sm:mx-1 shrink-0" />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max={editDiscountType === 'percent' ? 100 : pricingCalc.subtotal}
+                          step="any"
+                          value={editDiscountValue}
+                          onChange={(e) => setEditDiscountValue(Number(e.target.value) || 0)}
+                          placeholder={editDiscountType === 'percent' ? 'Discount % (e.g. 5)' : 'Discount ₹ (e.g. 5000)'}
+                          className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-bold font-mono focus:ring-2 focus:ring-amber-500 outline-none"
+                        />
+                        <span className="text-xs font-semibold text-slate-500">
+                          {editDiscountType === 'percent' ? '%' : '₹'}
+                        </span>
+                      </div>
 
-                {/* Close Button - At the far right end */}
-                <button 
-                  onClick={handleCloseModal} 
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-red-600 hover:text-white text-slate-600 border border-slate-200 transition-colors cursor-pointer shrink-0 shadow-2xs hover:border-red-600"
-                  title="Close Quotation View (Esc)"
-                  aria-label="Close Modal"
-                >
-                  <X size={18} strokeWidth={2.5} />
-                </button>
+                      <div>
+                        <input
+                          type="text"
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          placeholder="Discount notes (e.g. Approved 5% special bulk discount for client)"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-amber-500 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Real-time Calculation Card */}
+                    <div className="bg-white p-3.5 rounded-xl border border-amber-200 space-y-1.5 text-xs shadow-2xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal (Items):</span>
+                        <span className="font-mono font-medium">₹{pricingCalc.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      {pricingCalc.discountAmount > 0 && (
+                        <div className="flex justify-between text-emerald-600 font-semibold">
+                          <span>Special Discount ({pricingCalc.discountRate}%):</span>
+                          <span className="font-mono">-₹{pricingCalc.discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-slate-600">
+                        <span>Taxable Amount:</span>
+                        <span className="font-mono font-medium">₹{pricingCalc.taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>GST (18%):</span>
+                        <span className="font-mono font-medium">₹{pricingCalc.gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
+                        <span>Revised Grand Total:</span>
+                        <span className="font-mono text-base text-red-700">₹{pricingCalc.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="pt-2 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingPrice(false)}
+                          className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold text-xs cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveQuotationPrice}
+                          disabled={isSavingPrice}
+                          className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                        >
+                          {isSavingPrice ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
+                          Save Revised Quotation
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Official Invoice / Bill Document Area - Scrollable Inside Card */}
+              <div id="rfq-print-content" className="p-4 sm:p-8 md:p-12 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
+
+                {/* Header: Logo and Company Info */}
+                <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">
+                  <div>
+                    <img
+                      src="/images/siddhi-kabel-lockup.png"
+                      alt="Siddhi Kabel"
+                      className="h-16 w-auto object-contain mb-4"
+                      onError={(e) => { e.currentTarget.src = '/images/siddhi-kabel-logo.png'; }}
+                    />
+                    <h1 className="text-xl font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
+                    <p className="text-sm text-slate-500 mt-1">Plot 42, Peenya Industrial Area, 2nd Stage</p>
+                    <p className="text-sm text-slate-500">Bangalore, Karnataka 560058</p>
+                    <p className="text-sm font-medium text-slate-600 mt-1">GSTIN: 29AABCU9603R1ZM</p>
+                  </div>
+                  <div className="sm:text-right mt-6 sm:mt-0 bg-slate-50 p-4 rounded-xl border border-slate-200 min-w-[260px]">
+                    <h2 className="text-2xl font-black text-slate-800 mb-1">ESTIMATE</h2>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mt-3 text-left">
+                      <span className="text-slate-500 font-medium">Estimate / RFQ #:</span>
+                      <span className="font-bold text-slate-900 font-mono text-right">{selectedRfq.quoteNo}</span>
+                      <span className="text-slate-500 font-medium">Date:</span>
+                      <span className="font-bold text-slate-900 text-right">{selectedRfq.date || new Date(selectedRfq.createdAt).toLocaleDateString()}</span>
+                      <span className="text-slate-500 font-medium">Validity:</span>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${modalValInfo.isExpired
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                            : modalValInfo.remainingDays <= 2
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}>
+                          <Clock size={11} />
+                          {modalValInfo.countdownLabel}
+                        </span>
+                      </div>
+                      <span className="text-slate-500 font-medium">Status:</span>
+                      <span className="font-bold text-right text-xs">{selectedRfq.status}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Requirement 3.1: Separate Billing Address & Delivery / Site Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Billed To (Customer Master)</h3>
+                    <div className="text-slate-800 text-sm space-y-1">
+                      <p className="font-bold text-base text-slate-900">{selectedRfq.companyName}</p>
+                      <p className="font-medium text-slate-700">Attn: {selectedRfq.customerName}</p>
+                      <p className="text-slate-600">{selectedRfq.billingAddress || selectedRfq.address || 'Registered Corporate Address'}</p>
+                      <p className="text-slate-600">{selectedRfq.city || 'Bangalore'}, {selectedRfq.state || 'Karnataka'} {selectedRfq.pincode ? `- ${selectedRfq.pincode}` : ''}</p>
+                      <p className="text-slate-600 font-mono">GSTIN: {selectedRfq.email && (selectedRfq as any).gstin ? (selectedRfq as any).gstin : '29AABCU9603R1ZM'}</p>
+                      <p className="text-slate-600">Email: {selectedRfq.email} · Phone: {selectedRfq.phone}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Delivery &amp; Project Site Details</h3>
+                    <div className="text-slate-800 text-sm space-y-1">
+                      <p className="font-semibold text-slate-900">
+                        Destination Address: <span className="font-normal">{selectedRfq.deliveryAddress || selectedRfq.billingAddress || selectedRfq.city || 'Standard Factory Gate'}</span>
+                      </p>
+                      {selectedRfq.deliveryLocation && (
+                        <p className="text-slate-700">
+                          <strong>Delivery Bay / Location:</strong> {selectedRfq.deliveryLocation}
+                        </p>
+                      )}
+                      {selectedRfq.specialInstructions && (
+                        <p className="text-slate-700 bg-amber-50 border border-amber-200 p-2 rounded-lg text-xs mt-2">
+                          <strong>Special Site Instructions:</strong> {selectedRfq.specialInstructions}
+                        </p>
+                      )}
+                      {selectedRfq.lostReason && selectedRfq.status === 'Lost' && (
+                        <p className="text-rose-800 bg-rose-50 border border-rose-200 p-2 rounded-lg text-xs mt-2">
+                          <strong>Lost Reason:</strong> {selectedRfq.lostReason} {selectedRfq.lostReasonDetails ? `(${selectedRfq.lostReasonDetails})` : ''}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quotation Expiry Alert & Follow-up Comments Banner */}
+                {(modalValInfo.isExpired || selectedRfq.status === 'Expired' || selectedRfq.expiryComments) && (
+                  <div className={`mb-6 p-4 rounded-xl border ${modalValInfo.isExpired || selectedRfq.status === 'Expired'
+                      ? 'bg-rose-50/90 border-rose-200 text-rose-950'
+                      : 'bg-amber-50/90 border-amber-200 text-amber-950'
+                    }`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-rose-200/60">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className={modalValInfo.isExpired ? 'text-rose-600' : 'text-amber-600'} size={18} />
+                        <h4 className="font-bold text-sm">
+                          {modalValInfo.isExpired ? 'Quotation Validity Expired (7 Days Auto-Validity Elapsed)' : 'Quotation Validity Countdown'}
+                        </h4>
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${modalValInfo.isExpired ? 'bg-rose-200 text-rose-900' : 'bg-amber-200 text-amber-900'
+                          }`}>
+                          {modalValInfo.countdownLabel}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingExpiryComments(!isEditingExpiryComments)}
+                        className="text-xs font-semibold text-rose-700 hover:text-rose-900 underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+                      >
+                        <Edit3 size={12} />
+                        {isEditingExpiryComments ? 'Close Edit' : 'Add / Update Expiry Comment'}
+                      </button>
+                    </div>
+
+                    {/* Display Current Comment */}
+                    <div className="text-xs space-y-1">
+                      <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px] block">Expiry Follow-Up / Sales Discussion Comments:</span>
+                      <p className="bg-white/90 p-2.5 rounded-lg border border-rose-100 font-medium text-slate-800 whitespace-pre-wrap">
+                        {selectedRfq.expiryComments || `Quotation validity of 7 days expired on ${modalValInfo.expiryDate}. Follow-up discussion required for price revision or timeline extension.`}
+                      </p>
+                    </div>
+
+                    {/* Editable Comment Box */}
+                    {isEditingExpiryComments && (
+                      <div className="mt-3 pt-3 border-t border-rose-200/60 animate-in fade-in">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Add / Update Expiry Discussion Comment:
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={expiryCommentInput}
+                          onChange={(e) => setExpiryCommentInput(e.target.value)}
+                          placeholder="Enter discussion notes regarding quote expiration, client follow-up, or price revision..."
+                          className="w-full p-2.5 bg-white border border-rose-300 rounded-lg text-xs font-normal text-slate-900 focus:ring-2 focus:ring-rose-500 outline-none"
+                        />
+                        <div className="mt-2 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingExpiryComments(false)}
+                            className="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveExpiryComment}
+                            disabled={isSavingExpiryComment}
+                            className="px-3.5 py-1 rounded-md text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                          >
+                            {isSavingExpiryComment ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
+                            Save Expiry Comment
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Quotation Management Products Table: Part No, Description, Core/Cross Section, UOM, Price, Weight, OD, Validity, Brand, Qty, Amount */}
+                <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs sm:text-sm min-w-[980px]">
+                      <thead className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
+                        <tr>
+                          <th className="py-2.5 px-3 font-semibold w-10 text-center">#</th>
+                          <th className="py-2.5 px-3 font-semibold">Part Number</th>
+                          <th className="py-2.5 px-3 font-semibold">Description</th>
+                          <th className="py-2.5 px-3 font-semibold">Core / Cross Section</th>
+                          <th className="py-2.5 px-3 font-semibold text-center">UOM</th>
+                          <th className="py-2.5 px-3 font-semibold text-right">Price (₹)</th>
+                          <th className="py-2.5 px-3 font-semibold text-center">Weight</th>
+                          <th className="py-2.5 px-3 font-semibold text-center">Outer Diameter (OD)</th>
+                          <th className="py-2.5 px-3 font-semibold text-center">Validity</th>
+                          <th className="py-2.5 px-3 font-semibold text-center">Brand</th>
+                          <th className="py-2.5 px-3 font-semibold text-right">Qty</th>
+                          <th className="py-2.5 px-3 font-semibold text-right">Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 text-slate-700 text-xs">
+                        {selectedRfq.items && selectedRfq.items.length > 0 ? (
+                          selectedRfq.items.map((item: any, idx: number) => {
+                            const qty = Number(item.qty) || 1;
+                            const rate = Number(item.unitPrice) || 0;
+                            const lineTotal = item.totalBeforeTax ? Number(item.totalBeforeTax) : (qty * rate);
+                            const coreSqmm = formatCoreSqmm(item.core || item.coreSize, item.sqmm, item.name);
+                            const uomAbbr = formatUom(item.uom || item.unit);
+                            const weightStr = formatWeight(item.weight, item.name);
+                            const odStr = formatOD(item.outerDiameter, item.name);
+                            return (
+                              <tr key={idx} className="group hover:bg-slate-50 transition-colors">
+                                <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
+                                <td className="py-2.5 px-3 font-bold text-slate-900 font-mono">
+                                  {item.partNo || `PART-${idx + 1}`}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <p className="font-medium text-slate-800 line-clamp-2 max-w-xs">{item.description || item.name}</p>
+                                </td>
+                                <td className="py-2.5 px-3 font-mono font-medium text-slate-700">
+                                  {coreSqmm !== '-' ? (
+                                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-semibold">
+                                      {coreSqmm}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-xs uppercase border border-slate-200">
+                                    {uomAbbr}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-mono text-slate-800">
+                                  ₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-600">
+                                  {weightStr}
+                                </td>
+                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-600">
+                                  {odStr}
+                                </td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${modalValInfo.isExpired
+                                      ? 'bg-rose-100 text-rose-800'
+                                      : modalValInfo.remainingDays <= 2
+                                        ? 'bg-amber-100 text-amber-800'
+                                        : 'bg-emerald-100 text-emerald-800'
+                                    }`}>
+                                    {item.validity || '7 Days'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded">
+                                    {item.brand || 'LAPP'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-bold text-slate-800">
+                                  {qty} {uomAbbr}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-bold text-slate-900 font-mono">
+                                  ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={12} className="py-8 text-center text-slate-500 italic">No items listed in this quotation.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+
               </div>
             </div>
+          </div>,
+          document.body
+        );
+      })()}
 
-            {/* Price & Special Discount Editor Drawer */}
-            {isEditingPrice && (
-              <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 border-b border-amber-200 p-4 sm:p-5 shrink-0 animate-in slide-in-from-top-3 duration-200 print:hidden overflow-y-auto max-h-[48vh] custom-scrollbar">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-amber-200/80 mb-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <Tag size={16} className="text-amber-600" />
-                      Quotation Price & Special Discount Management
-                    </h3>
-                    <p className="text-xs text-slate-600">
-                      Revise unit rates and apply customer project discounts before finalizing quotation.
-                    </p>
-                  </div>
-                  {priceSuccessMsg && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold animate-in fade-in">
-                      <Check size={14} />
-                      {priceSuccessMsg}
-                    </div>
-                  )}
-                </div>
+      {/* Requirement 2.6: Lost Reason Popup Modal with Selectable Reasons & Others text input */}
+      {lostModalRfq && createPortal(
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-600" />
+                <h3 className="font-bold text-slate-900 text-sm">Mark RFQ as Lost</h3>
+              </div>
+              <button
+                onClick={() => setLostModalRfq(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-                {/* Editable Items Table */}
-                <div className="bg-white rounded-xl border border-amber-200 overflow-hidden mb-4 shadow-2xs">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-100/80 text-slate-700 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2 px-3 font-semibold">Part / Item</th>
-                        <th className="py-2 px-3 font-semibold w-24">Qty</th>
-                        <th className="py-2 px-3 font-semibold w-32">Unit Rate (₹)</th>
-                        <th className="py-2 px-3 font-semibold text-right w-32">Line Total (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {editItems.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-amber-50/40">
-                          <td className="py-2 px-3">
-                            <span className="font-bold text-slate-800 font-mono">{item.partNo || `Item #${idx+1}`}</span>
-                            <span className="text-slate-500 block text-[11px] truncate max-w-xs">{item.name}</span>
-                          </td>
-                          <td className="py-2 px-3">
-                            <input 
-                              type="number"
-                              min="1"
-                              value={item.qty}
-                              onChange={(e) => {
-                                const val = Math.max(1, Number(e.target.value) || 1);
-                                setEditItems(prev => prev.map((it, i) => i === idx ? { ...it, qty: val } : it));
-                              }}
-                              className="w-20 px-2 py-1 border border-slate-200 rounded-md bg-white font-mono font-medium focus:ring-1 focus:ring-amber-500 outline-none"
-                            />
-                          </td>
-                          <td className="py-2 px-3">
-                            <input 
-                              type="number"
-                              min="0"
-                              step="any"
-                              value={item.unitPrice}
-                              onChange={(e) => {
-                                const val = Math.max(0, Number(e.target.value) || 0);
-                                setEditItems(prev => prev.map((it, i) => i === idx ? { ...it, unitPrice: val } : it));
-                              }}
-                              className="w-28 px-2 py-1 border border-slate-200 rounded-md bg-white font-mono font-semibold text-red-700 focus:ring-1 focus:ring-red-500 outline-none"
-                            />
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
-                            ₹{((item.qty || 1) * (item.unitPrice || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            <div className="p-5 space-y-4 text-xs">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900">
+                <span className="font-bold block">Quote #: {lostModalRfq.quoteNo}</span>
+                <span className="text-[11px] text-rose-700">Customer: {lostModalRfq.companyName || lostModalRfq.customerName}</span>
+              </div>
 
-                {/* Special Discount Controls & Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Discount Input */}
-                  <div className="bg-white p-3.5 rounded-xl border border-amber-200 space-y-3 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Tag size={13} className="text-amber-600" />
-                        Special Customer Discount
-                      </label>
-                      <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden text-xs">
-                        <button
-                          type="button"
-                          onClick={() => setEditDiscountType('percent')}
-                          className={`px-2 py-0.5 font-bold cursor-pointer ${
-                            editDiscountType === 'percent' ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-600'
-                          }`}
-                        >
-                          % Percent
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditDiscountType('amount')}
-                          className={`px-2 py-0.5 font-bold cursor-pointer ${
-                            editDiscountType === 'amount' ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-600'
-                          }`}
-                        >
-                          ₹ Flat Amount
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="number"
-                        min="0"
-                        max={editDiscountType === 'percent' ? 100 : pricingCalc.subtotal}
-                        step="any"
-                        value={editDiscountValue}
-                        onChange={(e) => setEditDiscountValue(Number(e.target.value) || 0)}
-                        placeholder={editDiscountType === 'percent' ? 'Discount % (e.g. 5)' : 'Discount ₹ (e.g. 5000)'}
-                        className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-bold font-mono focus:ring-2 focus:ring-amber-500 outline-none"
+              <div>
+                <label className="block text-slate-700 font-bold mb-2">
+                  Select Reason for Losing this RFQ *
+                </label>
+                <div className="space-y-2">
+                  {[
+                    "Price too high / Competitor cheaper",
+                    "Project cancelled / deferred",
+                    "Delivery timeline not acceptable",
+                    "Specification mismatch / Material unavailable",
+                    "Client not responding / Ghosted",
+                    "Others"
+                  ].map((r) => (
+                    <label key={r} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name="lostReason"
+                        value={r}
+                        checked={selectedLostReason === r}
+                        onChange={(e) => setSelectedLostReason(e.target.value)}
+                        className="text-red-600 focus:ring-red-500 w-3.5 h-3.5 cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-slate-500">
-                        {editDiscountType === 'percent' ? '%' : '₹'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <input 
-                        type="text"
-                        value={editNotes}
-                        onChange={(e) => setEditNotes(e.target.value)}
-                        placeholder="Discount notes (e.g. Approved 5% special bulk discount for client)"
-                        className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:ring-1 focus:ring-amber-500 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Real-time Calculation Card */}
-                  <div className="bg-white p-3.5 rounded-xl border border-amber-200 space-y-1.5 text-xs shadow-2xs">
-                    <div className="flex justify-between text-slate-600">
-                      <span>Subtotal (Items):</span>
-                      <span className="font-mono font-medium">₹{pricingCalc.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    {pricingCalc.discountAmount > 0 && (
-                      <div className="flex justify-between text-emerald-600 font-semibold">
-                        <span>Special Discount ({pricingCalc.discountRate}%):</span>
-                        <span className="font-mono">-₹{pricingCalc.discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-slate-600">
-                      <span>Taxable Amount:</span>
-                      <span className="font-mono font-medium">₹{pricingCalc.taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>GST (18%):</span>
-                      <span className="font-mono font-medium">₹{pricingCalc.gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
-                      <span>Revised Grand Total:</span>
-                      <span className="font-mono text-base text-red-700">₹{pricingCalc.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-
-                    <div className="pt-2 flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingPrice(false)}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold text-xs cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSaveQuotationPrice}
-                        disabled={isSavingPrice}
-                        className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
-                      >
-                        {isSavingPrice ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
-                        Save Revised Quotation
-                      </button>
-                    </div>
-                  </div>
+                      <span className="font-medium text-slate-800">{r}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
-            )}
 
-            {/* Official Invoice / Bill Document Area - Scrollable Inside Card */}
-            <div id="rfq-print-content" className="p-4 sm:p-8 md:p-12 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
-              
-
-              {/* Header: Logo and Company Info */}
-              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">
-                <div>
-                  <img 
-                    src="/images/siddhi-kabel-lockup.png" 
-                    alt="Siddhi Kabel" 
-                    className="h-16 w-auto object-contain mb-4"
-                    onError={(e) => { e.currentTarget.src = '/images/siddhi-kabel-logo.png'; }}
+              {selectedLostReason === "Others" && (
+                <div className="animate-in fade-in duration-200">
+                  <label className="block text-slate-700 font-bold mb-1">
+                    Specify Reason Details *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={otherLostReasonDetails}
+                    onChange={(e) => setOtherLostReasonDetails(e.target.value)}
+                    placeholder="Enter specific competitor, pricing feedback or client comment..."
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-500 font-medium"
+                    required
                   />
-                  <h1 className="text-xl font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
-                  <p className="text-sm text-slate-500 mt-1">Plot 42, Peenya Industrial Area, 2nd Stage</p>
-                  <p className="text-sm text-slate-500">Bangalore, Karnataka 560058</p>
-                  <p className="text-sm font-medium text-slate-600 mt-1">GSTIN: 29AABCU9603R1ZM</p>
                 </div>
-                <div className="sm:text-right mt-6 sm:mt-0 bg-slate-50 p-4 rounded-xl border border-slate-200 min-w-[240px]">
-                  <h2 className="text-2xl font-black text-slate-800 mb-1">QUOTATION</h2>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-3 text-left">
-                    <span className="text-slate-500 font-medium">Quote No:</span>
-                    <span className="font-bold text-slate-900 font-mono text-right">{selectedRfq.quoteNo}</span>
-                    <span className="text-slate-500 font-medium">Date:</span>
-                    <span className="font-bold text-slate-900 text-right">{selectedRfq.date || new Date(selectedRfq.createdAt).toLocaleDateString()}</span>
-                    <span className="text-slate-500 font-medium">Status:</span>
-                    <span className="font-bold text-right text-xs">{selectedRfq.status}</span>
-                  </div>
-                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setLostModalRfq(null)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLostReason}
+                  disabled={isSubmittingLost || (selectedLostReason === "Others" && !otherLostReasonDetails.trim())}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  {isSubmittingLost ? "Saving..." : "Confirm & Mark Lost"}
+                </button>
               </div>
-
-              {/* Bill To Section */}
-              <div className="mb-8">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1 inline-block">Billed To</h3>
-                <div className="text-slate-800">
-                  <p className="text-lg font-bold">{selectedRfq.companyName}</p>
-                  <p className="text-sm font-medium mt-1">Attn: {selectedRfq.customerName}</p>
-                  <p className="text-sm text-slate-600 mt-1">Email: {selectedRfq.email}</p>
-                  <p className="text-sm text-slate-600">Phone: {selectedRfq.phone}</p>
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <div className="mb-8 overflow-hidden rounded-xl border border-slate-200">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm min-w-[500px]">
-                    <thead className="bg-slate-100 text-slate-800 border-b border-slate-200">
-                      <tr>
-                        <th className="py-3 px-4 font-semibold w-12 text-center">#</th>
-                        <th className="py-3 px-4 font-semibold">Part Number & Description</th>
-                        <th className="py-3 px-4 font-semibold">Brand</th>
-                        <th className="py-3 px-4 font-semibold text-right">Qty</th>
-                        <th className="py-3 px-4 font-semibold text-right">Unit Rate</th>
-                        <th className="py-3 px-4 font-semibold text-right">Amount (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-700">
-                      {selectedRfq.items && selectedRfq.items.length > 0 ? (
-                        selectedRfq.items.map((item: any, idx: number) => {
-                          const qty = Number(item.qty) || 1;
-                          const rate = Number(item.unitPrice) || 0;
-                          const lineTotal = item.totalBeforeTax ? Number(item.totalBeforeTax) : (qty * rate);
-                          return (
-                            <tr key={idx} className="group hover:bg-slate-50">
-                              <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
-                              <td className="py-3 px-4">
-                                <p className="font-bold text-slate-900 font-mono">{item.partNo}</p>
-                                <p className="text-slate-500 text-xs mt-0.5">{item.name}</p>
-                              </td>
-                              <td className="py-3 px-4 font-medium">{item.brand || 'Polycab'}</td>
-                              <td className="py-3 px-4 text-right font-bold">{qty} {item.unit || 'nos'}</td>
-                              <td className="py-3 px-4 text-right font-mono">₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td className="py-3 px-4 text-right font-bold text-slate-900 font-mono">₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className="py-8 text-center text-slate-500 italic">No items listed in this quotation.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Totals Section */}
-              <div className="flex flex-col sm:flex-row justify-between items-end border-t-2 border-slate-900 pt-6">
-                <div className="w-full sm:w-1/2 mb-6 sm:mb-0">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Terms & Conditions</h4>
-                  <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
-                    <li>Validity: 30 Days from date of quotation</li>
-                    <li>Delivery: Ex-Stock Bangalore / 7-10 days for manufacturing items</li>
-                    <li>Payment: 30 Days Credit against approved PO</li>
-                    <li>Subject to Bangalore Jurisdiction</li>
-                  </ul>
-                  {selectedRfq.notes && (
-                    <div className="mt-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium">
-                      <strong>Special Note:</strong> {selectedRfq.notes}
-                    </div>
-                  )}
-                </div>
-                <div className="w-full sm:w-80 bg-slate-50 p-5 rounded-xl border border-slate-200">
-                  <div className="space-y-2 text-sm text-slate-600 mb-3 pb-3 border-b border-slate-200">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span className="font-mono font-medium text-slate-800">
-                        ₹{(selectedRfq.subtotal ?? (selectedRfq.grandTotal ? selectedRfq.grandTotal / 1.18 : 0))?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    {/* Special Discount Display */}
-                    {Boolean(selectedRfq.discountAmount && selectedRfq.discountAmount > 0) && (
-                      <div className="flex justify-between text-emerald-600 font-semibold">
-                        <span>Special Discount ({selectedRfq.discountRate || 0}%)</span>
-                        <span className="font-mono">-₹{selectedRfq.discountAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between">
-                      <span>Taxable Value</span>
-                      <span className="font-mono font-medium text-slate-800">
-                        ₹{Math.max(0, (selectedRfq.subtotal || 0) - (selectedRfq.discountAmount || 0))?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Tax (GST 18%)</span>
-                      <span className="font-mono font-medium text-slate-800">
-                        ₹{(((Math.max(0, (selectedRfq.subtotal || 0) - (selectedRfq.discountAmount || 0))) * 0.18) || ((selectedRfq.grandTotal || 0) - (selectedRfq.subtotal || 0)))?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-lg font-black text-slate-900">
-                    <span>Grand Total</span>
-                    <span className="font-mono text-xl text-red-700">₹{selectedRfq.grandTotal?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer / Signature Area */}
-              <div className="mt-16 pt-8 border-t border-slate-200 flex justify-between items-end text-sm">
-                <div className="text-slate-500">
-                  <p>Computer generated document.</p>
-                  <p>No signature required.</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-bold text-slate-800 mb-12">For Siddhi Kabel Corp Pvt Ltd</p>
-                  <p className="text-slate-500 border-t border-slate-300 pt-1 inline-block px-4">Authorized Signatory</p>
-                </div>
-              </div>
-
             </div>
           </div>
         </div>,

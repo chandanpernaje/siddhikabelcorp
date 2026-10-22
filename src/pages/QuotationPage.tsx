@@ -134,6 +134,12 @@ export const QuotationPage: React.FC = () => {
         brand: i.brand,
         hsnCode: i.hsnCode || "85444990",
         unit: i.unit,
+        uom: i.uom || i.unit,
+        core: i.core,
+        coreSize: i.coreSize || i.sqmm,
+        sqmm: i.sqmm || i.coreSize,
+        weight: i.weight,
+        outerDiameter: i.outerDiameter,
         qty: i.qty,
         unitPrice: discountedPrice,
         totalBeforeTax: discountedPrice * i.qty,
@@ -147,7 +153,8 @@ export const QuotationPage: React.FC = () => {
       id: quoteNo,
       quoteNo,
       date: quoteDate,
-      validUntil: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      validUntil: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      validityDays: 7,
       customerName: buyerName,
       companyName: buyerCompany,
       gstin: buyerGstin,
@@ -167,7 +174,7 @@ export const QuotationPage: React.FC = () => {
       grandTotal,
       deliveryTerms,
       paymentTerms,
-      status: "RFQ Submitted",
+      status: "Pending",
     };
 
     const success = await saveQuote(doc);
@@ -572,11 +579,13 @@ export const QuotationPage: React.FC = () => {
                       <tr className="border-b-2 border-zinc-900 bg-slate-100 text-slate-900 font-bold uppercase tracking-wider">
                         <th className="py-2.5 px-3 w-10 text-center">#</th>
                         <th className="py-2.5 px-3">Part Number</th>
-                        <th className="py-2.5 px-3">Description &amp; Specifications</th>
-                        <th className="py-2.5 px-3">Brand</th>
-                        <th className="py-2.5 px-3 text-center">HSN</th>
+                        <th className="py-2.5 px-3">Description</th>
+                        <th className="py-2.5 px-3">Core/Cross Section</th>
+                        <th className="py-2.5 px-3">UOM</th>
+                        <th className="py-2.5 px-3 text-right">Price (₹)</th>
+                        <th className="py-2.5 px-3">Weight</th>
+                        <th className="py-2.5 px-3">OD</th>
                         <th className="py-2.5 px-3 text-right">Quantity</th>
-                        <th className="py-2.5 px-3 text-right">Rate (₹)</th>
                         <th className="py-2.5 px-3 text-right">Amount (₹)</th>
                         <th className="no-print py-2.5 px-2 text-center w-8"></th>
                       </tr>
@@ -584,7 +593,22 @@ export const QuotationPage: React.FC = () => {
                     <tbody className="divide-y divide-zinc-200">
                       {cart.map((item, idx) => {
                         const lineTotal = item.price * item.qty;
-                        const isMeter = item.unit === "meter";
+                        const isMeter = item.unit === "meter" || item.uom === "meter" || item.uom === "m";
+                        const abbrUom = (item.uom || item.unit || "m") === "meter" ? "m" : (item.uom || item.unit || "m") === "piece" ? "pc" : (item.uom || item.unit || "m");
+                        
+                        // Core/Cross Section display
+                        let coreDisplay = "-";
+                        if (item.core && (item.sqmm || item.coreSize)) {
+                          coreDisplay = `${item.core} Core x ${item.sqmm || item.coreSize} SQ.MM`;
+                        } else if (item.sqmm || item.coreSize) {
+                          coreDisplay = `${item.sqmm || item.coreSize} SQ.MM`;
+                        } else if (item.core) {
+                          coreDisplay = `${item.core} Core`;
+                        } else if (item.name) {
+                          const matchG = item.name.match(/(\d+)\s*[Ggx]\s*([0-9.]+)/i);
+                          if (matchG) coreDisplay = `${matchG[1]} Core x ${matchG[2]} SQ.MM`;
+                        }
+
                         return (
                           <tr key={item.id} className="hover:bg-slate-50/80">
                             <td className="py-3 px-3 text-center font-mono text-slate-500 font-medium">
@@ -593,14 +617,26 @@ export const QuotationPage: React.FC = () => {
                             <td className="py-3 px-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                               {item.partNo}
                             </td>
-                            <td className="py-3 px-3 text-slate-800 font-bold break-words">
+                            <td className="py-3 px-3 text-slate-800 font-semibold break-words">
                               {item.name}
+                              {item.brand && <span className="ml-1.5 text-[10px] font-bold text-slate-500 bg-slate-100 px-1 py-0.5 rounded border border-slate-200">{item.brand}</span>}
                             </td>
-                            <td className="py-3 px-3 text-slate-600 font-bold whitespace-nowrap">
-                              {item.brand}
+                            <td className="py-3 px-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                              {coreDisplay}
                             </td>
-                            <td className="py-3 px-3 text-center font-mono text-slate-600 whitespace-nowrap">
-                              {item.hsnCode || "85444990"}
+                            <td className="py-3 px-3 font-semibold text-slate-700 whitespace-nowrap">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[11px] border border-slate-200">
+                                {abbrUom}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono font-bold text-slate-800 whitespace-nowrap">
+                              ₹{item.price.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-3 font-mono text-slate-600 whitespace-nowrap">
+                              {item.weight ? (item.weight.includes("kg") ? item.weight : `${item.weight} kg/km`) : "-"}
+                            </td>
+                            <td className="py-3 px-3 font-mono text-slate-600 whitespace-nowrap">
+                              {item.outerDiameter ? (item.outerDiameter.includes("mm") ? item.outerDiameter : `${item.outerDiameter} mm`) : "-"}
                             </td>
                             <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                               <span className="no-print mr-2 inline-flex items-center gap-1">
@@ -619,10 +655,7 @@ export const QuotationPage: React.FC = () => {
                                   +
                                 </button>
                               </span>
-                              {item.qty} {item.unit}
-                            </td>
-                            <td className="py-3 px-3 text-right font-mono text-slate-700 whitespace-nowrap">
-                              ₹{item.price.toFixed(2)}
+                              {item.qty} {abbrUom}
                             </td>
                             <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                               ₹{lineTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -656,7 +689,7 @@ export const QuotationPage: React.FC = () => {
                         <li><span className="font-bold text-slate-900">Lead Time:</span> Ex-Stock Bangalore Warehouse (Dispatched in 24-48 Hours)</li>
                         <li><span className="font-bold text-slate-900">Payment:</span> 30 Days Credit against Approved Corporate PO</li>
                         <li><span className="font-bold text-slate-900">Freight:</span> To Pay / Extra at Actuals to Site</li>
-                        <li><span className="font-bold text-slate-900">Validity:</span> 30 Days from Issue</li>
+                        <li><span className="font-bold text-slate-900">Validity:</span> 7 Days from Issue (Auto-calculated)</li>
                       </ul>
                     </div>
                   </div>

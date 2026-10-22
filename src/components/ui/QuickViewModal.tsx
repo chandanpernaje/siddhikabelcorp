@@ -182,7 +182,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                   <div className="flex items-end justify-between">
                     <div>
                       <div className="text-[10px] uppercase font-mono text-slate-400">
-                        B2B Contract Rate (Ex-GST)
+                        B2B Contract Rate
                       </div>
                       <div className="flex items-baseline gap-1">
                         <span className="text-xl font-black font-mono text-slate-900 tabular-nums">
