@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2, Edit2, Eye } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 
 interface User {
@@ -14,6 +14,7 @@ interface User {
   address?: string;
   city?: string;
   state?: string;
+  pincode?: string;
   gstin?: string;
   createdAt?: string;
 }
@@ -28,6 +29,25 @@ export const AdminUsers: React.FC = () => {
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null);
+  
+  // Customer Create / Edit Modal State
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<User | null>(null);
+  const [customerFormData, setCustomerFormData] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    city: '',
+    state: '',
+    pincode: '',
+    address: '',
+    gstin: '',
+    status: 'Active',
+    password: ''
+  });
+  const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Sales Executive', status: 'Active' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -138,6 +158,107 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
+  const openCreateCustomerModal = () => {
+    setEditingCustomer(null);
+    setCustomerFormData({
+      name: '',
+      company: '',
+      email: '',
+      phone: '',
+      city: '',
+      state: '',
+      pincode: '',
+      address: '',
+      gstin: '',
+      status: 'Active',
+      password: ''
+    });
+    setCustomerFormError(null);
+    setIsCustomerModalOpen(true);
+  };
+
+  const openEditCustomerModal = (customer: User) => {
+    setEditingCustomer(customer);
+    setCustomerFormData({
+      name: customer.name || '',
+      company: customer.company || '',
+      email: customer.email || '',
+      phone: customer.phone || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      pincode: customer.pincode || '',
+      address: customer.address || '',
+      gstin: customer.gstin || '',
+      status: customer.status || 'Active',
+      password: ''
+    });
+    setCustomerFormError(null);
+    setIsCustomerModalOpen(true);
+  };
+
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setCustomerFormError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const url = editingCustomer
+        ? `${API_BASE_URL}/api/admin/users/${editingCustomer._id}`
+        : `${API_BASE_URL}/api/admin/users`;
+      const method = editingCustomer ? 'PUT' : 'POST';
+      const payload: any = {
+        name: customerFormData.name.trim(),
+        company: customerFormData.company.trim(),
+        email: customerFormData.email.trim().toLowerCase(),
+        phone: customerFormData.phone.trim(),
+        city: customerFormData.city.trim(),
+        state: customerFormData.state.trim(),
+        pincode: customerFormData.pincode.trim(),
+        address: customerFormData.address.trim(),
+        gstin: customerFormData.gstin.trim(),
+        status: customerFormData.status
+      };
+
+      if (editingCustomer) {
+        if (customerFormData.password && customerFormData.password.trim()) {
+          payload.password = customerFormData.password.trim();
+        }
+      } else {
+        payload.role = 'Customer';
+        payload.password = customerFormData.password && customerFormData.password.trim()
+          ? customerFormData.password.trim()
+          : 'Customer@123';
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.details || 'Failed to save customer');
+      }
+
+      const savedUser = await res.json();
+      if (selectedCustomer && editingCustomer && selectedCustomer._id === editingCustomer._id) {
+        setSelectedCustomer({ ...selectedCustomer, ...savedUser });
+      }
+
+      setIsCustomerModalOpen(false);
+      setEditingCustomer(null);
+      fetchUsers();
+    } catch (error: any) {
+      setCustomerFormError(error.message || 'Error saving customer profile');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const isCustomerRole = (role?: string) => {
     const r = (role || '').toLowerCase().trim();
     return r === 'customer' || r === 'website customer' || r === 'corporate customer' || r === 'client';
@@ -183,11 +304,20 @@ export const AdminUsers: React.FC = () => {
         <div className="flex items-center gap-3">
           <button 
             onClick={fetchUsers}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium text-sm cursor-pointer"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
+          {isAdmin && activeTab === 'Customers' && (
+            <button 
+              onClick={openCreateCustomerModal}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white rounded-lg transition-all font-bold text-sm shadow-md shadow-red-600/20 cursor-pointer"
+            >
+              <Plus size={16} />
+              Create Customer
+            </button>
+          )}
           {isAdmin && activeTab === 'Internal' && (
             <button 
               onClick={() => setIsAddModalOpen(true)}
@@ -301,12 +431,26 @@ export const AdminUsers: React.FC = () => {
                         </button>
                       </td>
                       <td className="py-4 px-6 text-center">
-                        <button
-                          onClick={() => setSelectedCustomer(user)}
-                          className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs rounded-lg transition-colors border border-red-200 shadow-xs cursor-pointer"
-                        >
-                          View Profile
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setSelectedCustomer(user)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs rounded-lg transition-colors border border-red-200 shadow-2xs cursor-pointer"
+                            title="View Customer Profile"
+                          >
+                            <Eye size={13} />
+                            View Profile
+                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => openEditCustomerModal(user)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold text-xs rounded-lg transition-colors border border-slate-200 shadow-2xs cursor-pointer"
+                              title="Edit Customer Details"
+                            >
+                              <Edit2 size={13} />
+                              Edit Profile
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -488,7 +632,20 @@ export const AdminUsers: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              {isAdmin ? (
+                <button
+                  onClick={() => {
+                    const cust = selectedCustomer;
+                    setSelectedCustomer(null);
+                    openEditCustomerModal(cust);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  <Edit2 size={14} />
+                  Edit Profile
+                </button>
+              ) : <div />}
               <button
                 onClick={() => setSelectedCustomer(null)}
                 className="px-5 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-2xs transition-colors cursor-pointer"
@@ -496,6 +653,213 @@ export const AdminUsers: React.FC = () => {
                 Close Profile
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create / Edit Customer Modal */}
+      {isCustomerModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+                  <Building size={18} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">
+                    {editingCustomer ? 'Edit Customer Profile' : 'Create New Customer'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {editingCustomer 
+                      ? `Updating corporate profile for ${editingCustomer.company || editingCustomer.name}` 
+                      : 'Add a new corporate or individual client account with contact and GST details.'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsCustomerModalOpen(false)} 
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {customerFormError && (
+              <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-700">
+                <AlertCircle size={16} className="shrink-0 text-red-500" />
+                <span>{customerFormError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveCustomer} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Contact Person Name <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={customerFormData.name}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, name: e.target.value })}
+                    placeholder="e.g. Rajesh Kumar"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Company Name
+                  </label>
+                  <input 
+                    type="text" 
+                    value={customerFormData.company}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, company: e.target.value })}
+                    placeholder="e.g. Apex Automation & Switchgear"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="email" 
+                    required 
+                    value={customerFormData.email}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })}
+                    placeholder="procurement@company.com"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="tel" 
+                    required 
+                    value={customerFormData.phone}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, phone: e.target.value })}
+                    placeholder="+91 98450 12345"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    GSTIN Number
+                  </label>
+                  <input 
+                    type="text" 
+                    value={customerFormData.gstin}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, gstin: e.target.value.toUpperCase() })}
+                    placeholder="29AABCU9603R1ZM (Leave blank if Non-GST / Unregistered)"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none font-mono text-sm transition-all" 
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">If non-GST / unregistered consumer, leave empty or type "Unregistered".</p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Address (Street / Building / Area)
+                  </label>
+                  <textarea 
+                    rows={2}
+                    value={customerFormData.address}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, address: e.target.value })}
+                    placeholder="e.g. Plot No 42, Peenya Industrial Area, Phase II"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all resize-none" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    City
+                  </label>
+                  <input 
+                    type="text" 
+                    value={customerFormData.city}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, city: e.target.value })}
+                    placeholder="e.g. Bangalore"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    State
+                  </label>
+                  <input 
+                    type="text" 
+                    value={customerFormData.state}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, state: e.target.value })}
+                    placeholder="e.g. Karnataka"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Pincode
+                  </label>
+                  <input 
+                    type="text" 
+                    value={customerFormData.pincode}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, pincode: e.target.value })}
+                    placeholder="e.g. 560058"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Account Status
+                  </label>
+                  <select 
+                    value={customerFormData.status}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, status: e.target.value })}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-white"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    {editingCustomer ? 'Reset Password (optional)' : 'Account Password'}
+                  </label>
+                  <input 
+                    type="password" 
+                    value={customerFormData.password}
+                    onChange={(e) => setCustomerFormData({ ...customerFormData, password: e.target.value })}
+                    placeholder={editingCustomer ? 'Leave blank to retain existing password' : 'Default: Customer@123 if left blank'}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setIsCustomerModalOpen(false)}
+                  className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors text-sm cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-xl hover:opacity-95 shadow-md shadow-red-600/25 transition-all disabled:opacity-70 text-sm cursor-pointer"
+                >
+                  {isSubmitting ? 'Saving...' : (editingCustomer ? 'Update Customer' : 'Create Customer')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

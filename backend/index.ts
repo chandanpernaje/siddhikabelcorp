@@ -695,12 +695,14 @@ app.patch('/api/admin/users/:id/status', verifyAdmin, async (req, res) => {
 app.post('/api/admin/users', verifyAdmin, async (req, res) => {
   try {
     const data = { ...req.body };
-    if (!data.status) data.status = 'Active'; // Requirement 4.3: do not require active/inactive status during initial creation
+    if (!data.status) data.status = 'Active';
+    if (!data.password) data.password = 'Customer@123';
+    if (!data.role) data.role = 'Customer';
     const newUser = await User.create(data);
     res.status(201).json(newUser);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user' });
+    res.status(500).json({ error: 'Failed to create user', details: error.message });
   }
 });
 
