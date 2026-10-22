@@ -1169,6 +1169,28 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
   }
 });
 
+app.delete('/api/notifications', async (req, res) => {
+  try {
+    await Notification.deleteMany({});
+    res.json({ message: 'All notifications deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete all notifications' });
+  }
+});
+
+app.post('/api/notifications/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (Array.isArray(ids) && ids.length > 0) {
+      const result = await Notification.deleteMany({ _id: { $in: ids } });
+      return res.json({ message: `${result.deletedCount} notifications deleted` });
+    }
+    res.status(400).json({ error: 'No IDs provided' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to bulk delete notifications' });
+  }
+});
+
 app.delete('/api/notifications/:id', async (req, res) => {
   try {
     await Notification.findByIdAndDelete(req.params.id);

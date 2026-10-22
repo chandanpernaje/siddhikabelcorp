@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingBag, Users, FileText, Settings, Menu, X, LogOut, 
-  Search, ChevronRight, ChevronDown, Bell, Check, Clock, UserCheck, ShieldCheck, KeyRound, AlertCircle, Building, Shield
+  Search, ChevronRight, ChevronDown, Bell, Check, Clock, UserCheck, ShieldCheck, KeyRound, AlertCircle, Building, Shield,
+  Trash2
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 
@@ -88,6 +89,8 @@ export const AdminLayout: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifsOpen, setNotifsOpen] = useState(false);
+  const [selectedNotifIds, setSelectedNotifIds] = useState<string[]>([]);
+  const [isDeletingNotifs, setIsDeletingNotifs] = useState(false);
   const notifsRef = useRef<HTMLDivElement>(null);
 
   // Profile Dropdown State (Click to open on Mobile & Desktop)
@@ -129,10 +132,10 @@ export const AdminLayout: React.FC = () => {
     setNotifsOpen(false);
   }, [location.pathname, isMobile]);
 
-  // Fetch Notifications (Show pending actions only)
+  // Fetch Notifications (Show all latest notifications without auto-deleting read ones)
   const fetchNotifications = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/notifications?pendingOnly=true`);
+      const res = await fetch(`${API_BASE_URL}/api/notifications`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);
@@ -250,12 +253,14 @@ export const AdminLayout: React.FC = () => {
   };
 
   const handleNotificationClick = async (notif: NotificationItem) => {
-    try {
-      await fetch(`${API_BASE_URL}/api/notifications/${notif._id}/read`, { method: 'PATCH' });
-      // Clear/remove notification after it is opened (showing pending actions only)
-      setNotifications(prev => prev.filter(n => n._id !== notif._id));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (e) {}
+    // Mark as read in backend and update UI, DO NOT delete automatically
+    if (!notif.read) {
+      try {
+        await fetch(`${API_BASE_URL}/api/notifications/${notif._id}/read`, { method: 'PATCH' });
+        setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, read: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (e) {}
+    }
 
     setNotifsOpen(false);
 
@@ -266,10 +271,72 @@ export const AdminLayout: React.FC = () => {
     }
   };
 
+  const toggleSelectNotification = (id: string) => {
+    setSelectedNotifIds(prev => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllNotifs = () => {
+    if (selectedNotifIds.length === notifications.length) {
+      setSelectedNotifIds([]);
+    } else {
+      setSelectedNotifIds(notifications.map(n => n._id));
+    }
+  };
+
+  const handleDeleteSingleNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await fetch(`${API_BASE_URL}/api/notifications/${id}`, { method: 'DELETE' });
+      const deletedNotif = notifications.find(n => n._id === id);
+      setNotifications(prev => prev.filter(n => n._id !== id));
+      setSelectedNotifIds(prev => prev.filter(itemId => itemId !== id));
+      if (deletedNotif && !deletedNotif.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (e) {}
+  };
+
+  const handleDeleteSelectedNotifs = async () => {
+    if (selectedNotifIds.length === 0) return;
+    try {
+      setIsDeletingNotifs(true);
+      await fetch(`${API_BASE_URL}/api/notifications/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedNotifIds })
+      });
+      const deletedSet = new Set(selectedNotifIds);
+      const unreadDeletedCount = notifications.filter(n => deletedSet.has(n._id) && !n.read).length;
+      setNotifications(prev => prev.filter(n => !deletedSet.has(n._id)));
+      setSelectedNotifIds([]);
+      setUnreadCount(prev => Math.max(0, prev - unreadDeletedCount));
+    } catch (e) {
+    } finally {
+      setIsDeletingNotifs(false);
+    }
+  };
+
+  const handleDeleteAllNotifs = async () => {
+    if (notifications.length === 0) return;
+    if (!window.confirm("Are you sure you want to delete all notifications?")) return;
+    try {
+      setIsDeletingNotifs(true);
+      await fetch(`${API_BASE_URL}/api/notifications`, { method: 'DELETE' });
+      setNotifications([]);
+      setSelectedNotifIds([]);
+      setUnreadCount(0);
+    } catch (e) {
+    } finally {
+      setIsDeletingNotifs(false);
+    }
+  };
+
   const handleMarkAllRead = async () => {
     try {
       await fetch(`${API_BASE_URL}/api/notifications/read-all`, { method: 'PATCH' });
-      setNotifications([]);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (e) {}
   };
@@ -676,75 +743,176 @@ export const AdminLayout: React.FC = () => {
 
               {/* Notification Dropdown Panel */}
               {notifsOpen && (
-                <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-                    <div className="flex items-center gap-2">
-                      <Bell size={16} className="text-red-600" />
-                      <span className="text-sm font-bold text-slate-800">Notifications</span>
-                      {unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
-                          {unreadCount} new
-                        </span>
-                      )}
+                <div className="absolute top-12 right-0 w-84 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  {/* Panel Header */}
+                  <div className="p-3.5 border-b border-slate-100 bg-slate-50/90 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bell size={16} className="text-red-600" />
+                        <span className="text-sm font-bold text-slate-800">Notifications</span>
+                        {unreadCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+                            {unreadCount} new
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Actions: Mark all read & Delete All */}
+                      <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleMarkAllRead}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                          >
+                            Mark read
+                          </button>
+                        )}
+                        {notifications.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleDeleteAllNotifs}
+                            disabled={isDeletingNotifs}
+                            className="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 cursor-pointer hover:bg-red-50 px-2 py-0.5 rounded-md transition-colors"
+                            title="Delete all notifications"
+                          >
+                            <Trash2 size={12} />
+                            Delete All
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={handleMarkAllRead}
-                        className="text-xs text-red-600 hover:text-red-800 font-semibold cursor-pointer"
-                      >
-                        Mark all read
-                      </button>
+
+                    {/* Checkbox Selection Toolbar */}
+                    {notifications.length > 0 && (
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs text-slate-600">
+                        <label className="flex items-center gap-2 cursor-pointer select-none font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={notifications.length > 0 && selectedNotifIds.length === notifications.length}
+                            onChange={toggleSelectAllNotifs}
+                            className="w-3.5 h-3.5 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                          />
+                          <span>Select All ({selectedNotifIds.length}/{notifications.length})</span>
+                        </label>
+                        {selectedNotifIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleDeleteSelectedNotifs}
+                            disabled={isDeletingNotifs}
+                            className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={12} />
+                            Delete Selected ({selectedNotifIds.length})
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
 
+                  {/* Notification Items List */}
                   <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 custom-scrollbar">
                     {notifications.length === 0 ? (
                       <div className="p-8 text-center text-slate-400">
                         <Bell size={28} className="mx-auto mb-2 opacity-40" />
-                        <p className="text-xs font-medium">No new notifications</p>
+                        <p className="text-xs font-medium">No notifications</p>
                       </div>
                     ) : (
-                      notifications.map(n => (
-                        <div
-                          key={n._id}
-                          onClick={() => handleNotificationClick(n)}
-                          className={`p-3.5 hover:bg-slate-50 transition-colors cursor-pointer flex items-start gap-3 ${!n.read ? 'bg-red-50/40' : ''}`}
-                        >
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                            n.type === 'rfq' 
-                              ? 'bg-red-100 text-red-700' 
-                              : n.type === 'customer' 
-                              ? 'bg-slate-100 text-slate-700' 
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {n.type === 'rfq' ? <FileText size={16} /> : <UserCheck size={16} />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className={`text-xs font-bold line-clamp-1 ${!n.read ? 'text-slate-900' : 'text-slate-700'}`}>
-                                {n.title}
-                              </p>
-                              {!n.read && <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" />}
+                      notifications.map(n => {
+                        const isSelected = selectedNotifIds.includes(n._id);
+                        return (
+                          <div
+                            key={n._id}
+                            className={`p-3 hover:bg-slate-50 transition-colors flex items-start gap-2.5 group relative ${
+                              !n.read ? 'bg-red-50/30' : ''
+                            } ${isSelected ? 'bg-blue-50/40' : ''}`}
+                          >
+                            {/* Checkbox */}
+                            <div className="pt-1 shrink-0">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  toggleSelectNotification(n._id);
+                                }}
+                                className="w-3.5 h-3.5 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                              />
                             </div>
-                            <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
-                            <span className="text-[10px] text-slate-400 mt-1 inline-flex items-center gap-1 font-mono">
-                              <Clock size={11} className="text-slate-400" />
-                              {new Date(n.createdAt).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })} • {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+
+                            {/* Icon (click to view) */}
+                            <div 
+                              onClick={() => handleNotificationClick(n)}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 cursor-pointer mt-0.5 ${
+                                n.type === 'rfq' 
+                                  ? 'bg-red-100 text-red-700' 
+                                  : n.type === 'customer' 
+                                  ? 'bg-slate-100 text-slate-700' 
+                                  : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              {n.type === 'rfq' ? <FileText size={16} /> : <UserCheck size={16} />}
+                            </div>
+
+                            {/* Content (Click to view without auto-deleting) */}
+                            <div 
+                              onClick={() => handleNotificationClick(n)}
+                              className="flex-1 min-w-0 cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between gap-1">
+                                <p className={`text-xs line-clamp-1 ${!n.read ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>
+                                  {n.title}
+                                </p>
+                                {!n.read && <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" title="Unread" />}
+                              </div>
+                              <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
+                              <div className="flex items-center justify-between mt-1 pt-0.5">
+                                <span className="text-[10px] text-slate-400 inline-flex items-center gap-1 font-mono">
+                                  <Clock size={11} className="text-slate-400" />
+                                  {new Date(n.createdAt).toLocaleDateString([], { day: '2-digit', month: 'short' })} • {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <span className="text-[10px] font-semibold text-blue-600 hover:text-blue-800">
+                                  View →
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Individual Delete Action Button */}
+                            <div className="shrink-0 pt-0.5">
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteSingleNotification(e, n._id)}
+                                className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                title="Delete notification"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                   
-                  <div className="p-2 border-t border-slate-100 bg-slate-50 text-center">
+                  {/* Panel Footer */}
+                  <div className="p-2.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs">
                     <Link
                       to="/admin/rfqs"
                       onClick={() => setNotifsOpen(false)}
-                      className="text-xs font-bold text-red-600 hover:text-red-800 cursor-pointer"
+                      className="font-bold text-red-600 hover:text-red-800 cursor-pointer"
                     >
-                      View All RFQ Records →
+                      View All RFQs →
                     </Link>
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteAllNotifs}
+                        disabled={isDeletingNotifs}
+                        className="font-semibold text-slate-500 hover:text-red-600 cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
