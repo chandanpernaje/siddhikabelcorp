@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
           <p className="text-slate-600 leading-relaxed max-w-sm">
             Siddhi Kabel Corporation Private Limited is one of the leading and reliable suppliers of world class Industrial Electrical, Automation & Safety Products with over 15 years of industry experience.
           </p>
-          
+
           <div className="flex items-center gap-3 pt-2">
             <a href="https://www.facebook.com/siddhikabel/" target="_blank" rel="noopener noreferrer" className="p-2 bg-white text-slate-500 hover:text-white hover:bg-[#1877F2] rounded-full transition-all border border-slate-200 hover:border-[#1877F2] shadow-sm" aria-label="Facebook">
               <Facebook className="w-4 h-4" />
@@ -113,7 +113,7 @@ export const Footer: React.FC = () => {
                 SKINTOP® Cable Gland Systems
               </a>
             </li>
-            
+
           </ul>
         </div>
 
@@ -146,11 +146,7 @@ export const Footer: React.FC = () => {
                   <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Information</span>
                   <a href="https://mail.google.com/mail/?view=cm&fs=1&to=info@siddhikabel.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition-colors">info@siddhikabel.com</a>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Sales</span>
-                  <a href="tel:+919620000947" className="hover:text-rose-400 transition-colors">096200 00947</a>
-                  <a href="tel:+919886058511" className="hover:text-rose-400 transition-colors">098860 58511</a>
-                </div>
+
                 <div className="flex flex-col">
                   <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Enquiry</span>
                   <a href="https://mail.google.com/mail/?view=cm&fs=1&to=enquiry@siddhikabel.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition-colors">enquiry@siddhikabel.com</a>
