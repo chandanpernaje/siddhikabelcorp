@@ -163,8 +163,8 @@ export function getQuotationValidityInfo(rfq: { createdAt?: string; date?: strin
   let countdownLabel = '';
   if (isActionTaken) {
     if (rfq.status === 'Under Review') countdownLabel = 'Under Review';
-    else if (rfq.status === 'PO Received' || rfq.status === 'Approved' || rfq.status === 'Completed') countdownLabel = 'PO Received';
-    else if (rfq.status === 'Closed') countdownLabel = 'Closed';
+    else if (rfq.status === 'PO Received' || rfq.status === 'Approved') countdownLabel = 'PO Received';
+    else if (rfq.status === 'Completed' || rfq.status === 'Closed') countdownLabel = 'Completed';
     else if (rfq.status === 'Lost') countdownLabel = 'Lost';
     else countdownLabel = rfq.status || 'Action Taken';
   } else if (isExpired) {
@@ -683,7 +683,7 @@ export const AdminRFQs: React.FC = () => {
       const email = rfq.email || '';
       const phone = rfq.phone || '';
       const assignedTo = rfq.assignedToName || 'Sales Team';
-      const status = rfq.status || 'Under Review';
+      const status = (rfq.status === 'Closed' ? 'Completed' : rfq.status) || 'Under Review';
 
       const subtotal = rfq.subtotal ?? (rfq.items ? rfq.items.reduce((s, it) => s + ((it.qty || 1) * (it.unitPrice || 0)), 0) : 0);
       const discountRate = rfq.discountRate || 0;
@@ -813,7 +813,7 @@ export const AdminRFQs: React.FC = () => {
           discRate,
           discAmt,
           r.grandTotal || 0,
-          r.status || '',
+          r.status === 'Closed' ? 'Completed' : (r.status || ''),
           r.assignedToName || 'Unassigned'
         ]);
       });
@@ -843,18 +843,18 @@ export const AdminRFQs: React.FC = () => {
     }
   };
 
-  // Status Badge rendering for preserved statuses: Pending, Under Review, PO Received, Closed, Lost, Expired
+  // Status Badge rendering for preserved statuses: Pending, Under Review, PO Received, Completed, Lost, Expired
   const renderStatusBadge = (status: string, rfqItem?: RFQ) => {
     const norm = (status || 'Pending').trim();
-    if (norm === 'Closed') {
+    if (norm === 'Completed' || norm === 'Closed') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs">
           <CheckCircle size={13} className="text-slate-600" />
-          Closed
+          Completed
         </span>
       );
     }
-    if (norm === 'PO Received' || norm === 'Approved' || norm === 'Completed') {
+    if (norm === 'PO Received' || norm === 'Approved') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
           <CheckCircle size={13} className="text-emerald-600" />
@@ -916,7 +916,7 @@ export const AdminRFQs: React.FC = () => {
         if (!matches) return false;
       }
 
-      // 2. Status Pipeline Filter: Unassigned, Pending, Under Review, PO Received, Closed, Lost, Expired
+      // 2. Status Pipeline Filter: Unassigned, Pending, Under Review, PO Received, Completed, Lost, Expired
       if (statusFilter === 'All') return true;
       if (statusFilter === 'Unassigned') {
         return !r.assignedTo && !r.assignedToName;
@@ -925,8 +925,8 @@ export const AdminRFQs: React.FC = () => {
         return r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing';
       }
       if (statusFilter === 'Under Review') return r.status === 'Under Review';
-      if (statusFilter === 'PO Received') return r.status === 'PO Received' || r.status === 'Approved' || r.status === 'Completed';
-      if (statusFilter === 'Closed') return r.status === 'Closed';
+      if (statusFilter === 'PO Received') return r.status === 'PO Received' || r.status === 'Approved';
+      if (statusFilter === 'Completed' || statusFilter === 'Closed') return r.status === 'Completed' || r.status === 'Closed';
       if (statusFilter === 'Lost') return r.status === 'Lost';
       if (statusFilter === 'Expired') return r.status === 'Expired';
       return true;
@@ -1047,15 +1047,15 @@ export const AdminRFQs: React.FC = () => {
         )}
       </div>
 
-      {/* Status Filter Tabs: All, Unassigned, Pending, Under Review, PO Received, Closed, Lost, Expired */}
+      {/* Status Filter Tabs: All, Unassigned, Pending, Under Review, PO Received, Completed, Lost, Expired */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
         {[
           { key: 'All', label: `All (${rfqs.length})`, active: 'bg-slate-800 text-white font-bold', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
           { key: 'Unassigned', label: `Unassigned (${rfqs.filter(r => !r.assignedTo && !r.assignedToName).length})`, active: 'bg-purple-700 text-white font-bold shadow-xs', inactive: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' },
           { key: 'Pending', label: `Pending (${rfqs.filter(r => r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
           { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-sky-600 text-white font-bold shadow-xs', inactive: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100' },
-          { key: 'PO Received', label: `PO Received (${rfqs.filter(r => r.status === 'PO Received' || r.status === 'Approved' || r.status === 'Completed').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
-          { key: 'Closed', label: `Closed (${rfqs.filter(r => r.status === 'Closed').length})`, active: 'bg-slate-700 text-white font-bold shadow-xs', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
+          { key: 'PO Received', label: `PO Received (${rfqs.filter(r => r.status === 'PO Received' || r.status === 'Approved').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
+          { key: 'Completed', label: `Completed (${rfqs.filter(r => r.status === 'Completed' || r.status === 'Closed').length})`, active: 'bg-slate-700 text-white font-bold shadow-xs', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
           { key: 'Lost', label: `Lost (${rfqs.filter(r => r.status === 'Lost').length})`, active: 'bg-slate-600 text-white font-bold shadow-xs', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
           { key: 'Expired', label: `Expired (${rfqs.filter(r => r.status === 'Expired').length})`, active: 'bg-red-600 text-white font-bold shadow-xs', inactive: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' },
         ].map(({ key, label, active, inactive }) => (
@@ -1172,12 +1172,12 @@ export const AdminRFQs: React.FC = () => {
                           </div>
                           <div className="mt-0.5 flex items-center gap-1">
                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold ${val.isActionTaken
-                                ? (rfq.status === 'Under Review' ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-slate-100 text-slate-800 border border-slate-200')
-                                : val.isExpired
-                                  ? 'bg-red-100 text-red-800 border border-red-200'
-                                  : val.remainingDays <= 2
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              ? (rfq.status === 'Under Review' ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-slate-100 text-slate-800 border border-slate-200')
+                              : val.isExpired
+                                ? 'bg-red-100 text-red-800 border border-red-200'
+                                : val.remainingDays <= 2
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                               }`}>
                               <Clock size={9} className="shrink-0" />
                               {val.countdownLabel}
@@ -1208,25 +1208,25 @@ export const AdminRFQs: React.FC = () => {
                       <td className="py-2 px-1.5 align-middle">
                         <div className="w-full">
                           <select
-                            value={rfq.status}
+                            value={rfq.status === 'Closed' ? 'Completed' : rfq.status}
                             onChange={(e) => handleInitiateStatusChange(rfq._id, e.target.value, rfq)}
-                            className={`w-full text-[11px] font-bold rounded-lg px-1.5 py-1 border outline-none cursor-pointer shadow-2xs transition-all ${rfq.status === 'PO Received' || rfq.status === 'Completed' || rfq.status === 'Approved'
-                                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                                : rfq.status === 'Closed'
-                                  ? 'border-slate-400 bg-slate-200 text-slate-900 font-extrabold'
-                                  : rfq.status === 'Under Review'
-                                    ? 'border-sky-300 bg-sky-50 text-sky-800'
-                                    : rfq.status === 'Lost'
-                                      ? 'border-slate-300 bg-slate-100 text-slate-800'
-                                      : rfq.status === 'Expired'
-                                        ? 'border-red-300 bg-red-100 text-red-900 font-extrabold'
-                                        : 'border-amber-300 bg-amber-50 text-amber-800'
+                            className={`w-full text-[11px] font-bold rounded-lg px-1.5 py-1 border outline-none cursor-pointer shadow-2xs transition-all ${rfq.status === 'PO Received' || rfq.status === 'Approved'
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                              : rfq.status === 'Completed' || rfq.status === 'Closed'
+                                ? 'border-slate-400 bg-slate-200 text-slate-900 font-extrabold'
+                                : rfq.status === 'Under Review'
+                                  ? 'border-sky-300 bg-sky-50 text-sky-800'
+                                  : rfq.status === 'Lost'
+                                    ? 'border-slate-300 bg-slate-100 text-slate-800'
+                                    : rfq.status === 'Expired'
+                                      ? 'border-red-300 bg-red-100 text-red-900 font-extrabold'
+                                      : 'border-amber-300 bg-amber-50 text-amber-800'
                               } focus:ring-2 focus:ring-red-500`}
                           >
                             <option value="Pending">Pending</option>
                             <option value="Under Review">Under Review</option>
                             <option value="PO Received">PO Received</option>
-                            <option value="Closed">Closed</option>
+                            <option value="Completed">Completed</option>
                             <option value="Lost">Lost</option>
                             {rfq.status === 'Expired' && <option value="Expired">Expired</option>}
                           </select>
@@ -1255,8 +1255,8 @@ export const AdminRFQs: React.FC = () => {
                           </select>
                         ) : (
                           <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-semibold ${rfq.assignedToName
-                              ? 'bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs'
-                              : 'bg-slate-50 text-slate-400 border border-slate-200'
+                            ? 'bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs'
+                            : 'bg-slate-50 text-slate-400 border border-slate-200'
                             }`}>
                             <UserIcon size={11} className="text-slate-500 shrink-0" />
                             <span className="truncate max-w-[80px]">{rfq.assignedToName || 'Unassigned'}</span>
@@ -1306,10 +1306,10 @@ export const AdminRFQs: React.FC = () => {
         const modalValInfo = getQuotationValidityInfo(selectedRfq);
         const quoteSubtotal = selectedRfq.items && selectedRfq.items.length > 0
           ? selectedRfq.items.reduce((sum: number, it: any) => {
-              const q = Number(it.qty) || 1;
-              const r = Number(it.unitPrice) || 0;
-              return sum + (it.totalBeforeTax ? Number(it.totalBeforeTax) : (q * r));
-            }, 0)
+            const q = Number(it.qty) || 1;
+            const r = Number(it.unitPrice) || 0;
+            return sum + (it.totalBeforeTax ? Number(it.totalBeforeTax) : (q * r));
+          }, 0)
           : (Number(selectedRfq.subtotal) || 0);
         const qDiscAmt = Number(selectedRfq.discountAmount) || 0;
         const qDiscRate = Number(selectedRfq.discountRate) || 0;
@@ -1370,40 +1370,40 @@ export const AdminRFQs: React.FC = () => {
                       <span>Back</span>
                     </button>
 
-                    {/* Status: Admin & Sales can manage status with preserved statuses: Pending, Under Review, PO Received, Closed, Lost, Expired */}
-                    <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
-                        ? 'bg-emerald-50 border-emerald-300'
-                        : selectedRfq.status === 'Closed'
-                          ? 'bg-slate-200 border-slate-400'
-                          : selectedRfq.status === 'Under Review'
-                            ? 'bg-sky-50 border-sky-300'
-                            : selectedRfq.status === 'Lost'
-                              ? 'bg-slate-100 border-slate-300'
-                              : selectedRfq.status === 'Expired'
-                                ? 'bg-red-50 border-red-300'
-                                : 'bg-white border-slate-200'
+                    {/* Status: Admin & Sales can manage status with preserved statuses: Pending, Under Review, PO Received, Completed, Lost, Expired */}
+                    <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl border shadow-2xs shrink-0 ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Approved'
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : selectedRfq.status === 'Completed' || selectedRfq.status === 'Closed'
+                        ? 'bg-slate-200 border-slate-400'
+                        : selectedRfq.status === 'Under Review'
+                          ? 'bg-sky-50 border-sky-300'
+                          : selectedRfq.status === 'Lost'
+                            ? 'bg-slate-100 border-slate-300'
+                            : selectedRfq.status === 'Expired'
+                              ? 'bg-red-50 border-red-300'
+                              : 'bg-white border-slate-200'
                       }`}>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">Status:</span>
                       <select
-                        value={selectedRfq.status}
+                        value={selectedRfq.status === 'Closed' ? 'Completed' : selectedRfq.status}
                         onChange={(e) => handleInitiateStatusChange(selectedRfq._id, e.target.value, selectedRfq)}
-                        className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Completed' || selectedRfq.status === 'Approved'
-                            ? 'text-emerald-800 font-extrabold'
-                            : selectedRfq.status === 'Closed'
-                              ? 'text-slate-900 font-extrabold'
-                              : selectedRfq.status === 'Under Review'
-                                ? 'text-sky-800 font-extrabold'
-                                : selectedRfq.status === 'Lost'
-                                  ? 'text-slate-700 font-bold'
-                                  : selectedRfq.status === 'Expired'
-                                    ? 'text-red-700 font-extrabold'
-                                    : 'text-amber-700'
+                        className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${selectedRfq.status === 'PO Received' || selectedRfq.status === 'Approved'
+                          ? 'text-emerald-800 font-extrabold'
+                          : selectedRfq.status === 'Completed' || selectedRfq.status === 'Closed'
+                            ? 'text-slate-900 font-extrabold'
+                            : selectedRfq.status === 'Under Review'
+                              ? 'text-sky-800 font-extrabold'
+                              : selectedRfq.status === 'Lost'
+                                ? 'text-slate-700 font-bold'
+                                : selectedRfq.status === 'Expired'
+                                  ? 'text-red-700 font-extrabold'
+                                  : 'text-amber-700'
                           }`}
                       >
                         <option value="Pending" className="bg-white text-slate-900">Pending</option>
                         <option value="Under Review" className="bg-white text-slate-900">Under Review</option>
                         <option value="PO Received" className="bg-white text-slate-900">PO Received</option>
-                        <option value="Closed" className="bg-white text-slate-900">Closed</option>
+                        <option value="Completed" className="bg-white text-slate-900">Completed</option>
                         <option value="Lost" className="bg-white text-slate-900">Lost</option>
                         {selectedRfq.status === 'Expired' && <option value="Expired" className="bg-white text-slate-900">Expired</option>}
                       </select>
@@ -1440,8 +1440,8 @@ export const AdminRFQs: React.FC = () => {
                     <button
                       onClick={() => setIsEditingPrice(!isEditingPrice)}
                       className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl transition-all font-bold text-xs border cursor-pointer shrink-0 ${isEditingPrice
-                          ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
+                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                        : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 shadow-2xs'
                         }`}
                       title="Edit quotation item rates and special customer discount"
                     >
@@ -1764,19 +1764,19 @@ export const AdminRFQs: React.FC = () => {
                       <span className="text-slate-500 font-medium">Validity:</span>
                       <div className="text-right">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${modalValInfo.isActionTaken
-                            ? (selectedRfq.status === 'Under Review' ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-800 border border-slate-300')
-                            : modalValInfo.isExpired
-                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                              : modalValInfo.remainingDays <= 2
-                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          ? (selectedRfq.status === 'Under Review' ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-800 border border-slate-300')
+                          : modalValInfo.isExpired
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                            : modalValInfo.remainingDays <= 2
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                           }`}>
                           <Clock size={11} />
                           {modalValInfo.countdownLabel}
                         </span>
                       </div>
                       <span className="text-slate-500 font-medium">Status:</span>
-                      <span className="font-bold text-right text-xs">{selectedRfq.status}</span>
+                      <span className="font-bold text-right text-xs">{selectedRfq.status === 'Closed' ? 'Completed' : selectedRfq.status}</span>
                       <span className="text-slate-700 font-bold border-t border-slate-200 pt-1 mt-0.5">Grand Total:</span>
                       <span className="font-mono font-bold text-red-700 text-right text-xs sm:text-sm border-t border-slate-200 pt-1 mt-0.5">
                         ₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -1822,8 +1822,8 @@ export const AdminRFQs: React.FC = () => {
                 {/* Quotation Expiry Alert & Follow-up Comments Banner */}
                 {(modalValInfo.isExpired || selectedRfq.status === 'Expired' || selectedRfq.expiryComments) && (
                   <div className={`mb-6 p-4 rounded-xl border ${modalValInfo.isExpired || selectedRfq.status === 'Expired'
-                      ? 'bg-rose-50/90 border-rose-200 text-rose-950'
-                      : 'bg-amber-50/90 border-amber-200 text-amber-950'
+                    ? 'bg-rose-50/90 border-rose-200 text-rose-950'
+                    : 'bg-amber-50/90 border-amber-200 text-amber-950'
                     }`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-rose-200/60">
                       <div className="flex items-center gap-2">
@@ -1891,7 +1891,7 @@ export const AdminRFQs: React.FC = () => {
                 )}
 
                 {/* Quotation Management Products: Responsive Mobile Cards (< md) & Desktop/Print Table (>= md) */}
-                
+
                 {/* Mobile View: High-Density Responsive Product Cards (< md) */}
                 <div className="block md:hidden print:hidden space-y-3 mb-6">
                   {selectedRfq.items && selectedRfq.items.length > 0 ? (
@@ -1917,10 +1917,10 @@ export const AdminRFQs: React.FC = () => {
                               </span>
                             </div>
                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${modalValInfo.isExpired
-                                ? 'bg-rose-100 text-rose-800'
-                                : modalValInfo.remainingDays <= 2
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-rose-100 text-rose-800'
+                              : modalValInfo.remainingDays <= 2
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
                               }`}>
                               {item.validity || '7 Days'}
                             </span>
@@ -2059,10 +2059,10 @@ export const AdminRFQs: React.FC = () => {
                                 </td>
                                 <td className="py-2.5 px-3 text-center">
                                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${modalValInfo.isExpired
-                                      ? 'bg-rose-100 text-rose-800'
-                                      : modalValInfo.remainingDays <= 2
-                                        ? 'bg-amber-100 text-amber-800'
-                                        : 'bg-emerald-100 text-emerald-800'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : modalValInfo.remainingDays <= 2
+                                      ? 'bg-amber-100 text-amber-800'
+                                      : 'bg-emerald-100 text-emerald-800'
                                     }`}>
                                     {item.validity || '7 Days'}
                                   </span>

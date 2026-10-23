@@ -144,7 +144,7 @@ export interface QuotationDocument {
   grandTotal: number;
   deliveryTerms: string;
   paymentTerms: string;
-  status: 'Pending' | 'Under Review' | 'PO Received' | 'Closed' | 'Lost' | 'Expired' | string;
+  status: 'Pending' | 'Under Review' | 'PO Received' | 'Completed' | 'Closed' | 'Lost' | 'Expired' | string;
   lostReason?: string;
   lostReasonDetails?: string;
   assignedAt?: string;

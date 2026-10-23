@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  Upload, Plus, Download, FileSpreadsheet, Search, ShoppingBag, X, 
-  Image as ImageIcon, Trash2, Link as LinkIcon, RefreshCw, Layers, Tag, 
+import {
+  Upload, Plus, Download, FileSpreadsheet, Search, ShoppingBag, X,
+  Image as ImageIcon, Trash2, Link as LinkIcon, RefreshCw, Layers, Tag,
   Edit2, FileText, CheckCircle2, AlertCircle, ExternalLink, Eye,
   ArrowUpDown, ArrowUp, ArrowDown, Calendar, Check, Building, ChevronRight, Zap
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { API_BASE_URL } from '../../config/api';
-import { 
-  AVAILABLE_CORES, 
-  getValidSqmmOptions, 
-  validateCoreSqmm, 
-  UOM_OPTIONS, 
-  COLOUR_OPTIONS 
+import {
+  AVAILABLE_CORES,
+  getValidSqmmOptions,
+  validateCoreSqmm,
+  UOM_OPTIONS,
+  COLOUR_OPTIONS
 } from '../../config/cableSpecs';
 import { ColourSwatch } from '../../components/ui/ColourSwatch';
 import { formatUom, formatWeight, formatOD } from './AdminRFQs';
@@ -245,14 +245,14 @@ export const AdminProducts: React.FC = () => {
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
     });
   }, [makes]);
-  
+
   const [activeTab, setActiveTab] = useState<'Products' | 'Categories' | 'Makes'>('Products');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [isPriceOnlyUpload, setIsPriceOnlyUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  
+
   // Product Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<any>(null);
@@ -266,7 +266,7 @@ export const AdminProducts: React.FC = () => {
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
-  
+
   // Core Size & SQMM & UOM & Colour Form State
   const [modalCore, setModalCore] = useState<string>('');
   const [modalSqmm, setModalSqmm] = useState<string>('');
@@ -274,7 +274,7 @@ export const AdminProducts: React.FC = () => {
   const [modalColour, setModalColour] = useState<string>('');
   const [customColour, setCustomColour] = useState<string>('');
   const [coreSqmmError, setCoreSqmmError] = useState<string | null>(null);
-  
+
   // Price Validity State (Requirement 5.9)
   const [modalValidFrom, setModalValidFrom] = useState<string>('');
   const [modalExpiryDate, setModalExpiryDate] = useState<string>('');
@@ -283,19 +283,19 @@ export const AdminProducts: React.FC = () => {
   const [modalDatasheet, setModalDatasheet] = useState<string | null>(null);
   const [datasheetInputMode, setDatasheetInputMode] = useState<'upload' | 'url'>('upload');
   const [datasheetUrlInput, setDatasheetUrlInput] = useState<string>('');
-  
+
   const [isSaving, setIsSaving] = useState(false);
 
   // Category / Make Modal State (Hierarchy: Make -> Make Category -> Product Category/Group -> Product)
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [currentCat, setCurrentCat] = useState<CategoryItem | null>(null);
-  const [catFormData, setCatFormData] = useState({ 
-    name: '', 
-    description: '', 
-    make: 'LAPP', 
-    subGroup: '', 
-    imageUrl: '', 
-    datasheetUrl: '' 
+  const [catFormData, setCatFormData] = useState({
+    name: '',
+    description: '',
+    make: 'LAPP',
+    subGroup: '',
+    imageUrl: '',
+    datasheetUrl: ''
   });
 
   const [isMakeModalOpen, setIsMakeModalOpen] = useState(false);
@@ -443,7 +443,7 @@ export const AdminProducts: React.FC = () => {
     if (isPriceOnlyUpload) formData.append('mode', 'price_only');
 
     try {
-      const importUrl = isPriceOnlyUpload 
+      const importUrl = isPriceOnlyUpload
         ? `${API_BASE_URL}/api/products/import?mode=price_only`
         : `${API_BASE_URL}/api/products/import`;
 
@@ -451,10 +451,10 @@ export const AdminProducts: React.FC = () => {
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await res.json();
       setUploadResult(data);
-      
+
       if (res.ok) {
         fetchProducts();
       }
@@ -697,7 +697,7 @@ export const AdminProducts: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/products/${id}`, { 
+      const res = await fetch(`${API_BASE_URL}/api/products/${id}`, {
         method: 'DELETE',
         headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
       });
@@ -716,7 +716,7 @@ export const AdminProducts: React.FC = () => {
   };
 
   const handleSelectOne = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -727,7 +727,7 @@ export const AdminProducts: React.FC = () => {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/products/bulk-delete`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -744,7 +744,7 @@ export const AdminProducts: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate combination on frontend before saving
     if (modalCore && modalSqmm) {
       const val = validateCoreSqmm(modalCore, modalSqmm);
@@ -779,7 +779,7 @@ export const AdminProducts: React.FC = () => {
       const method = currentProduct ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -815,7 +815,7 @@ export const AdminProducts: React.FC = () => {
       const method = currentCat ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -855,7 +855,7 @@ export const AdminProducts: React.FC = () => {
       const method = currentMake ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
@@ -918,7 +918,7 @@ export const AdminProducts: React.FC = () => {
   const effectiveCategory = activeTab === 'Products' ? activeCategory : selectedCategoryTab;
   const currentCategoryKey = getLappCategoryKey(effectiveCategory);
   const currentCategoryConfig = ((activeTab === 'Products' ? (activeBrand === 'All' || activeBrand.toLowerCase() === 'lapp') : (categoryMakeFilter.toLowerCase() === 'lapp')))
-    ? LAPP_CATEGORY_CONFIGS[currentCategoryKey] 
+    ? LAPP_CATEGORY_CONFIGS[currentCategoryKey]
     : null;
 
   const currentSubSeriesCounts = React.useMemo(() => {
@@ -1002,7 +1002,7 @@ export const AdminProducts: React.FC = () => {
   }, [categories]);
 
   const displayedCategories = React.useMemo(() => {
-    return sortedCategories.filter(c => 
+    return sortedCategories.filter(c =>
       (c.make || 'LAPP').toLowerCase() === categoryMakeFilter.toLowerCase() &&
       c.name?.toLowerCase().trim() !== 'solar cables'
     );
@@ -1051,7 +1051,7 @@ export const AdminProducts: React.FC = () => {
     if (p.subCategory && typeof p.subCategory === 'string' && p.subCategory.trim()) {
       return p.subCategory.trim();
     }
-    
+
     const name = String(p.name || '').trim();
     const cat = String(p.category?.name || p.categoryName || categoryFallback || '').trim();
     const catLower = cat.toLowerCase();
@@ -1153,8 +1153,8 @@ export const AdminProducts: React.FC = () => {
       const pBrand = (p.brand?.name || p.brandName || '').toLowerCase().trim();
 
       const matchesBrand = activeBrand === 'All' || pBrand === activeBrandLower;
-      const matchesCategory = 
-        activeCategory === 'All' || 
+      const matchesCategory =
+        activeCategory === 'All' ||
         pCat === activeCatLower ||
         (activeCatLower === 'control cables' && pCat.includes('control')) ||
         (activeCatLower === 'power cables' && pCat.includes('power')) ||
@@ -1242,7 +1242,7 @@ export const AdminProducts: React.FC = () => {
       const pCore = String(p.core || '').toLowerCase().trim();
       const pSqmm = String(p.sqmm || p.coreSize || p.size || '').toLowerCase().trim();
 
-      const matchesSearch = 
+      const matchesSearch =
         !q ||
         pName.includes(q) ||
         pPartNo.includes(q) ||
@@ -1282,7 +1282,7 @@ export const AdminProducts: React.FC = () => {
       let matchesSubSeries = true;
       if (currentCategoryConfig && selectedSubSeries !== 'all') {
         if (selectedSubSeries === 'Newly Added Products') {
-          const matchesAnyStandard = currentCategoryConfig.series.some(s => 
+          const matchesAnyStandard = currentCategoryConfig.series.some(s =>
             s.pattern.test(String(p.name || '')) || s.pattern.test(String(p.subGroup || p.subCategory || ''))
           );
           matchesSubSeries = !matchesAnyStandard;
@@ -1321,20 +1321,20 @@ export const AdminProducts: React.FC = () => {
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      
+
       {/* Top Header & Action Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Product & Catalog Management</h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            {isSalesManager 
-              ? 'Catalog View Mode (Sales Manager View-Only Access)' 
+            {isSalesManager
+              ? 'Catalog View Mode (Sales Manager View-Only Access)'
               : 'Add, edit, bulk import products, technical specifications, and manufacturer datasheets.'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button 
+          <button
             onClick={() => { fetchProducts(); fetchCategories(); fetchBrands(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium text-xs"
           >
@@ -1361,7 +1361,7 @@ export const AdminProducts: React.FC = () => {
                 </button>
               </div>
 
-              <button 
+              <button
                 onClick={openAddModal}
                 className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
               >
@@ -1372,7 +1372,7 @@ export const AdminProducts: React.FC = () => {
           )}
 
           {isAdmin && activeTab === 'Categories' && (
-            <button 
+            <button
               onClick={() => { setCurrentCat(null); setCatFormData({ name: '', description: '', make: 'LAPP', subGroup: '', imageUrl: '', datasheetUrl: '' }); setIsCatModalOpen(true); }}
               className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
             >
@@ -1382,7 +1382,7 @@ export const AdminProducts: React.FC = () => {
           )}
 
           {isAdmin && (activeTab === 'Makes' || (activeTab as any) === 'Brands') && (
-            <button 
+            <button
               onClick={() => { setCurrentMake(null); setMakeFormData({ name: 'LAPP', description: '' }); setIsMakeModalOpen(true); }}
               className="flex items-center px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-lg transition-all shadow-md shadow-red-600/20 text-xs cursor-pointer"
             >
@@ -1397,27 +1397,24 @@ export const AdminProducts: React.FC = () => {
       <div className="flex border-b border-slate-200 overflow-x-auto text-sm font-bold no-scrollbar">
         <button
           onClick={() => setActiveTab('Products')}
-          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
-            activeTab === 'Products' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${activeTab === 'Products' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <ShoppingBag size={16} />
           Products Catalog ({products.length})
         </button>
         <button
           onClick={() => setActiveTab('Categories')}
-          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
-            activeTab === 'Categories' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${activeTab === 'Categories' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <Layers size={16} />
           Category Management ({sortedCategories.length})
         </button>
         <button
           onClick={() => setActiveTab('Makes')}
-          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
-            activeTab === 'Makes' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
+          className={`px-5 py-2.5 border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${activeTab === 'Makes' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
         >
           <Building size={16} />
           Brand Management ({sortedMakes.length})
@@ -1431,9 +1428,9 @@ export const AdminProducts: React.FC = () => {
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 text-slate-400" size={15} />
-              <input 
-                type="text" 
-                placeholder="Search products by name, part no, category, or brand..." 
+              <input
+                type="text"
+                placeholder="Search products by name, part no, category, or brand..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-8 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -1449,7 +1446,7 @@ export const AdminProducts: React.FC = () => {
                 </button>
               )}
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-2">
               {/* Category Filter */}
               <select
@@ -1518,16 +1515,15 @@ export const AdminProducts: React.FC = () => {
                   setSelectedSubSeries('all');
                   setActiveSubCategory('All');
                 }}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                  activeCategory === 'All'
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${activeCategory === 'All'
                     ? 'bg-red-600 text-white border-red-600 shadow-xs'
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                }`}
+                  }`}
               >
                 All Categories ({products.length})
               </button>
-              {(activeBrand === 'All' 
-                ? sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === 'lapp') 
+              {(activeBrand === 'All'
+                ? sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === 'lapp')
                 : sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === activeBrand.toLowerCase())
               ).map((c) => {
                 const isCatActive = activeCategory.toLowerCase() === c.name.toLowerCase();
@@ -1542,11 +1538,10 @@ export const AdminProducts: React.FC = () => {
                       setSelectedSubSeries('all');
                       setActiveSubCategory('All');
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                      isCatActive
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${isCatActive
                         ? 'bg-red-600 text-white border-red-600 shadow-xs'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <span>{c.name}</span>
                     {count > 0 && <span className="ml-1 opacity-80 text-[11px]">({count})</span>}
@@ -1585,11 +1580,10 @@ export const AdminProducts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedSubSeries('all')}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    selectedSubSeries === 'all'
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${selectedSubSeries === 'all'
                       ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                  }`}
+                    }`}
                 >
                   {currentCategoryConfig.allLabel} ({currentSubSeriesCounts.all || currentCategoryConfig.baselineTotal})
                 </button>
@@ -1601,11 +1595,10 @@ export const AdminProducts: React.FC = () => {
                       key={series.id}
                       type="button"
                       onClick={() => setSelectedSubSeries(series.title)}
-                      className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                        isActive
+                      className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${isActive
                           ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                      }`}
+                        }`}
                     >
                       {series.title}
                     </button>
@@ -1615,11 +1608,10 @@ export const AdminProducts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedSubSeries('Newly Added Products')}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    selectedSubSeries === 'Newly Added Products'
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${selectedSubSeries === 'Newly Added Products'
                       ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                  }`}
+                    }`}
                 >
                   Newly Added Products
                 </button>
@@ -1632,7 +1624,7 @@ export const AdminProducts: React.FC = () => {
                     <span className="font-extrabold text-amber-900">{selectedSubSeries}:</span>
                     <span className="text-amber-800">
                       {currentCategoryConfig.series.find(s => s.title === selectedSubSeries)?.desc ||
-                       (selectedSubSeries === 'Newly Added Products' ? `Custom / newly added ${currentCategoryConfig.groupPrefix} products` : 'Standard LAPP Industrial Configuration')}
+                        (selectedSubSeries === 'Newly Added Products' ? `Custom / newly added ${currentCategoryConfig.groupPrefix} products` : 'Standard LAPP Industrial Configuration')}
                     </span>
                   </div>
                   <span className="px-2 py-0.5 bg-amber-200/70 text-amber-900 font-bold rounded text-[11px]">
@@ -1651,8 +1643,8 @@ export const AdminProducts: React.FC = () => {
                   <tr>
                     {isAdmin && (
                       <th className="py-2.5 px-3 w-10 text-center">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={sortedProducts.length > 0 && selectedIds.length === sortedProducts.length}
                           onChange={handleSelectAll}
                           className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
@@ -1660,7 +1652,7 @@ export const AdminProducts: React.FC = () => {
                       </th>
                     )}
                     <th className="py-2.5 px-3 font-semibold text-center w-14">S.No</th>
-                    <th 
+                    <th
                       onClick={() => handleSort('partNo')}
                       className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
                       title="Click to sort by Part Number (Ascending / Descending)"
@@ -1674,7 +1666,7 @@ export const AdminProducts: React.FC = () => {
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort('name')}
                       className="py-2.5 px-3 font-semibold cursor-pointer hover:bg-slate-100 select-none group transition-colors"
                       title="Click to sort by Description / Product Name (Ascending / Descending)"
@@ -1717,8 +1709,8 @@ export const AdminProducts: React.FC = () => {
                       <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
                         {isAdmin && (
                           <td className="py-2.5 px-3 text-center">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={selectedIds.includes(p.id)}
                               onChange={() => handleSelectOne(p.id)}
                               className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
@@ -1733,7 +1725,7 @@ export const AdminProducts: React.FC = () => {
                         {/* 2. Part Number */}
                         <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
                           {p.partNo ? (
-                            <span 
+                            <span
                               onClick={() => setViewProduct(p)}
                               className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 hover:border-red-400 cursor-pointer"
                               title="Click to view details"
@@ -1748,18 +1740,18 @@ export const AdminProducts: React.FC = () => {
                           <div className="flex items-center gap-2.5">
                             <div className="h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                               {p.imageUrl ? (
-                                <img 
-                                  src={p.imageUrl} 
-                                  alt={p.name} 
+                                <img
+                                  src={p.imageUrl}
+                                  alt={p.name}
                                   className="h-full w-full object-contain cursor-pointer"
-                                  onClick={() => setViewingImage(p.imageUrl)} 
+                                  onClick={() => setViewingImage(p.imageUrl)}
                                 />
                               ) : (
                                 <ShoppingBag size={15} className="text-slate-400" />
                               )}
                             </div>
                             <div>
-                              <p 
+                              <p
                                 onClick={() => setViewProduct(p)}
                                 className="font-semibold text-slate-800 hover:text-red-700 line-clamp-1 cursor-pointer transition-colors max-w-xs"
                                 title={p.description || p.name}
@@ -1820,25 +1812,25 @@ export const AdminProducts: React.FC = () => {
                         {/* Actions */}
                         <td className="py-2.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button 
+                            <button
                               onClick={() => setViewProduct(p)}
-                              className="p-1.5 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
+                              className="p-1.5 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                               title="View Full Product Information"
                             >
                               <Eye size={15} />
                             </button>
                             {isAdmin && (
                               <>
-                                <button 
+                                <button
                                   onClick={() => openEditModal(p)}
-                                  className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
+                                  className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                   title="Edit Product"
                                 >
                                   <Edit2 size={15} />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleDelete(p.id)}
-                                  className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" 
+                                  className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                   title="Delete Product"
                                 >
                                   <Trash2 size={15} />
@@ -1877,11 +1869,10 @@ export const AdminProducts: React.FC = () => {
                           const firstCat = sortedCategories.find(c => (c.make || 'LAPP').toLowerCase() === m.toLowerCase());
                           if (firstCat) setSelectedCategoryTab(firstCat.name);
                         }}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                          isActive
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${isActive
                             ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                             : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         {m} ({count})
                       </button>
@@ -1909,11 +1900,10 @@ export const AdminProducts: React.FC = () => {
                         setSelectedCategoryTab(c.name);
                         setSelectedSubSeries('all');
                       }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                        isCatActive
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${isCatActive
                           ? 'bg-red-600 text-white border-red-600 shadow-xs'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                      }`}
+                        }`}
                     >
                       {c.name}
                     </button>
@@ -1959,11 +1949,10 @@ export const AdminProducts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedSubSeries('all')}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    selectedSubSeries === 'all'
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${selectedSubSeries === 'all'
                       ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                  }`}
+                    }`}
                 >
                   {currentCategoryConfig.allLabel} ({currentSubSeriesCounts.all || currentCategoryConfig.baselineTotal})
                 </button>
@@ -1975,11 +1964,10 @@ export const AdminProducts: React.FC = () => {
                       key={series.id}
                       type="button"
                       onClick={() => setSelectedSubSeries(series.title)}
-                      className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                        isActive
+                      className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${isActive
                           ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                      }`}
+                        }`}
                     >
                       {series.title}
                     </button>
@@ -1989,11 +1977,10 @@ export const AdminProducts: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedSubSeries('Newly Added Products')}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    selectedSubSeries === 'Newly Added Products'
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${selectedSubSeries === 'Newly Added Products'
                       ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                  }`}
+                    }`}
                 >
                   Newly Added Products
                 </button>
@@ -2006,7 +1993,7 @@ export const AdminProducts: React.FC = () => {
                     <span className="font-extrabold text-amber-900">{selectedSubSeries}:</span>
                     <span className="text-amber-800">
                       {currentCategoryConfig.series.find(s => s.title === selectedSubSeries)?.desc ||
-                       (selectedSubSeries === 'Newly Added Products' ? `Custom / newly added ${currentCategoryConfig.groupPrefix} products` : 'Standard LAPP Industrial Configuration')}
+                        (selectedSubSeries === 'Newly Added Products' ? `Custom / newly added ${currentCategoryConfig.groupPrefix} products` : 'Standard LAPP Industrial Configuration')}
                     </span>
                   </div>
                   <button
@@ -2049,27 +2036,26 @@ export const AdminProducts: React.FC = () => {
                   ) : (
                     displayedCategories.map((c) => {
                       const makeName = c.make || 'LAPP';
-                      const makeBadgeTheme = 
+                      const makeBadgeTheme =
                         makeName === 'LAPP' ? 'bg-red-50 text-red-700 border-red-200' :
-                        makeName === 'Eaton' ? 'bg-sky-50 text-sky-700 border-sky-200' :
-                        (makeName === 'Mennekes' || makeName === 'Minak') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        'bg-purple-50 text-purple-700 border-purple-200';
+                          makeName === 'Eaton' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                            (makeName === 'Mennekes' || makeName === 'Minak') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              'bg-purple-50 text-purple-700 border-purple-200';
                       const isSelectedRow = selectedCategoryTab.toLowerCase() === c.name.toLowerCase();
                       const rowCatKey = getLappCategoryKey(c.name);
                       const rowConfig = makeName.toLowerCase() === 'lapp' ? LAPP_CATEGORY_CONFIGS[rowCatKey] : null;
 
                       return (
-                        <tr 
-                          key={c._id} 
+                        <tr
+                          key={c._id}
                           onClick={() => {
                             setSelectedCategoryTab(c.name);
                             setSelectedSubSeries('all');
                           }}
-                          className={`transition-colors cursor-pointer ${
-                            isSelectedRow
-                              ? 'bg-amber-50/60 border-l-4 border-l-amber-500' 
+                          className={`transition-colors cursor-pointer ${isSelectedRow
+                              ? 'bg-amber-50/60 border-l-4 border-l-amber-500'
                               : 'hover:bg-slate-50'
-                          }`}
+                            }`}
                         >
                           <td className="py-3 px-6">
                             <span className={`px-2.5 py-0.5 rounded font-extrabold text-xs border ${makeBadgeTheme}`}>
@@ -2235,118 +2221,118 @@ export const AdminProducts: React.FC = () => {
                     {isAdmin && <th className="py-3 px-6 font-semibold text-right">Action</th>}
                   </tr>
                 </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {sortedMakes.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">No authorized brands found.</td>
-                  </tr>
-                ) : (
-                  sortedMakes.map((m) => {
-                    const catCount = sortedCategories.filter(c => (c.make || '').toLowerCase() === m.name.toLowerCase()).length || 6;
-                    const prodCount = makeCountMap[m.name.toLowerCase()] ?? m.productCount ?? 0;
-                    
-                    const makeBadgeTheme = 
-                      m.name === 'LAPP' ? 'bg-red-50 text-red-700 border-red-200' :
-                      m.name === 'Eaton' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      m.name === 'Partex' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      'bg-emerald-50 text-emerald-700 border-emerald-200';
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {sortedMakes.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-500">No authorized brands found.</td>
+                    </tr>
+                  ) : (
+                    sortedMakes.map((m) => {
+                      const catCount = sortedCategories.filter(c => (c.make || '').toLowerCase() === m.name.toLowerCase()).length || 6;
+                      const prodCount = makeCountMap[m.name.toLowerCase()] ?? m.productCount ?? 0;
 
-                    return (
-                      <tr key={m._id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-6">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2.5 py-1 rounded-md font-extrabold text-xs tracking-wide border shadow-2xs ${makeBadgeTheme}`}>
-                              {m.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-6 text-slate-600 font-medium">
-                          {m.description || 'Authorized Client Manufacturer'}
-                        </td>
-                        <td className="py-3 px-6 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCategoryMakeFilter(m.name);
-                              setActiveTab('Categories');
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
-                            title={`View categories assigned to ${m.name}`}
-                          >
-                            <Layers size={13} className="text-red-600" />
-                            {catCount} Categories
-                          </button>
-                        </td>
-                        <td className="py-3 px-6 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveBrand(m.name);
-                              setActiveCategory('All');
-                              setActiveSubCategory('All');
-                              setActiveTab('Products');
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors cursor-pointer"
-                            title={`View ${prodCount} products mapped to ${m.name}`}
-                          >
-                            <ShoppingBag size={13} className="text-red-600" />
-                            {prodCount} Products
-                          </button>
-                        </td>
-                        {isAdmin && (
-                          <td className="py-3 px-6 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => { 
-                                  setCurrentMake(m); 
-                                  setMakeFormData({ name: m.name, description: m.description || '' }); 
-                                  setIsMakeModalOpen(true); 
-                                }}
-                                className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
-                                title="Edit Make details"
-                              >
-                                <Edit2 size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteMake(m._id, m.name)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
-                                title={`Delete ${m.name} (only if 0 products mapped)`}
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                      const makeBadgeTheme =
+                        m.name === 'LAPP' ? 'bg-red-50 text-red-700 border-red-200' :
+                          m.name === 'Eaton' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            m.name === 'Partex' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+                      return (
+                        <tr key={m._id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-6">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2.5 py-1 rounded-md font-extrabold text-xs tracking-wide border shadow-2xs ${makeBadgeTheme}`}>
+                                {m.name}
+                              </span>
                             </div>
                           </td>
-                        )}
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                          <td className="py-3 px-6 text-slate-600 font-medium">
+                            {m.description || 'Authorized Client Manufacturer'}
+                          </td>
+                          <td className="py-3 px-6 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCategoryMakeFilter(m.name);
+                                setActiveTab('Categories');
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
+                              title={`View categories assigned to ${m.name}`}
+                            >
+                              <Layers size={13} className="text-red-600" />
+                              {catCount} Categories
+                            </button>
+                          </td>
+                          <td className="py-3 px-6 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveBrand(m.name);
+                                setActiveCategory('All');
+                                setActiveSubCategory('All');
+                                setActiveTab('Products');
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors cursor-pointer"
+                              title={`View ${prodCount} products mapped to ${m.name}`}
+                            >
+                              <ShoppingBag size={13} className="text-red-600" />
+                              {prodCount} Products
+                            </button>
+                          </td>
+                          {isAdmin && (
+                            <td className="py-3 px-6 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => {
+                                    setCurrentMake(m);
+                                    setMakeFormData({ name: m.name, description: m.description || '' });
+                                    setIsMakeModalOpen(true);
+                                  }}
+                                  className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                  title="Edit Make details"
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteMake(m._id, m.name)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                  title={`Delete ${m.name} (only if 0 products mapped)`}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* PRODUCT ADD / EDIT MODAL - PORTAL-MOUNTED, FULLY RESPONSIVE */}
       {isModalOpen && createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 sm:p-4 md:p-6 overflow-hidden"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsModalOpen(false);
           }}
         >
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[94vh] sm:max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
-            
+
             {/* Header - Permanently Pinned at Top with Close (X) */}
             <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 border-b border-slate-200 bg-slate-50 shrink-0 z-10">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900">{currentProduct ? 'Edit Product' : 'Add New Product'}</h3>
                 <p className="text-xs text-slate-500">Configure catalog details, image, and technical PDF datasheet.</p>
               </div>
-              <button 
+              <button
                 type="button"
-                onClick={() => setIsModalOpen(false)} 
+                onClick={() => setIsModalOpen(false)}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-200/80 hover:bg-red-50 hover:text-red-600 text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 title="Close"
               >
@@ -2357,7 +2343,7 @@ export const AdminProducts: React.FC = () => {
             {/* Form Body */}
             <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden">
               <div className="overflow-y-auto p-4 sm:p-6 space-y-4 flex-1 custom-scrollbar">
-                
+
                 {/* 1. Image Upload Section */}
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between mb-2">
@@ -2403,9 +2389,9 @@ export const AdminProducts: React.FC = () => {
                       <input type="file" accept="image/*" onChange={handleModalImageFileChange} className="hidden" />
                     </label>
                   ) : (
-                    <input 
-                      type="url" 
-                      placeholder="https://example.com/cable.jpg" 
+                    <input
+                      type="url"
+                      placeholder="https://example.com/cable.jpg"
                       value={imageUrlInput}
                       onChange={(e) => { setImageUrlInput(e.target.value); setModalImage(e.target.value); }}
                       className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
@@ -2462,9 +2448,9 @@ export const AdminProducts: React.FC = () => {
                       <input type="file" accept="application/pdf" onChange={handleModalDatasheetFileChange} className="hidden" />
                     </label>
                   ) : (
-                    <input 
-                      type="url" 
-                      placeholder="https://example.com/datasheet.pdf" 
+                    <input
+                      type="url"
+                      placeholder="https://example.com/datasheet.pdf"
                       value={datasheetUrlInput}
                       onChange={(e) => { setDatasheetUrlInput(e.target.value); setModalDatasheet(e.target.value); }}
                       className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
@@ -2479,8 +2465,8 @@ export const AdminProducts: React.FC = () => {
                     <label className="block font-semibold text-slate-700 mb-1">
                       1. Make (Manufacturer) *
                     </label>
-                    <select 
-                      name="brandName" 
+                    <select
+                      name="brandName"
                       value={modalMake}
                       onChange={(e) => {
                         const newMake = e.target.value;
@@ -2492,7 +2478,7 @@ export const AdminProducts: React.FC = () => {
                         }
                       }}
                       required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
                     >
                       {ALLOWED_MAKES.map((m) => (
                         <option key={m} value={m}>{m}</option>
@@ -2505,8 +2491,8 @@ export const AdminProducts: React.FC = () => {
                     <label className="block font-semibold text-slate-700 mb-1">
                       2. Product Category / Group *
                     </label>
-                    <select 
-                      name="categoryName" 
+                    <select
+                      name="categoryName"
                       value={modalCategory}
                       onChange={(e) => {
                         const newCat = e.target.value;
@@ -2516,7 +2502,7 @@ export const AdminProducts: React.FC = () => {
                           setModalSubGroup(found.subGroup);
                         }
                       }}
-                      required 
+                      required
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
                     >
                       <option value="">Select Category...</option>
@@ -2531,50 +2517,50 @@ export const AdminProducts: React.FC = () => {
                     <label className="block font-semibold text-slate-700 mb-1">
                       3. Sub-category / Series
                     </label>
-                    <input 
+                    <input
                       type="text"
                       name="subGroup"
                       value={modalSubGroup}
                       onChange={(e) => setModalSubGroup(e.target.value)}
                       placeholder="e.g. ÖLFLEX® Power & Control or Series"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-slate-50/50" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-slate-50/50"
                     />
                   </div>
 
                   {/* Hierarchy Step 4: Final Product Name */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">4. Product Name *</label>
-                    <input 
-                      type="text" 
-                      name="name" 
-                      defaultValue={currentProduct?.name || ''} 
-                      required 
+                    <input
+                      type="text"
+                      name="name"
+                      defaultValue={currentProduct?.name || ''}
+                      required
                       placeholder="e.g. ÖLFLEX® CLASSIC 110 3G1.5"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Part Number</label>
-                    <input 
-                      type="text" 
-                      name="partNo" 
-                      defaultValue={currentProduct?.partNo || ''} 
+                    <input
+                      type="text"
+                      name="partNo"
+                      defaultValue={currentProduct?.partNo || ''}
                       placeholder="e.g. 1119003"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">List Price (₹) *</label>
-                    <input 
-                      type="number" 
-                      step="0.01" 
-                      name="price" 
-                      defaultValue={currentProduct?.price || ''} 
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="price"
+                      defaultValue={currentProduct?.price || ''}
                       placeholder="e.g. 150.00"
                       required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
 
@@ -2611,7 +2597,7 @@ export const AdminProducts: React.FC = () => {
                     {(() => {
                       const coreOpts = modalCore ? getValidSqmmOptions(modalCore) : [];
                       const opts = coreOpts.length > 0 ? coreOpts : [
-                        "0.14", "0.25", "0.34", "0.5", "0.75", "1", "1.5", "2", "2.5", "4", "6", 
+                        "0.14", "0.25", "0.34", "0.5", "0.75", "1", "1.5", "2", "2.5", "4", "6",
                         "10", "16", "25", "35", "50", "70", "95", "120", "150", "185", "240"
                       ];
                       const isPredefined = opts.includes(modalSqmm) || !modalSqmm;
@@ -2738,46 +2724,46 @@ export const AdminProducts: React.FC = () => {
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">GST (%)</label>
-                    <input 
-                      type="number" 
-                      step="1" 
-                      name="gst" 
-                      defaultValue={currentProduct?.gst || 18} 
+                    <input
+                      type="number"
+                      step="1"
+                      name="gst"
+                      defaultValue={currentProduct?.gst || 18}
                       placeholder="18"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Outer Diameter (OD)</label>
-                    <input 
-                      type="text" 
-                      name="outerDiameter" 
-                      defaultValue={currentProduct?.outerDiameter || ''} 
+                    <input
+                      type="text"
+                      name="outerDiameter"
+                      defaultValue={currentProduct?.outerDiameter || ''}
                       placeholder="e.g. 6.3 mm"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Weight / Specs</label>
-                    <input 
-                      type="text" 
-                      name="weight" 
-                      defaultValue={currentProduct?.weight || ''} 
+                    <input
+                      type="text"
+                      name="weight"
+                      defaultValue={currentProduct?.weight || ''}
                       placeholder="e.g. 75 kg/km"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
 
                   <div className="sm:col-span-2">
                     <label className="block font-semibold text-slate-700 mb-1">Description / Application Notes</label>
-                    <textarea 
-                      name="description" 
+                    <textarea
+                      name="description"
                       rows={2}
-                      defaultValue={currentProduct?.description || currentProduct?.application || ''} 
+                      defaultValue={currentProduct?.description || currentProduct?.application || ''}
                       placeholder="Technical application, specifications, standards..."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
                 </div>
@@ -2785,15 +2771,15 @@ export const AdminProducts: React.FC = () => {
 
               {/* Footer - Permanently Pinned at Bottom */}
               <div className="flex items-center justify-end gap-2.5 px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 shrink-0 z-10">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-200/60 font-semibold rounded-xl text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSaving}
                   className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 active:scale-98 text-white font-bold rounded-xl text-xs shadow-md shadow-red-600/20 transition-all cursor-pointer disabled:opacity-60"
                 >
@@ -2808,7 +2794,7 @@ export const AdminProducts: React.FC = () => {
 
       {/* 4. Complete Product Information View Modal (Requirement 9) - Portal-Mounted */}
       {viewProduct && createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 sm:p-4 md:p-6 overflow-hidden"
           onClick={(e) => {
             if (e.target === e.currentTarget) setViewProduct(null);
@@ -2826,9 +2812,9 @@ export const AdminProducts: React.FC = () => {
                   <p className="text-xs text-slate-500">Complete catalog information, images, and datasheet</p>
                 </div>
               </div>
-              <button 
+              <button
                 type="button"
-                onClick={() => setViewProduct(null)} 
+                onClick={() => setViewProduct(null)}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-200/80 hover:bg-red-50 hover:text-red-600 text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 title="Close"
               >
@@ -3024,16 +3010,16 @@ export const AdminProducts: React.FC = () => {
 
             {/* Modal Actions - Permanently Pinned at Bottom */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 shrink-0 z-10">
-              <button 
-                type="button" 
-                onClick={() => setViewProduct(null)} 
+              <button
+                type="button"
+                onClick={() => setViewProduct(null)}
                 className="px-4 py-2 text-slate-600 hover:bg-slate-200/60 font-semibold rounded-xl text-xs cursor-pointer"
               >
                 Close
               </button>
               {isAdmin && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => { const prod = viewProduct; setViewProduct(null); openEditModal(prod); }}
                   className="px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-red-600/20 cursor-pointer"
                 >
@@ -3048,7 +3034,7 @@ export const AdminProducts: React.FC = () => {
 
       {/* CATEGORY MODAL - Portal-Mounted */}
       {isCatModalOpen && createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsCatModalOpen(false);
@@ -3077,31 +3063,31 @@ export const AdminProducts: React.FC = () => {
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Product Category / Group Name *</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={catFormData.name} 
-                  onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })} 
+                <input
+                  type="text"
+                  required
+                  value={catFormData.name}
+                  onChange={(e) => setCatFormData({ ...catFormData, name: e.target.value })}
                   placeholder="e.g. ÖLFLEX® Control Cables, Miniature Contactors"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Subgroup (Optional)</label>
-                <input 
-                  type="text" 
-                  value={catFormData.subGroup} 
-                  onChange={(e) => setCatFormData({ ...catFormData, subGroup: e.target.value })} 
+                <input
+                  type="text"
+                  value={catFormData.subGroup}
+                  onChange={(e) => setCatFormData({ ...catFormData, subGroup: e.target.value })}
                   placeholder="e.g. Screened, Flexible, PVC / PUR"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Description</label>
-                <input 
-                  type="text" 
-                  value={catFormData.description} 
-                  onChange={(e) => setCatFormData({ ...catFormData, description: e.target.value })} 
+                <input
+                  type="text"
+                  value={catFormData.description}
+                  onChange={(e) => setCatFormData({ ...catFormData, description: e.target.value })}
                   placeholder="Category description / application overview"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
@@ -3118,7 +3104,7 @@ export const AdminProducts: React.FC = () => {
 
       {/* MAKE MODAL - Portal-Mounted */}
       {isMakeModalOpen && createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsMakeModalOpen(false);
@@ -3132,8 +3118,8 @@ export const AdminProducts: React.FC = () => {
                   {currentMake ? 'Edit Brand / Manufacturer' : 'Add Brand / Manufacturer'}
                 </h3>
               </div>
-              <button 
-                onClick={() => setIsMakeModalOpen(false)} 
+              <button
+                onClick={() => setIsMakeModalOpen(false)}
                 className="w-8 h-8 rounded-lg bg-slate-200/80 hover:bg-slate-300 flex items-center justify-center text-slate-600 cursor-pointer"
               >
                 <X size={18} />
@@ -3142,10 +3128,10 @@ export const AdminProducts: React.FC = () => {
             <form onSubmit={handleSaveMake} className="p-6 space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Brand / Manufacturer *</label>
-                <select 
-                  required 
-                  value={makeFormData.name} 
-                  onChange={(e) => setMakeFormData({ ...makeFormData, name: e.target.value })} 
+                <select
+                  required
+                  value={makeFormData.name}
+                  onChange={(e) => setMakeFormData({ ...makeFormData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white font-medium text-slate-800"
                 >
                   {ALLOWED_MAKES.map((m) => (
@@ -3158,24 +3144,24 @@ export const AdminProducts: React.FC = () => {
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Description & Scope</label>
-                <textarea 
+                <textarea
                   rows={3}
-                  value={makeFormData.description} 
-                  onChange={(e) => setMakeFormData({ ...makeFormData, description: e.target.value })} 
+                  value={makeFormData.description}
+                  onChange={(e) => setMakeFormData({ ...makeFormData, description: e.target.value })}
                   placeholder="e.g. Authorized Global Manufacturer of Industrial Automation & Cable Systems"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button 
-                  type="button" 
-                  onClick={() => setIsMakeModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsMakeModalOpen(false)}
                   className="px-4 py-2 text-slate-600 font-semibold rounded-lg cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg shadow-sm hover:opacity-95 cursor-pointer"
                 >
                   Save Brand
@@ -3191,8 +3177,8 @@ export const AdminProducts: React.FC = () => {
       {viewingImage && createPortal(
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4" onClick={() => setViewingImage(null)}>
           <div className="relative max-w-2xl max-h-[90vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={() => setViewingImage(null)} 
+            <button
+              onClick={() => setViewingImage(null)}
               className="absolute -top-12 right-0 text-white hover:text-red-400 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
               title="Close Image"
             >

@@ -248,10 +248,10 @@ export const AccountModal: React.FC = () => {
                         { label: 'Assigned', key: 'assigned' },
                         { label: 'Under Review', key: 'under review' },
                         { label: 'Process by Sales', key: 'process by sales' },
-                        { label: 'Closed', key: 'closed' },
+                        { label: 'Completed', key: 'completed' },
                       ].map((step, idx) => {
                         const cur = (selectedRfq.status || 'New').toLowerCase().trim();
-                        const phaseKeys = ['new', 'assigned', 'under review', 'process by sales', 'closed'];
+                        const phaseKeys = ['new', 'assigned', 'under review', 'process by sales', 'completed'];
                         let curIdx = phaseKeys.indexOf(cur);
                         if (curIdx === -1) {
                           if (cur.includes('submit') || cur.includes('open') || cur.includes('gen')) curIdx = 0;
@@ -361,9 +361,9 @@ export const AccountModal: React.FC = () => {
                               rfq.status === 'Assigned' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
                               rfq.status === 'Under Review' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
                               rfq.status === 'Process by Sales' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
-                              rfq.status === 'Closed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 
+                              (rfq.status === 'Completed' || rfq.status === 'Closed') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 
                               'bg-slate-100 text-slate-700'}`}>
-                            {rfq.status || 'New'}
+                            {rfq.status === 'Closed' ? 'Completed' : (rfq.status || 'New')}
                           </span>
                           {rfq.grandTotal > 0 && <p className="font-bold text-slate-900 text-xs mt-0.5 font-mono">₹{rfq.grandTotal.toLocaleString('en-IN')}</p>}
                         </div>

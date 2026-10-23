@@ -201,8 +201,8 @@ export const AdminDashboard: React.FC = () => {
                       }`}>
                         {(rfq.status === 'New' || rfq.status === 'Open' || rfq.status === 'Pending') && <Clock size={12} className="mr-1.5" strokeWidth={2.5} />}
                         {(rfq.status === 'Assigned' || rfq.status === 'Under Review') && <Users size={12} className="mr-1.5" strokeWidth={2.5} />}
-                        {(rfq.status === 'Closed' || rfq.status === 'Quoted') && <CheckCircle size={12} className="mr-1.5" strokeWidth={2.5} />}
-                        {rfq.status}
+                        {(rfq.status === 'Completed' || rfq.status === 'Closed' || rfq.status === 'Quoted') && <CheckCircle size={12} className="mr-1.5" strokeWidth={2.5} />}
+                        {rfq.status === 'Closed' ? 'Completed' : rfq.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">

@@ -477,6 +477,9 @@ app.get('/api/admin/dashboard', async (req, res) => {
         obj.assignedToName = obj.assignedTo.name || obj.assignedToName;
         obj.assignedTo = obj.assignedTo._id?.toString() || obj.assignedTo;
       }
+      if (obj.status === 'Closed') {
+        obj.status = 'Completed';
+      }
       return obj;
     });
 
@@ -1334,13 +1337,13 @@ app.get('/api/rfqs', async (req, res) => {
         obj.assignedToName = obj.assignedTo.name || obj.assignedToName;
         obj.assignedTo = obj.assignedTo._id?.toString() || obj.assignedTo;
       }
-      // Preserve the 4 primary statuses: Pending, Under Review, PO Received, Closed (plus Lost, Expired)
+      // Preserve the primary statuses: Pending, Under Review, PO Received, Completed (plus Lost, Expired)
       if (obj.status === 'New' || obj.status === 'Assigned' || obj.status === 'Open' || obj.status === 'Processing' || obj.status === 'Process by Sales') {
         obj.status = 'Pending';
-      } else if (obj.status === 'Approved' || obj.status === 'Completed') {
+      } else if (obj.status === 'Approved') {
         obj.status = 'PO Received';
-      } else if (obj.status === 'Closed') {
-        obj.status = 'Closed';
+      } else if (obj.status === 'Closed' || obj.status === 'Completed') {
+        obj.status = 'Completed';
       }
       return obj;
     });
@@ -1392,7 +1395,7 @@ app.get('/api/rfqs', async (req, res) => {
   }
 });
 
-// Update RFQ Status API (Agreed Statuses: Pending, Under Review, PO Received, Closed, Lost, Expired)
+// Update RFQ Status API (Agreed Statuses: Pending, Under Review, PO Received, Completed, Lost, Expired)
 app.patch('/api/rfqs/:id/status', async (req, res) => {
   try {
     const token = req.headers['authorization']?.split(' ')[1];
@@ -1422,7 +1425,7 @@ app.patch('/api/rfqs/:id/status', async (req, res) => {
 
     const { status, notes, lostReason, lostReasonDetails, expiryComments } = req.body;
     const updateFields: any = {};
-    if (status !== undefined) updateFields.status = status;
+    if (status !== undefined) updateFields.status = (status === 'Closed' ? 'Completed' : status);
     if (notes !== undefined) updateFields.notes = notes;
     if (lostReason !== undefined) updateFields.lostReason = lostReason;
     if (lostReasonDetails !== undefined) updateFields.lostReasonDetails = lostReasonDetails;
