@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2, Edit2, Eye } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
@@ -130,6 +131,28 @@ export const AdminUsers: React.FC = () => {
       }
     } catch (e) {
       console.error('Failed to delete user', e);
+    }
+  };
+
+  const handleDeleteCustomer = async (userId: string, name?: string) => {
+    if (!isAdmin) return;
+    if (!window.confirm(`Are you sure you want to delete customer "${name || 'this customer'}"? This will permanently remove their profile.`)) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u._id !== userId));
+        if (selectedCustomer && selectedCustomer._id === userId) {
+          setSelectedCustomer(null);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to delete customer', e);
     }
   };
 
@@ -315,7 +338,7 @@ export const AdminUsers: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white rounded-lg transition-all font-bold text-sm shadow-md shadow-red-600/20 cursor-pointer"
             >
               <Plus size={16} />
-              Create Customer
+              Add Customer
             </button>
           )}
           {isAdmin && activeTab === 'Internal' && (
@@ -335,19 +358,19 @@ export const AdminUsers: React.FC = () => {
         <div className="overflow-x-auto">
           {activeTab === 'Customers' ? (
             /* Corporate Customers Table */
-            <table className="w-full text-left text-sm min-w-[850px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <table className="w-full text-left text-sm table-fixed min-w-[900px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
                 <tr>
-                  <th className="py-3 px-6 font-semibold">Customer / Company</th>
-                  <th className="py-3 px-6 font-semibold">Registered Date</th>
-                  <th className="py-3 px-6 font-semibold">Contact Details</th>
-                  <th className="py-3 px-6 font-semibold">GSTIN</th>
-                  <th className="py-3 px-6 font-semibold">Location</th>
-                  <th className="py-3 px-6 font-semibold">Status</th>
-                  <th className="py-3 px-6 font-semibold text-center">Action</th>
+                  <th className="py-2.5 px-3 font-semibold w-48 sm:w-56">Customer / Company</th>
+                  <th className="py-2.5 px-2.5 font-semibold w-28 shrink-0">Registered Date</th>
+                  <th className="py-2.5 px-3 font-semibold w-40 shrink-0">Contact Details</th>
+                  <th className="py-2.5 px-2.5 font-semibold w-36 shrink-0">GSTIN</th>
+                  <th className="py-2.5 px-2.5 font-semibold w-32 shrink-0">Location</th>
+                  <th className="py-2.5 px-2 font-semibold w-20 text-center shrink-0">Status</th>
+                  <th className="py-2.5 px-2 font-semibold text-center w-24 shrink-0">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-500">
@@ -365,20 +388,24 @@ export const AdminUsers: React.FC = () => {
                   </tr>
                 ) : (
                   customers.map((user) => (
-                    <tr key={user._id} className="hover:bg-red-50/20 transition-colors">
-                      <td className="py-4 px-6">
+                    <tr key={user._id} className="hover:bg-red-50/20 transition-colors group">
+                      <td className="py-2.5 px-3 align-middle overflow-hidden">
                         <div className="font-bold text-slate-900 flex items-center gap-2">
-                          <Building size={16} className="text-red-600" />
-                          {user.company || user.name}
+                          <div className="w-7 h-7 rounded-lg bg-red-50 text-red-700 flex items-center justify-center shrink-0 border border-red-200">
+                            <Building size={14} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate font-bold text-slate-900 text-xs sm:text-sm" title={user.company || user.name}>{user.company || user.name}</div>
+                            {user.company && (
+                              <div className="text-[11px] text-slate-500 font-medium truncate" title={`Attn: ${user.name}`}>Attn: {user.name}</div>
+                            )}
+                          </div>
                         </div>
-                        {user.company && (
-                          <div className="text-xs text-slate-500 mt-0.5 font-medium">Attn: {user.name}</div>
-                        )}
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-600 font-medium">
+                      <td className="py-2.5 px-2.5 text-xs text-slate-600 font-medium align-middle whitespace-nowrap">
                         {user.createdAt ? (
                           <div>
-                            <div className="font-bold text-slate-800">
+                            <div className="font-bold text-slate-800 text-xs">
                               {new Date(user.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </div>
                             <div className="text-[10px] text-slate-400">
@@ -386,68 +413,80 @@ export const AdminUsers: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Registered</span>
+                          <span className="text-slate-400 italic text-xs">Registered</span>
                         )}
                       </td>
-                      <td className="py-4 px-6 text-slate-600">
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <Mail size={13} className="text-slate-400" />
-                          <span>{user.email || 'N/A'}</span>
+                      <td className="py-2.5 px-3 text-slate-600 align-middle overflow-hidden">
+                        <div className="flex items-center gap-1.5 text-xs truncate" title={user.email}>
+                          <Mail size={12} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{user.email || 'N/A'}</span>
                         </div>
                         {user.phone && (
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                            <Phone size={13} className="text-slate-400" />
-                            <span>{user.phone}</span>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate" title={user.phone}>
+                            <Phone size={12} className="text-slate-400 shrink-0" />
+                            <span className="truncate">{user.phone}</span>
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-2.5 px-2.5 align-middle whitespace-nowrap">
                         {user.gstin && user.gstin.trim() && user.gstin.toUpperCase() !== 'UNREGISTERED' ? (
-                          <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-800 rounded border border-slate-200">
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-800 rounded border border-slate-200">
                             {user.gstin}
                           </span>
                         ) : (
-                          <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">
+                          <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-semibold inline-block">
                             Unregistered (Non-GST)
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-600">
-                        {user.city ? `${user.city}${user.state ? `, ${user.state}` : ''}` : 'N/A'}
+                      <td className="py-2.5 px-2.5 text-xs text-slate-700 font-medium align-middle overflow-hidden">
+                        <div className="truncate text-xs" title={user.city ? `${user.city}${user.state ? `, ${user.state}` : ''}` : 'N/A'}>
+                          {user.city ? `${user.city}${user.state ? `, ${user.state}` : ''}` : 'N/A'}
+                        </div>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-2.5 px-2 text-center align-middle whitespace-nowrap">
                         <button
                           onClick={() => handleToggleStatus(user._id, user.status)}
                           disabled={!isAdmin}
                           title={isAdmin ? "Click to toggle Active / Inactive" : ""}
-                          className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${
+                          className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-md transition-colors ${
                             user.status === 'Inactive' 
-                              ? 'text-slate-600 bg-slate-100 border border-slate-200'
+                              ? 'text-slate-600 bg-slate-100 border border-slate-200' 
                               : 'text-emerald-700 bg-emerald-50 border border-emerald-200'
                           } ${isAdmin ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
                         >
-                          <UserCheck size={13} className="mr-1" />
+                          <UserCheck size={11} className="mr-1" />
                           {user.status || 'Active'}
                         </button>
                       </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="py-2.5 px-2 text-center align-middle whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => setSelectedCustomer(user)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs rounded-lg transition-colors border border-red-200 shadow-2xs cursor-pointer"
+                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             title="View Customer Profile"
+                            aria-label="View Customer Profile"
                           >
-                            <Eye size={13} />
-                            View Profile
+                            <Eye size={15} />
                           </button>
                           {isAdmin && (
                             <button
                               onClick={() => openEditCustomerModal(user)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold text-xs rounded-lg transition-colors border border-slate-200 shadow-2xs cursor-pointer"
+                              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                               title="Edit Customer Details"
+                              aria-label="Edit Customer Details"
                             >
-                              <Edit2 size={13} />
-                              Edit Profile
+                              <Edit2 size={15} />
+                            </button>
+                          )}
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDeleteCustomer(user._id, user.company || user.name)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Customer Profile"
+                              aria-label="Delete Customer Profile"
+                            >
+                              <Trash2 size={15} />
                             </button>
                           )}
                         </div>
@@ -459,14 +498,14 @@ export const AdminUsers: React.FC = () => {
             </table>
           ) : (
             /* Internal Team Table */
-            <table className="w-full text-left text-sm min-w-[650px]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider font-semibold">
                 <tr>
-                  <th className="py-3 px-6 font-semibold">Staff Member</th>
-                  <th className="py-3 px-6 font-semibold">Email Contact</th>
-                  <th className="py-3 px-6 font-semibold">Role Designation</th>
-                  <th className="py-3 px-6 font-semibold">Status</th>
-                  <th className="py-3 px-6 font-semibold text-center">Action</th>
+                  <th className="py-3 px-4 font-semibold">Staff Member</th>
+                  <th className="py-3 px-4 font-semibold w-56 shrink-0">Email Contact</th>
+                  <th className="py-3 px-4 font-semibold w-48 shrink-0">Role Designation</th>
+                  <th className="py-3 px-4 font-semibold text-center w-28 shrink-0">Status</th>
+                  <th className="py-3 px-4 font-semibold text-center w-24 shrink-0">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -486,8 +525,8 @@ export const AdminUsers: React.FC = () => {
                   </tr>
                 ) : (
                   internalUsers.map((user) => (
-                    <tr key={user._id} className="hover:bg-red-50/20 transition-colors">
-                      <td className="py-4 px-6 font-medium text-slate-900 flex items-center gap-3">
+                    <tr key={user._id} className="hover:bg-red-50/20 transition-colors group">
+                      <td className="py-3.5 px-4 font-medium text-slate-900 flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center border text-xs shadow-2xs ${
                           user.role === 'Admin' || user.role === 'Super Admin'
                             ? 'bg-red-50 text-red-700 border-red-200'
@@ -549,62 +588,70 @@ export const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* Customer Profile Details Modal - Fully Responsive */}
-      {selectedCustomer && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
-            <div className="bg-slate-50 border-b border-slate-200 p-6 flex justify-between items-start">
-              <div>
-                <span className="text-xs font-bold text-red-600 uppercase tracking-widest">Customer Profile</span>
-                <h3 className="text-xl font-bold text-slate-900 mt-1">{selectedCustomer.company || selectedCustomer.name}</h3>
-                <p className="text-slate-500 text-xs mt-0.5">Contact: {selectedCustomer.name}</p>
+      {/* Customer Profile Details Modal - Rendered via Portal for 100% Viewport Positioning */}
+      {selectedCustomer && createPortal(
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-3 sm:p-4 overflow-hidden"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedCustomer(null);
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Pinned Sticky Header */}
+            <div className="bg-slate-50/95 border-b border-slate-100 px-4 sm:px-6 py-3.5 sm:py-4 flex justify-between items-center shrink-0">
+              <div className="min-w-0 pr-3">
+                <span className="text-[10px] sm:text-xs font-bold text-red-600 uppercase tracking-widest">Customer Profile</span>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate mt-0.5">{selectedCustomer.company || selectedCustomer.name}</h3>
+                <p className="text-slate-500 text-xs truncate">Contact: {selectedCustomer.name}</p>
               </div>
               <button 
                 onClick={() => setSelectedCustomer(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer shrink-0"
+                title="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Scrollable Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs sm:text-sm custom-scrollbar">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Address</p>
-                  <p className="font-medium text-slate-800 mt-1 break-all">{selectedCustomer.email || 'N/A'}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Email Address</p>
+                  <p className="font-semibold text-slate-800 mt-0.5 break-all">{selectedCustomer.email || 'N/A'}</p>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Phone / Mobile</p>
-                  <p className="font-medium text-slate-800 mt-1">{selectedCustomer.phone || 'N/A'}</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Phone / Mobile</p>
+                  <p className="font-semibold text-slate-800 mt-0.5">{selectedCustomer.phone || 'N/A'}</p>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Registration Date</p>
-                  <p className="font-semibold text-slate-800 mt-1">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Registration Date</p>
+                  <p className="font-semibold text-slate-800 mt-0.5">
                     {selectedCustomer.createdAt 
                       ? new Date(selectedCustomer.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
                       : 'Corporate Client'}
                   </p>
                 </div>
-                <span className="text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg">
+                <span className="text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg shrink-0">
                   Registered User
                 </span>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">GSTIN Number</p>
-                <p className="font-mono font-bold text-slate-800 mt-1 text-base">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">GSTIN Number</p>
+                <p className="font-mono font-bold text-slate-800 mt-0.5 text-sm sm:text-base">
                   {selectedCustomer.gstin && selectedCustomer.gstin.trim() && selectedCustomer.gstin.toUpperCase() !== 'UNREGISTERED'
                     ? selectedCustomer.gstin
                     : 'Unregistered (Consumer / Non-GST Corporate)'}
                 </p>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Delivery & Billing Address</p>
-                <p className="font-medium text-slate-800 mt-1">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Delivery & Billing Address</p>
+                <p className="font-medium text-slate-800 mt-0.5">
                   {selectedCustomer.address || 'Address not registered'}
                 </p>
                 {(selectedCustomer.city || selectedCustomer.state) && (
@@ -614,7 +661,7 @@ export const AdminUsers: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between pt-1">
                 <div>
                   <span className="text-xs font-semibold text-slate-400">Account Status: </span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${selectedCustomer.status === 'Inactive' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-100 text-emerald-800'}`}>
@@ -624,7 +671,7 @@ export const AdminUsers: React.FC = () => {
                 {isAdmin && (
                   <button
                     onClick={() => handleToggleStatus(selectedCustomer._id, selectedCustomer.status)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer"
                   >
                     Set as {selectedCustomer.status === 'Inactive' ? 'Active' : 'Inactive'}
                   </button>
@@ -632,325 +679,384 @@ export const AdminUsers: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+            {/* Pinned Sticky Footer */}
+            <div className="p-3.5 sm:p-4 bg-slate-50/95 border-t border-slate-100 flex items-center justify-between shrink-0">
               {isAdmin ? (
-                <button
-                  onClick={() => {
-                    const cust = selectedCustomer;
-                    setSelectedCustomer(null);
-                    openEditCustomerModal(cust);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
-                >
-                  <Edit2 size={14} />
-                  Edit Profile
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const cust = selectedCustomer;
+                      setSelectedCustomer(null);
+                      openEditCustomerModal(cust);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Edit2 size={13} />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCustomer(selectedCustomer._id, selectedCustomer.company || selectedCustomer.name)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                    Delete
+                  </button>
+                </div>
               ) : <div />}
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="px-5 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-2xs transition-colors cursor-pointer"
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-2xs transition-colors cursor-pointer"
               >
                 Close Profile
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Create / Edit Customer Modal */}
-      {isCustomerModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-8">
-            <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/80">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+      {/* Create / Edit Customer Modal - Rendered via Portal for 100% Viewport Positioning */}
+      {isCustomerModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 sm:p-4 md:p-6 overflow-hidden"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsCustomerModalOpen(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[94vh] sm:max-h-[88vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Pinned Sticky Header */}
+            <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 bg-slate-50/95 shrink-0 z-10">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                   <Building size={18} />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-800 truncate">
                     {editingCustomer ? 'Edit Customer Profile' : 'Create New Customer'}
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-[11px] text-slate-500 truncate">
                     {editingCustomer 
-                      ? `Updating corporate profile for ${editingCustomer.company || editingCustomer.name}` 
-                      : 'Add a new corporate or individual client account with contact and GST details.'}
+                      ? `Updating profile for ${editingCustomer.company || editingCustomer.name}` 
+                      : 'Add client account with GST, billing address & contact details.'}
                   </p>
                 </div>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsCustomerModalOpen(false)} 
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/80 transition-colors cursor-pointer shrink-0 ml-2"
+                title="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            {customerFormError && (
-              <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-700">
-                <AlertCircle size={16} className="shrink-0 text-red-500" />
-                <span>{customerFormError}</span>
+            {/* Form wrapping scrollable content and sticky footer */}
+            <form onSubmit={handleSaveCustomer} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 sm:py-4 space-y-3 custom-scrollbar text-xs sm:text-sm">
+                {customerFormError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-700">
+                    <AlertCircle size={16} className="shrink-0 text-red-500" />
+                    <span>{customerFormError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Contact Person Name <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={customerFormData.name}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, name: e.target.value })}
+                      placeholder="e.g. Rajesh Kumar"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Company Name
+                    </label>
+                    <input 
+                      type="text" 
+                      value={customerFormData.company}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, company: e.target.value })}
+                      placeholder="e.g. Apex Automation & Switchgear"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="email" 
+                      required 
+                      value={customerFormData.email}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })}
+                      placeholder="procurement@company.com"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="tel" 
+                      required 
+                      value={customerFormData.phone}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, phone: e.target.value })}
+                      placeholder="+91 98450 12345"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      GSTIN Number
+                    </label>
+                    <input 
+                      type="text" 
+                      value={customerFormData.gstin}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, gstin: e.target.value.toUpperCase() })}
+                      placeholder="29AABCU9603R1ZM (or Unregistered)"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none font-mono transition-all font-medium" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Account Status
+                    </label>
+                    <select 
+                      value={customerFormData.status}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, status: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-bold"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Delivery & Billing Address
+                    </label>
+                    <input 
+                      type="text"
+                      value={customerFormData.address}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, address: e.target.value })}
+                      placeholder="e.g. Plot No 42, Peenya Industrial Area, Phase II"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        City
+                      </label>
+                      <input 
+                        type="text" 
+                        value={customerFormData.city}
+                        onChange={(e) => setCustomerFormData({ ...customerFormData, city: e.target.value })}
+                        placeholder="e.g. Bangalore"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        State
+                      </label>
+                      <input 
+                        type="text" 
+                        value={customerFormData.state}
+                        onChange={(e) => setCustomerFormData({ ...customerFormData, state: e.target.value })}
+                        placeholder="e.g. Karnataka"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Pincode
+                      </label>
+                      <input 
+                        type="text" 
+                        value={customerFormData.pincode}
+                        onChange={(e) => setCustomerFormData({ ...customerFormData, pincode: e.target.value })}
+                        placeholder="e.g. 560058"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      {editingCustomer ? 'Reset Password (optional)' : 'Account Password'}
+                    </label>
+                    <input 
+                      type="password" 
+                      value={customerFormData.password}
+                      onChange={(e) => setCustomerFormData({ ...customerFormData, password: e.target.value })}
+                      placeholder={editingCustomer ? 'Leave blank to retain existing password' : 'Default: Customer@123 if left blank'}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                    />
+                  </div>
+                </div>
               </div>
-            )}
 
-            <form onSubmit={handleSaveCustomer} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Contact Person Name <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={customerFormData.name}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, name: e.target.value })}
-                    placeholder="e.g. Rajesh Kumar"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Company Name
-                  </label>
-                  <input 
-                    type="text" 
-                    value={customerFormData.company}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, company: e.target.value })}
-                    placeholder="e.g. Apex Automation & Switchgear"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="email" 
-                    required 
-                    value={customerFormData.email}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })}
-                    placeholder="procurement@company.com"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="tel" 
-                    required 
-                    value={customerFormData.phone}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, phone: e.target.value })}
-                    placeholder="+91 98450 12345"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    GSTIN Number
-                  </label>
-                  <input 
-                    type="text" 
-                    value={customerFormData.gstin}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, gstin: e.target.value.toUpperCase() })}
-                    placeholder="29AABCU9603R1ZM (Leave blank if Non-GST / Unregistered)"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none font-mono text-sm transition-all" 
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">If non-GST / unregistered consumer, leave empty or type "Unregistered".</p>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Address (Street / Building / Area)
-                  </label>
-                  <textarea 
-                    rows={2}
-                    value={customerFormData.address}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, address: e.target.value })}
-                    placeholder="e.g. Plot No 42, Peenya Industrial Area, Phase II"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all resize-none" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    City
-                  </label>
-                  <input 
-                    type="text" 
-                    value={customerFormData.city}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, city: e.target.value })}
-                    placeholder="e.g. Bangalore"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    State
-                  </label>
-                  <input 
-                    type="text" 
-                    value={customerFormData.state}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, state: e.target.value })}
-                    placeholder="e.g. Karnataka"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Pincode
-                  </label>
-                  <input 
-                    type="text" 
-                    value={customerFormData.pincode}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, pincode: e.target.value })}
-                    placeholder="e.g. 560058"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Account Status
-                  </label>
-                  <select 
-                    value={customerFormData.status}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, status: e.target.value })}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm bg-white"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    {editingCustomer ? 'Reset Password (optional)' : 'Account Password'}
-                  </label>
-                  <input 
-                    type="password" 
-                    value={customerFormData.password}
-                    onChange={(e) => setCustomerFormData({ ...customerFormData, password: e.target.value })}
-                    placeholder={editingCustomer ? 'Leave blank to retain existing password' : 'Default: Customer@123 if left blank'}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-sm transition-all" 
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+              {/* Pinned Sticky Footer */}
+              <div className="px-4 sm:px-6 py-3 sm:py-3.5 bg-slate-50/95 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0 z-10">
                 <button 
                   type="button" 
                   onClick={() => setIsCustomerModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-colors text-sm cursor-pointer"
+                  className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-200/70 rounded-xl transition-colors text-xs sm:text-sm cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-xl hover:opacity-95 shadow-md shadow-red-600/25 transition-all disabled:opacity-70 text-sm cursor-pointer"
+                  className="px-5 sm:px-6 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-xl hover:opacity-95 shadow-md shadow-red-600/25 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
                 >
                   {isSubmitting ? 'Saving...' : (editingCustomer ? 'Update Customer' : 'Create Customer')}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Add User Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
-              <h3 className="text-xl font-bold text-slate-800">Add Staff Member</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                <X size={24} />
+      {/* Add Staff User Modal - Rendered via Portal for 100% Viewport Positioning */}
+      {isAddModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-3 sm:p-4 overflow-hidden"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] sm:max-h-[85vh] flex flex-col border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Pinned Sticky Header */}
+            <div className="flex justify-between items-center px-5 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/95 shrink-0">
+              <h3 className="text-base sm:text-lg font-bold text-slate-800">Add Staff Member</h3>
+              <button 
+                onClick={() => setIsAddModalOpen(false)} 
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/80 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleAddUser} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                <input 
-                  type="email" 
-                  required 
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                <input 
-                  type="password" 
-                  required 
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" 
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            
+            {/* Form wrapping scrollable body and sticky footer */}
+            <form onSubmit={handleAddUser} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar text-xs sm:text-sm">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Role Designation</label>
-                  <select 
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
-                  >
-                    <option value="Super Admin">Super Admin</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Sales Manager">Sales Manager</option>
-                    <option value="Sales Executive">Sales Executive</option>
-                  </select>
+                  <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="e.g. Amit Sharma"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                  <select 
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
+                  <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="email" 
+                    required 
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    placeholder="amit@siddhikabel.com"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="password" 
+                    required 
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    placeholder="Enter account password"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-medium" 
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Role Designation
+                    </label>
+                    <select 
+                      value={formData.role}
+                      onChange={(e) => setFormData({...formData, role: e.target.value})}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-bold"
+                    >
+                      <option value="Super Admin">Super Admin</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Sales Manager">Sales Manager</option>
+                      <option value="Sales Executive">Sales Executive</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Status
+                    </label>
+                    <select 
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none transition-all font-bold"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+
+              {/* Pinned Sticky Footer */}
+              <div className="px-5 py-3 sm:py-3.5 bg-slate-50/95 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
                 <button 
                   type="button" 
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors text-sm cursor-pointer"
+                  className="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-200/70 rounded-xl transition-colors text-xs sm:text-sm cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-lg hover:opacity-95 shadow-md shadow-red-600/25 transition-all disabled:opacity-70 text-sm cursor-pointer"
+                  className="px-5 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 text-white font-bold rounded-xl hover:opacity-95 shadow-md shadow-red-600/25 transition-all disabled:opacity-70 text-xs sm:text-sm cursor-pointer"
                 >
                   {isSubmitting ? 'Saving...' : 'Save User'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 };
+
+
+

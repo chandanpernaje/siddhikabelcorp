@@ -86,15 +86,17 @@ export const Products: React.FC = () => {
     if (val === null || val === undefined) return '';
     const str = String(val).replace(/,/g, '.').replace(/mm²|sqmm|sq\.?\s*mm/gi, '').trim();
     const num = parseFloat(str);
-    if (isNaN(num)) return str;
+    if (isNaN(num) || num <= 0) return '';
     return num.toString();
   };
 
   const normalizeCore = (val: any): string => {
     if (val === null || val === undefined) return '';
-    const str = String(val).replace(/cores?/gi, '').trim();
+    const s = String(val).trim().toLowerCase();
+    if (s.includes('single')) return '1';
+    const str = s.replace(/cores?/gi, '').trim();
     const num = parseInt(str, 10);
-    if (isNaN(num)) return str;
+    if (isNaN(num) || num < 0) return '';
     return num.toString();
   };
 
@@ -589,10 +591,10 @@ export const Products: React.FC = () => {
               )}
             </div>
 
-            {/* 5. Unit of Measurement Filter */}
+            {/* 5. UOM Filter */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 block uppercase tracking-wider font-mono">
-                Unit of Measurement (UOM)
+                UOM
               </label>
               <select
                 value={selectedUom}
@@ -906,7 +908,7 @@ export const Products: React.FC = () => {
 
             {/* UOM */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block">UOM (Unit of Measurement)</label>
+              <label className="text-xs font-bold text-slate-700 block">UOM</label>
               <select
                 value={selectedUom}
                 onChange={(e) => setSelectedUom(e.target.value)}

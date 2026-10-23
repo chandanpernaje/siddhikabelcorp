@@ -38,7 +38,7 @@ export const ProductDetail: React.FC = () => {
     fetch(`${API_BASE_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
-        const found = data.find((p: any) => p.id === productId || (p.partNo && p.partNo.toLowerCase() === productId.toLowerCase()));
+        const found = data.find((p: any) => p.id === productId || p._id === productId || (p.partNo && p.partNo.toLowerCase() === productId.toLowerCase()));
         if (found) {
           const resolvedSqmm = found.sqmm || found.coreSize || (found.size ? String(found.size) : null);
           setDbProduct({
@@ -56,7 +56,7 @@ export const ProductDetail: React.FC = () => {
               ...(found.core ? [`Cores: ${found.core} Cores`] : []),
               ...(resolvedSqmm ? [`Conductor Cross Section: ${resolvedSqmm} mm²`] : []),
               ...(found.colour ? [`Cable Colour: ${found.colour}`] : []),
-              ...(found.uom ? [`Unit of Measurement (UOM): ${found.uom}`] : []),
+              ...(found.uom ? [`UOM: ${found.uom}`] : []),
               ...(found.outerDiameter ? [`Outer Diameter: ${found.outerDiameter}`] : []),
               ...(found.copperIndex ? [`Copper Index: ${found.copperIndex} kg/km`] : []),
               ...(found.weight ? [`Weight: ${found.weight}`] : []),
@@ -604,7 +604,7 @@ export const ProductDetail: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 sm:gap-0">
                 <div>
                   <span className="text-[11px] uppercase font-mono text-slate-400 font-bold block">
-                    Contract Rate (Ex-GST)
+                    Contract Rate
                   </span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black font-mono text-slate-900 tabular-nums">
@@ -788,7 +788,7 @@ export const ProductDetail: React.FC = () => {
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Cross-Sectional Area</span>
+                  <span className="text-slate-400 font-mono block">Cross Section (SQMM)</span>
                   <span className="text-slate-900 font-bold text-sm">
                     {dbProduct?.sqmm || product.sqmm || (product.size ? `${product.size} mm²` : '0.5 - 35 mm²')}
                   </span>
@@ -811,7 +811,7 @@ export const ProductDetail: React.FC = () => {
                 )}
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Unit of Measurement (UOM)</span>
+                  <span className="text-slate-400 font-mono block">UOM</span>
                   <span className="text-slate-900 font-bold text-sm">
                     {dbProduct?.uom || product.uom || product.unit || 'Meter (m)'}
                   </span>

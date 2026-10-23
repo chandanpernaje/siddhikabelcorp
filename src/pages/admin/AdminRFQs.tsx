@@ -146,31 +146,45 @@ export function formatWeight(w?: string | number | null, name?: string): string 
 }
 
 // Automatic 7-Day Validity & Countdown Calculator (No manual date entry required)
-export function getQuotationValidityInfo(rfq: { createdAt?: string; date?: string; validUntil?: string | null; status?: string; validityDays?: number }) {
-  const baseDateStr = rfq.createdAt || rfq.date || new Date().toISOString();
+export function getQuotationValidityInfo(rfq: { createdAt?: string; date?: string; validUntil?: string | null; status?: string; validityDays?: number; assignedAt?: string | null }) {
+  const baseDateStr = rfq.assignedAt || rfq.createdAt || rfq.date || new Date().toISOString();
   const baseTime = new Date(baseDateStr).getTime();
   const totalDays = rfq.validityDays || 7;
   const expiryTime = rfq.validUntil ? new Date(rfq.validUntil).getTime() : baseTime + (totalDays * 24 * 60 * 60 * 1000);
   const now = Date.now();
   const diffMs = expiryTime - now;
-  const isExpired = rfq.status === 'Expired' || diffMs <= 0;
+
+  const isActionTaken = rfq.status === 'Under Review' || rfq.status === 'PO Received' || rfq.status === 'Approved' || rfq.status === 'Completed' || rfq.status === 'Closed' || rfq.status === 'Lost';
+  const isExpired = !isActionTaken && (rfq.status === 'Expired' || diffMs <= 0);
 
   const remainingDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
   const remainingHours = Math.max(0, Math.ceil(diffMs / (60 * 60 * 1000)));
 
+  let countdownLabel = '';
+  if (isActionTaken) {
+    if (rfq.status === 'Under Review') countdownLabel = 'Under Review';
+    else if (rfq.status === 'PO Received' || rfq.status === 'Approved' || rfq.status === 'Completed') countdownLabel = 'PO Received';
+    else if (rfq.status === 'Closed') countdownLabel = 'Closed';
+    else if (rfq.status === 'Lost') countdownLabel = 'Lost';
+    else countdownLabel = rfq.status || 'Action Taken';
+  } else if (isExpired) {
+    countdownLabel = 'Expired (0d left)';
+  } else if (remainingDays > 1) {
+    countdownLabel = `7 Days (${remainingDays}d left)`;
+  } else if (remainingHours > 0) {
+    countdownLabel = `Expires today (${remainingHours}h left)`;
+  } else {
+    countdownLabel = 'Expires today';
+  }
+
   return {
     isExpired,
+    isActionTaken,
     validityTotalDays: totalDays,
     remainingDays: Math.max(0, remainingDays),
     remainingHours,
     expiryDate: new Date(expiryTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-    countdownLabel: isExpired
-      ? 'Expired (0d left)'
-      : remainingDays > 1
-        ? `7 Days (${remainingDays}d left)`
-        : remainingHours > 0
-          ? `Expires today (${remainingHours}h left)`
-          : 'Expires today'
+    countdownLabel
   };
 }
 
@@ -720,7 +734,7 @@ export const AdminRFQs: React.FC = () => {
           const qty = Number(item.qty) || 1;
           const rate = Number(item.unitPrice) || 0;
           const lineTotal = item.totalBeforeTax ? Number(item.totalBeforeTax) : (qty * rate);
-          const itemVal = getQuotationValidityInfo(rfq, item);
+          const itemVal = getQuotationValidityInfo(rfq);
           rows.push([
             idx + 1,
             item.partNo || '',
@@ -902,8 +916,11 @@ export const AdminRFQs: React.FC = () => {
         if (!matches) return false;
       }
 
-      // 2. Status Pipeline Filter: Pending, Under Review, PO Received, Closed, Lost, Expired
+      // 2. Status Pipeline Filter: Unassigned, Pending, Under Review, PO Received, Closed, Lost, Expired
       if (statusFilter === 'All') return true;
+      if (statusFilter === 'Unassigned') {
+        return !r.assignedTo && !r.assignedToName;
+      }
       if (statusFilter === 'Pending') {
         return r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing';
       }
@@ -915,11 +932,21 @@ export const AdminRFQs: React.FC = () => {
       return true;
     });
 
-    // 3. Date Sorting (Ascending / Descending by RFQ Generation Date)
+    // 3. Date & Validity Sorting (Ascending / Descending by RFQ Generation Date)
     return filtered.sort((a, b) => {
-      const timeA = new Date(a.createdAt || a.date).getTime();
-      const timeB = new Date(b.createdAt || b.date).getTime();
-      if (isNaN(timeA) || isNaN(timeB)) return 0;
+      const parseDate = (d?: string | null) => {
+        if (!d) return 0;
+        const t = new Date(d).getTime();
+        if (!isNaN(t)) return t;
+        const parts = String(d).split(/[-/]/);
+        if (parts.length === 3) {
+          const parsed = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
+          if (!isNaN(parsed)) return parsed;
+        }
+        return 0;
+      };
+      const timeA = parseDate(a.createdAt || a.date);
+      const timeB = parseDate(b.createdAt || b.date);
       return dateSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
   }, [rfqs, searchQuery, statusFilter, dateSortOrder]);
@@ -956,7 +983,7 @@ export const AdminRFQs: React.FC = () => {
             title="Download full RFQ spreadsheet summary"
           >
             <FileSpreadsheet size={14} />
-            Export All (Excel)
+            Export All
           </button>
           <button
             onClick={() => fetchData(true)}
@@ -1020,10 +1047,11 @@ export const AdminRFQs: React.FC = () => {
         )}
       </div>
 
-      {/* Status Filter Tabs: Pending, Under Review, PO Received, Closed, Lost, Expired */}
+      {/* Status Filter Tabs: All, Unassigned, Pending, Under Review, PO Received, Closed, Lost, Expired */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
         {[
           { key: 'All', label: `All (${rfqs.length})`, active: 'bg-slate-800 text-white font-bold', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
+          { key: 'Unassigned', label: `Unassigned (${rfqs.filter(r => !r.assignedTo && !r.assignedToName).length})`, active: 'bg-purple-700 text-white font-bold shadow-xs', inactive: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' },
           { key: 'Pending', label: `Pending (${rfqs.filter(r => r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
           { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-sky-600 text-white font-bold shadow-xs', inactive: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100' },
           { key: 'PO Received', label: `PO Received (${rfqs.filter(r => r.status === 'PO Received' || r.status === 'Approved' || r.status === 'Completed').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
@@ -1044,11 +1072,11 @@ export const AdminRFQs: React.FC = () => {
       {/* RFQ Data Table */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm table-fixed min-w-[780px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
               <tr>
                 {isAdmin && (
-                  <th className="py-3 px-3 w-10 text-center font-semibold shrink-0">
+                  <th className="py-2.5 px-1 w-8 text-center font-semibold shrink-0">
                     <input
                       type="checkbox"
                       checked={sortedRfqs.length > 0 && selectedIds.length === sortedRfqs.length}
@@ -1057,28 +1085,28 @@ export const AdminRFQs: React.FC = () => {
                     />
                   </th>
                 )}
-                <th className="py-3 px-3 w-14 text-center font-bold text-slate-600 shrink-0">S.No.</th>
-                <th className="py-3 px-4 font-semibold w-44 shrink-0">RFQ Number</th>
-                <th className="py-3 px-4 font-semibold min-w-[220px]">Client Name</th>
-                <th className="py-3 px-4 font-semibold w-48 shrink-0">
+                <th className="py-2.5 px-1 w-9 text-center font-bold text-slate-600 shrink-0">S.No.</th>
+                <th className="py-2.5 px-1.5 font-semibold w-28 shrink-0">RFQ Number</th>
+                <th className="py-2.5 px-2 font-semibold w-36 sm:w-40">Client Name</th>
+                <th className="py-2.5 px-1.5 font-semibold w-26 shrink-0">
                   <button
                     type="button"
                     onClick={() => setDateSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-                    className="inline-flex items-center gap-1.5 hover:text-slate-900 font-bold transition-colors cursor-pointer group"
+                    className="inline-flex items-center gap-1 hover:text-slate-900 font-bold transition-colors cursor-pointer group"
                     title={`Sort by Date (${dateSortOrder === 'desc' ? 'Newest First' : 'Oldest First'})`}
                   >
                     <span>Date &amp; Validity</span>
                     {dateSortOrder === 'desc' ? (
-                      <ArrowDown size={14} className="text-red-600" />
+                      <ArrowDown size={12} className="text-red-600 shrink-0" />
                     ) : (
-                      <ArrowUp size={14} className="text-red-600" />
+                      <ArrowUp size={12} className="text-red-600 shrink-0" />
                     )}
                   </button>
                 </th>
-                <th className="py-3 px-4 font-semibold w-36 shrink-0">Amount (₹)</th>
-                <th className="py-3 px-4 font-semibold w-40 shrink-0">Status</th>
-                <th className="py-3 px-4 font-semibold w-44 shrink-0">Assigned / Processed By</th>
-                <th className="py-3 px-4 font-semibold text-center w-28 shrink-0">Actions</th>
+                <th className="py-2.5 px-2 font-semibold text-right w-24 shrink-0">Amount (₹)</th>
+                <th className="py-2.5 px-1.5 font-semibold w-26 shrink-0">Status</th>
+                <th className="py-2.5 px-1.5 font-semibold w-28 shrink-0">Assigned To</th>
+                <th className="py-2.5 px-1 font-semibold text-center w-16 shrink-0">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
@@ -1103,7 +1131,7 @@ export const AdminRFQs: React.FC = () => {
                   return (
                     <tr key={rfq._id} className="hover:bg-red-50/20 transition-colors group">
                       {isAdmin && (
-                        <td className="py-3 px-3 text-center align-middle">
+                        <td className="py-2 px-1 text-center align-middle">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(rfq._id)}
@@ -1112,73 +1140,77 @@ export const AdminRFQs: React.FC = () => {
                           />
                         </td>
                       )}
-                      <td className="py-3 px-3 text-center font-bold text-slate-500 text-xs align-middle">
+                      <td className="py-2 px-1 text-center font-bold text-slate-500 text-xs align-middle">
                         {index + 1}
                       </td>
                       <td
-                        className="py-3 px-4 font-mono font-bold text-sky-700 hover:text-sky-900 cursor-pointer align-middle"
+                        className="py-2 px-1.5 font-mono font-bold text-sky-700 hover:text-sky-900 cursor-pointer align-middle whitespace-nowrap"
                         onClick={() => setSelectedRfq(rfq)}
                       >
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold hover:bg-sky-100 transition-colors shadow-2xs font-mono text-xs">
-                          <FileText size={12} className="text-sky-600 shrink-0" />
-                          {rfq.quoteNo}
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-bold hover:bg-sky-100 transition-colors shadow-2xs font-mono text-[11px]">
+                          <FileText size={11} className="text-sky-600 shrink-0" />
+                          <span className="truncate">{rfq.quoteNo}</span>
                         </span>
                       </td>
                       <td
-                        className="py-3 px-4 cursor-pointer align-middle"
+                        className="py-2 px-2 cursor-pointer align-middle overflow-hidden"
                         onClick={() => setSelectedRfq(rfq)}
                       >
-                        <div className="font-semibold text-slate-900 group-hover:text-red-700 transition-colors leading-snug">
+                        <div className="font-semibold text-slate-900 group-hover:text-red-700 transition-colors leading-snug truncate text-xs" title={rfq.companyName || rfq.customerName || 'Direct Client'}>
                           {rfq.companyName || rfq.customerName || 'Direct Client'}
                         </div>
-                        {rfq.companyName && rfq.customerName && rfq.companyName !== rfq.customerName && (
-                          <div className="text-xs text-slate-500 mt-0.5">{rfq.customerName}</div>
-                        )}
+                        <div className="text-[10px] text-slate-500 truncate" title={rfq.customerName || rfq.email || ''}>
+                          {rfq.companyName && rfq.customerName && rfq.companyName !== rfq.customerName
+                            ? rfq.customerName
+                            : (rfq.email || rfq.phone || '')}
+                        </div>
                       </td>
-                      <td className="py-3 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">
+                      <td className="py-2 px-1.5 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">
                         <div>
-                          <div className="font-bold text-slate-800">
+                          <div className="font-bold text-slate-800 text-[11px]">
                             {new Date(rfq.createdAt || rfq.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </div>
-                          <div className="mt-1 flex items-center gap-1">
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${val.isExpired
-                                ? 'bg-red-100 text-red-800 border border-red-200'
-                                : val.remainingDays <= 2
-                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          <div className="mt-0.5 flex items-center gap-1">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold ${val.isActionTaken
+                                ? (rfq.status === 'Under Review' ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-slate-100 text-slate-800 border border-slate-200')
+                                : val.isExpired
+                                  ? 'bg-red-100 text-red-800 border border-red-200'
+                                  : val.remainingDays <= 2
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                               }`}>
-                              <Clock size={10} />
+                              <Clock size={9} className="shrink-0" />
                               {val.countdownLabel}
                             </span>
                           </div>
                           {/* Show comments when quotation expires */}
                           {val.isExpired && (
                             <div
-                              className="mt-1 text-[10px] text-red-900 bg-red-50/90 border border-red-200 px-1.5 py-0.5 rounded line-clamp-1 max-w-[160px] cursor-help"
+                              className="mt-0.5 text-[9px] text-red-900 bg-red-50/90 border border-red-200 px-1 py-0.2 rounded truncate max-w-[110px] cursor-help"
                               title={rfq.expiryComments || 'Quotation expired after 7 days validity period.'}
                             >
-                              💬 {rfq.expiryComments || 'Expired: 7-day validity limit'}
+                              💬 {rfq.expiryComments || 'Expired'}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-800 align-middle">
-                        <div>
+                      <td className="py-2 px-2 font-mono font-bold text-slate-900 text-right align-middle whitespace-nowrap">
+                        <div className="text-xs">
                           ₹{Number(rfq.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         {Boolean(rfq.discountAmount && rfq.discountAmount > 0) && (
-                          <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                            <Tag size={10} /> -{rfq.discountRate || ''}% off
+                          <div className="text-[10px] text-emerald-600 font-semibold flex items-center justify-end gap-0.5">
+                            <Tag size={9} className="shrink-0" /> -{rfq.discountRate || ''}% off
                           </div>
                         )}
                       </td>
 
-                      <td className="py-3 px-4 align-middle">
-                        <div className="w-full max-w-[145px]">
+                      <td className="py-2 px-1.5 align-middle">
+                        <div className="w-full">
                           <select
                             value={rfq.status}
                             onChange={(e) => handleInitiateStatusChange(rfq._id, e.target.value, rfq)}
-                            className={`w-full text-xs font-bold rounded-lg px-2.5 py-1.5 border outline-none cursor-pointer shadow-2xs transition-all ${rfq.status === 'PO Received' || rfq.status === 'Completed' || rfq.status === 'Approved'
+                            className={`w-full text-[11px] font-bold rounded-lg px-1.5 py-1 border outline-none cursor-pointer shadow-2xs transition-all ${rfq.status === 'PO Received' || rfq.status === 'Completed' || rfq.status === 'Approved'
                                 ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                                 : rfq.status === 'Closed'
                                   ? 'border-slate-400 bg-slate-200 text-slate-900 font-extrabold'
@@ -1199,7 +1231,7 @@ export const AdminRFQs: React.FC = () => {
                             {rfq.status === 'Expired' && <option value="Expired">Expired</option>}
                           </select>
                           {rfq.status === 'Lost' && rfq.lostReason && (
-                            <div className="text-[10px] text-slate-500 truncate mt-0.5" title={rfq.lostReason}>
+                            <div className="text-[9px] text-slate-500 truncate mt-0.5" title={rfq.lostReason}>
                               {rfq.lostReason}
                             </div>
                           )}
@@ -1207,14 +1239,14 @@ export const AdminRFQs: React.FC = () => {
                       </td>
 
                       {/* Assigned Salesperson Column (Admin assigns, Sales views) */}
-                      <td className="py-3 px-4 align-middle">
+                      <td className="py-2 px-1.5 align-middle">
                         {canAssign ? (
                           <select
-                            className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer max-w-[170px]"
+                            className="w-full text-[11px] bg-white border border-slate-300 rounded-lg px-1.5 py-1 font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 cursor-pointer"
                             value={getAssignedUserId(rfq.assignedTo, rfq.assignedToName)}
                             onChange={(e) => handleAssign(rfq._id, e.target.value)}
                           >
-                            <option value="">-- Assign Salesperson --</option>
+                            <option value="">-- Assign --</option>
                             {users.map(u => (
                               <option key={u._id} value={u._id}>
                                 {u.name} ({u.role?.replace('Sales ', '')})
@@ -1222,40 +1254,40 @@ export const AdminRFQs: React.FC = () => {
                             ))}
                           </select>
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${rfq.assignedToName
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-semibold ${rfq.assignedToName
                               ? 'bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs'
                               : 'bg-slate-50 text-slate-400 border border-slate-200'
                             }`}>
-                            <UserIcon size={12} className="text-slate-500 shrink-0" />
-                            <span className="truncate max-w-[120px]">{rfq.assignedToName || 'Unassigned'}</span>
+                            <UserIcon size={11} className="text-slate-500 shrink-0" />
+                            <span className="truncate max-w-[80px]">{rfq.assignedToName || 'Unassigned'}</span>
                           </span>
                         )}
                       </td>
 
                       {/* Actions: View Details, Return to Sales, Excel, Delete */}
-                      <td className="py-3 px-4 text-center whitespace-nowrap align-middle">
+                      <td className="py-2 px-1 text-center whitespace-nowrap align-middle">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => setSelectedRfq(rfq)}
-                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                             title="View Full Quotation Details"
                           >
-                            <Eye size={17} />
+                            <Eye size={13} />
                           </button>
                           <button
                             onClick={() => handleExportSingleRfqExcel(rfq)}
-                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
                             title="Download Individual Quotation Excel (.xlsx)"
                           >
-                            <FileSpreadsheet size={17} />
+                            <FileSpreadsheet size={13} />
                           </button>
                           {isAdmin && (
                             <button
                               onClick={() => handleDelete(rfq._id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                               title="Delete RFQ"
                             >
-                              <Trash2 size={17} />
+                              <Trash2 size={13} />
                             </button>
                           )}
                         </div>
@@ -1272,6 +1304,19 @@ export const AdminRFQs: React.FC = () => {
       {/* RFQ Detail & Quotation Modal: Portal-Mounted, Permanently Pinned Top Header */}
       {selectedRfq && (() => {
         const modalValInfo = getQuotationValidityInfo(selectedRfq);
+        const quoteSubtotal = selectedRfq.items && selectedRfq.items.length > 0
+          ? selectedRfq.items.reduce((sum: number, it: any) => {
+              const q = Number(it.qty) || 1;
+              const r = Number(it.unitPrice) || 0;
+              return sum + (it.totalBeforeTax ? Number(it.totalBeforeTax) : (q * r));
+            }, 0)
+          : (Number(selectedRfq.subtotal) || 0);
+        const qDiscAmt = Number(selectedRfq.discountAmount) || 0;
+        const qDiscRate = Number(selectedRfq.discountRate) || 0;
+        const qTaxable = Math.max(0, quoteSubtotal - qDiscAmt);
+        const qGst = Number((selectedRfq as any).gstAmount) || (Number((selectedRfq as any).cgst || 0) + Number((selectedRfq as any).sgst || 0)) || (qTaxable * 0.18);
+        const qGrandTotal = Number(selectedRfq.grandTotal) || (qTaxable + qGst);
+
         return createPortal(
           <div
             id="rfq-print-overlay"
@@ -1284,9 +1329,9 @@ export const AdminRFQs: React.FC = () => {
 
               {/* Top Toolbar: Fully responsive for Mobile & Desktop (Hidden on Print) */}
               <div id="rfq-print-toolbar" className="bg-slate-50 text-slate-800 border-b border-slate-200 px-3 sm:px-5 py-2 sm:py-2.5 print:hidden shrink-0 z-30 shadow-2xs">
-                {/* Mobile Top Header Row (< sm): Back Button + Quote Number + Close X */}
+                {/* Mobile Top Header Row (< sm): Back Button + Quote Number + Total + Close X */}
                 <div className="flex sm:hidden items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200">
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <button
                       onClick={handleCloseModal}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition-colors cursor-pointer shrink-0"
@@ -1297,6 +1342,9 @@ export const AdminRFQs: React.FC = () => {
                     </button>
                     <span className="text-xs font-bold font-mono text-slate-900 bg-white px-2 py-1 rounded-lg border border-slate-200 truncate">
                       {selectedRfq.quoteNo}
+                    </span>
+                    <span className="text-xs font-black font-mono text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded-lg shrink-0">
+                      ₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <button
@@ -1408,7 +1456,7 @@ export const AdminRFQs: React.FC = () => {
                       title="Download this quotation as Microsoft Excel (.xlsx)"
                     >
                       <FileSpreadsheet size={14} />
-                      <span className="hidden xs:inline">Excel</span>
+                      <span className="hidden xs:inline">Export</span>
                     </button>
 
                     {/* Print Button */}
@@ -1691,36 +1739,37 @@ export const AdminRFQs: React.FC = () => {
               )}
 
               {/* Official Invoice / Bill Document Area - Scrollable Inside Card */}
-              <div id="rfq-print-content" className="p-3.5 sm:p-6 md:p-10 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
+              <div id="rfq-print-content" className="p-3 sm:p-5 md:p-6 print:p-0 print:overflow-visible bg-white flex-1 overflow-y-auto custom-scrollbar">
 
                 {/* Header: Logo and Company Info */}
-                <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-5 sm:pb-8 mb-5 sm:mb-8 gap-4 sm:gap-0">
+                <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-3 sm:pb-4 mb-3 sm:mb-4 gap-3 sm:gap-0">
                   <div>
                     <img
                       src="/images/siddhi-kabel-lockup.png"
                       alt="Siddhi Kabel"
-                      className="h-12 sm:h-16 w-auto object-contain mb-3 sm:mb-4"
+                      className="h-10 sm:h-12 w-auto object-contain mb-2"
                       onError={(e) => { e.currentTarget.src = '/images/siddhi-kabel-logo.png'; }}
                     />
-                    <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">Plot 42, Peenya Industrial Area, 2nd Stage</p>
-                    <p className="text-xs sm:text-sm text-slate-500">Bangalore, Karnataka 560058</p>
-                    <p className="text-xs sm:text-sm font-medium text-slate-600 mt-0.5 sm:mt-1">GSTIN: 29AABCU9603R1ZM</p>
+                    <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">SIDDHI KABEL CORP PVT LTD</h1>
+                    <p className="text-xs text-slate-500 mt-0.5">Plot 42, Peenya Industrial Area, 2nd Stage, Bangalore 560058</p>
+                    <p className="text-xs font-medium text-slate-600">GSTIN: 29AABCU9603R1ZM</p>
                   </div>
-                  <div className="w-full sm:w-auto sm:text-right mt-2 sm:mt-0 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 sm:min-w-[260px]">
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">ESTIMATE</h2>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:text-sm mt-2.5 sm:mt-3 text-left">
+                  <div className="w-full sm:w-auto sm:text-right mt-2 sm:mt-0 bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200 sm:min-w-[260px] shadow-2xs">
+                    <h2 className="text-lg sm:text-xl font-black text-slate-800 mb-0.5">ESTIMATE</h2>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-left">
                       <span className="text-slate-500 font-medium">Estimate / RFQ #:</span>
                       <span className="font-bold text-slate-900 font-mono text-right">{selectedRfq.quoteNo}</span>
                       <span className="text-slate-500 font-medium">Date:</span>
                       <span className="font-bold text-slate-900 text-right">{selectedRfq.date || new Date(selectedRfq.createdAt).toLocaleDateString()}</span>
                       <span className="text-slate-500 font-medium">Validity:</span>
                       <div className="text-right">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${modalValInfo.isExpired
-                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                            : modalValInfo.remainingDays <= 2
-                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${modalValInfo.isActionTaken
+                            ? (selectedRfq.status === 'Under Review' ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-800 border border-slate-300')
+                            : modalValInfo.isExpired
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : modalValInfo.remainingDays <= 2
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                           }`}>
                           <Clock size={11} />
                           {modalValInfo.countdownLabel}
@@ -1728,12 +1777,16 @@ export const AdminRFQs: React.FC = () => {
                       </div>
                       <span className="text-slate-500 font-medium">Status:</span>
                       <span className="font-bold text-right text-xs">{selectedRfq.status}</span>
+                      <span className="text-slate-700 font-bold border-t border-slate-200 pt-1 mt-0.5">Grand Total:</span>
+                      <span className="font-mono font-bold text-red-700 text-right text-xs sm:text-sm border-t border-slate-200 pt-1 mt-0.5">
+                        ₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Requirement 3.1: Separate Billing Address & Delivery / Site Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 p-3.5 sm:p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4 p-3 sm:p-3.5 bg-slate-50/70 rounded-xl border border-slate-200">
                   <div>
                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Billed To (Customer Master)</h3>
                     <div className="text-slate-800 text-xs sm:text-sm space-y-1">
@@ -1916,10 +1969,34 @@ export const AdminRFQs: React.FC = () => {
                       No items listed in this quotation.
                     </div>
                   )}
+
+                  {/* Mobile Financial Summary Card (Compact, Responsive) */}
+                  {selectedRfq.items && selectedRfq.items.length > 0 && (
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5 shadow-2xs mt-2.5">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal ({selectedRfq.items.length} items):</span>
+                        <span className="font-mono font-bold text-slate-900">₹{quoteSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      {qDiscAmt > 0 && (
+                        <div className="flex justify-between text-emerald-700 font-semibold">
+                          <span>Special Discount ({qDiscRate}%):</span>
+                          <span className="font-mono">-₹{qDiscAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-slate-600">
+                        <span>GST (18%):</span>
+                        <span className="font-mono font-medium text-slate-800">₹{qGst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm font-black text-slate-900 pt-1.5 border-t border-slate-300">
+                        <span>Grand Total:</span>
+                        <span className="font-mono text-base text-red-700">₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Desktop & Official Print Table: 12-Column Specification Grid (>= md) */}
-                <div className="hidden md:block print:block mb-8 overflow-hidden rounded-xl border border-slate-200">
+                <div className="hidden md:block print:block mb-3.5 overflow-hidden rounded-xl border border-slate-200">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs sm:text-sm min-w-[980px]">
                       <thead className="bg-slate-100 text-slate-800 border-b border-slate-200 text-xs">
@@ -2010,81 +2087,63 @@ export const AdminRFQs: React.FC = () => {
                           </tr>
                         )}
                       </tbody>
+                      {/* Integrated Clean Table Footer for Financial Summary */}
+                      {selectedRfq.items && selectedRfq.items.length > 0 && (
+                        <tfoot className="bg-slate-50 border-t-2 border-slate-300 font-semibold text-xs text-slate-800">
+                          <tr>
+                            <td colSpan={10} className="py-2.5 px-4 text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                              Subtotal (Items):
+                            </td>
+                            <td colSpan={2} className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                              ₹{quoteSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                          {qDiscAmt > 0 && (
+                            <tr className="text-emerald-700 bg-emerald-50/50">
+                              <td colSpan={10} className="py-2 px-4 text-right font-bold text-[11px] uppercase tracking-wider">
+                                Special Discount ({qDiscRate}%):
+                              </td>
+                              <td colSpan={2} className="py-2 px-3 text-right font-mono font-bold">
+                                -₹{qDiscAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td colSpan={10} className="py-2 px-4 text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                              GST (18%):
+                            </td>
+                            <td colSpan={2} className="py-2 px-3 text-right font-mono font-medium text-slate-800">
+                              ₹{qGst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                          <tr className="bg-slate-100 text-sm border-t-2 border-slate-900">
+                            <td colSpan={10} className="py-3 px-4 text-right font-black text-slate-900 uppercase tracking-wide">
+                              Grand Total:
+                            </td>
+                            <td colSpan={2} className="py-3 px-3 text-right font-mono font-black text-base text-red-700">
+                              ₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
                 </div>
 
-                {/* Quotation Financial Summary & Dispatch Terms */}
-                {(() => {
-                  const quoteSubtotal = selectedRfq.items && selectedRfq.items.length > 0
-                    ? selectedRfq.items.reduce((sum: number, it: any) => {
-                        const q = Number(it.qty) || 1;
-                        const r = Number(it.unitPrice) || 0;
-                        return sum + (it.totalBeforeTax ? Number(it.totalBeforeTax) : (q * r));
-                      }, 0)
-                    : (Number(selectedRfq.subtotal) || 0);
-                  const qDiscAmt = Number(selectedRfq.discountAmount) || 0;
-                  const qDiscRate = Number(selectedRfq.discountRate) || 0;
-                  const qTaxable = Math.max(0, quoteSubtotal - qDiscAmt);
-                  const qGst = Number(selectedRfq.gstAmount) || (Number(selectedRfq.cgst || 0) + Number(selectedRfq.sgst || 0)) || (qTaxable * 0.18);
-                  const qGrandTotal = Number(selectedRfq.grandTotal) || (qTaxable + qGst);
-
-                  return (
-                    <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-2 border-slate-200">
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
-                        {/* Dispatch & Commercial Terms */}
-                        <div className="w-full sm:w-1/2 space-y-2 text-xs text-slate-600">
-                          <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] border-b border-slate-200 pb-1">
-                            Dispatch &amp; Commercial Terms
-                          </h4>
-                          <p><strong className="text-slate-800">Dispatch:</strong> Ex-Stock Bangalore Central Warehouse (24-48 Hours)</p>
-                          <p><strong className="text-slate-800">Payment Terms:</strong> 30 Days Credit against Approved Corporate PO</p>
-                          <p><strong className="text-slate-800">Freight:</strong> To Pay / Extra at actuals to project site</p>
-                          <p><strong className="text-slate-800">Quotation Validity:</strong> 7 Days from issue date</p>
-                        </div>
-
-                        {/* Financial Summary Card */}
-                        <div className="w-full sm:w-[320px] bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs shrink-0">
-                          <div className="flex justify-between text-slate-600">
-                            <span>Subtotal (Items):</span>
-                            <span className="font-mono font-medium">₹{quoteSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                          </div>
-                          {qDiscAmt > 0 && (
-                            <div className="flex justify-between text-emerald-600 font-semibold">
-                              <span>Special Discount ({qDiscRate}%):</span>
-                              <span className="font-mono">-₹{qDiscAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-slate-600">
-                            <span>Taxable Amount:</span>
-                            <span className="font-mono font-medium">₹{qTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                          </div>
-                          <div className="flex justify-between text-slate-600">
-                            <span>GST (18%):</span>
-                            <span className="font-mono font-medium">₹{qGst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t-2 border-slate-900">
-                            <span>Grand Total:</span>
-                            <span className="font-mono text-base text-red-700">₹{qGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Official Signatory Block */}
-                      <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 text-xs text-slate-500">
-                        <div>
-                          <p className="font-bold text-slate-800">SIDDHI KABEL CORP PVT LTD</p>
-                          <p className="text-[11px] text-slate-500">Authorized Channel Partner &amp; Master Stockist</p>
-                        </div>
-                        <div className="sm:text-right">
-                          <div className="h-10 border-b border-dashed border-slate-300 w-44 mb-1"></div>
-                          <p className="font-bold text-slate-700">Authorized Signatory</p>
-                          <p className="text-[10px] text-slate-400">Computer generated official estimate</p>
-                        </div>
-                      </div>
+                {/* Print-Only Official Terms & Signatory Block (Hidden on Screen, Visible only on Paper Print) */}
+                <div className="hidden print:block mt-6 pt-4 border-t-2 border-slate-200">
+                  <div className="flex justify-between items-end text-xs text-slate-500">
+                    <div>
+                      <p className="font-bold text-slate-800">SIDDHI KABEL CORP PVT LTD</p>
+                      <p className="text-[11px] text-slate-500">Authorized Channel Partner &amp; Master Stockist</p>
                     </div>
-                  );
-                })()}
+                    <div className="text-right">
+                      <div className="h-10 border-b border-dashed border-slate-300 w-44 mb-1"></div>
+                      <p className="font-bold text-slate-700">Authorized Signatory</p>
+                      <p className="text-[10px] text-slate-400">Computer generated official estimate</p>
+                    </div>
+                  </div>
+                </div>
 
 
               </div>

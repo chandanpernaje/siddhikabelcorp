@@ -1277,11 +1277,11 @@ app.get('/api/rfqs', async (req, res) => {
       } catch (e) {}
     }
 
-    // Requirement 2.5: Automatic 7-day expiry for RFQs in Pending or Under Review
+    // Requirement 2.5: Automatic 7-day expiry for RFQs in Pending/Assigned without action
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     try {
       const toExpire = await RFQ.find({
-        status: { $in: ['Pending', 'Under Review', 'New', 'Assigned', 'Process by Sales', 'Processing'] },
+        status: { $in: ['Pending', 'New', 'Assigned', 'Process by Sales', 'Processing'] },
         $or: [
           { assignedAt: { $lte: sevenDaysAgo } },
           { assignedAt: null, createdAt: { $lte: sevenDaysAgo } }
@@ -1773,7 +1773,16 @@ app.get('/api/categories', async (req, res) => {
       return keyA.localeCompare(keyB);
     });
 
-    res.json(sortedCategories);
+    // Strictly deduplicate by make + category name
+    const seenCat = new Set<string>();
+    const deduplicatedCategories = sortedCategories.filter(c => {
+      const k = `${(c.make || 'LAPP').toLowerCase().trim()}:${(c.name || '').toLowerCase().trim()}`;
+      if (!c.name || seenCat.has(k)) return false;
+      seenCat.add(k);
+      return true;
+    });
+
+    res.json(deduplicatedCategories);
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.json(OFFICIAL_24_CATEGORIES.map((c, idx) => ({ _id: `cat_${idx}`, ...c })));
@@ -1894,13 +1903,21 @@ const getMakesHandler = async (req: express.Request, res: express.Response) => {
     }));
 
     const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
-    enrichedMakes.sort((a, b) => {
+    const seenMake = new Set<string>();
+    const dedupedMakes = enrichedMakes.filter(m => {
+      const k = (m.name || '').toLowerCase().trim();
+      if (!k || seenMake.has(k)) return false;
+      seenMake.add(k);
+      return true;
+    });
+
+    dedupedMakes.sort((a, b) => {
       const idxA = brandOrder.indexOf(a.name);
       const idxB = brandOrder.indexOf(b.name);
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
     });
 
-    res.json(enrichedMakes);
+    res.json(dedupedMakes);
   } catch (error) {
     console.error('Error fetching makes:', error);
     res.json([

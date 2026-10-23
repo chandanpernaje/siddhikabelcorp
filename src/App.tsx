@@ -92,7 +92,7 @@ export const App: React.FC = () => {
               {/* Public Website Routes */}
               <Route path="/" element={<MainLayout />}>
                 <Route index element={<Home />} />
-                <Route path="products" element={<Navigate to="/#brands" replace />} />
+                <Route path="products" element={<Products />} />
                 <Route path="olflex-cables" element={<OlflexCables />} />
                 <Route path="eaton-products" element={<EatonProducts />} />
                 <Route path="product-detail" element={<ProductDetail />} />

@@ -340,7 +340,7 @@ export const OlflexCables: React.FC = () => {
         const matchCore = !coreFilter || (pCore !== null && pCore.toString() === coreFilter);
 
         const pSize = normalizeCrossSection(
-          p.size !== undefined && p.size !== null && p.size !== 0 ? p.size : (p.sqmm || p.coreSize),
+          p.size !== undefined && p.size !== null && p.size !== 0 ? p.size : (p.sqmm || (p as any).coreSize),
           p.name
         );
         const matchSize = !sqmmFilter || (pSize !== null && pSize.toString() === sqmmFilter);

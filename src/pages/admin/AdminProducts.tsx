@@ -154,10 +154,17 @@ export const AdminProducts: React.FC = () => {
   const brands = makes;
   const setBrands = setMakes;
 
-  // Canonical Brand Display Order: 1. LAPP, 2. Eaton, 3. Partex, 4. Mennekes
+  // Canonical Brand Display Order: 1. LAPP, 2. Eaton, 3. Partex, 4. Mennekes (Strictly Deduplicated)
   const sortedMakes = React.useMemo(() => {
     const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
-    return [...makes].sort((a, b) => {
+    const seen = new Set<string>();
+    const deduped = makes.filter(m => {
+      const k = (m.name || '').toLowerCase().trim();
+      if (!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return deduped.sort((a, b) => {
       const idxA = brandOrder.findIndex(o => o.toLowerCase() === (a.name || '').toLowerCase());
       const idxB = brandOrder.findIndex(o => o.toLowerCase() === (b.name || '').toLowerCase());
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
@@ -823,7 +830,14 @@ export const AdminProducts: React.FC = () => {
 
   const sortedCategories = React.useMemo(() => {
     const activeCats = categories.filter(c => c.name?.toLowerCase().trim() !== 'solar cables');
-    return [...activeCats].sort((a, b) => {
+    const seenCat = new Set<string>();
+    const dedupedCats = activeCats.filter(c => {
+      const key = `${(c.make || 'LAPP').toLowerCase().trim()}:${(c.name || '').toLowerCase().trim()}`;
+      if (!c.name || seenCat.has(key)) return false;
+      seenCat.add(key);
+      return true;
+    });
+    return [...dedupedCats].sort((a, b) => {
       const makeA = a.make || 'LAPP';
       const makeB = b.make || 'LAPP';
       const idxA = canonicalMakeOrder.indexOf(makeA);
@@ -1192,7 +1206,7 @@ export const AdminProducts: React.FC = () => {
                   className={`flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 text-xs ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-1" /> : <FileSpreadsheet size={14} className="mr-1" />}
-                  {uploading ? 'Importing...' : 'Bulk Excel'}
+                  {uploading ? 'Importing...' : 'Import'}
                 </button>
               </div>
 
@@ -1947,7 +1961,7 @@ export const AdminProducts: React.FC = () => {
                                 onClick={() => {
                                   setActiveBrand(makeName);
                                   setActiveCategory(c.name);
-                                  setActiveSubCategory(c.subGroup);
+                                  setActiveSubCategory(c.subGroup || 'All');
                                   setActiveTab('Products');
                                 }}
                                 className="text-left text-slate-700 hover:text-red-600 hover:underline cursor-pointer font-medium flex items-center gap-1 group"
@@ -2519,10 +2533,10 @@ export const AdminProducts: React.FC = () => {
                     )}
                   </div>
 
-                  {/* UOM (Unit of Measurement) Dropdown */}
+                  {/* UOM Dropdown */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      UOM (Unit of Measurement) *
+                      UOM *
                     </label>
                     <select
                       value={modalUom}
