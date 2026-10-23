@@ -222,8 +222,17 @@ export const Products: React.FC = () => {
 
       // 2. Category Filter
       if (selectedCategory !== 'All') {
-        const catName = p.categoryName || p.category?.name || '';
-        if (catName.toLowerCase().trim() !== selectedCategory.toLowerCase().trim()) return false;
+        const catName = (p.categoryName || p.category?.name || '').toLowerCase().trim();
+        const selCat = selectedCategory.toLowerCase().trim();
+        const isInfra = /infra|frls|hrfr|zhfr|building wire|house wire/i.test(p.name || '') || /infra|domestic|house|building|solar/i.test(catName);
+
+        if (selCat === 'domestic / house wiring' || selCat.includes('domestic') || selCat.includes('house') || selCat.includes('infra')) {
+          if (!isInfra && !catName.includes('domestic') && !catName.includes('house') && !catName.includes('infra')) return false;
+        } else if (selCat === 'control cabinet single cores' || selCat.includes('single core')) {
+          if (isInfra || (!catName.includes('single core') && !catName.includes('cabinet') && !catName.includes('panel'))) return false;
+        } else if (catName !== selCat) {
+          return false;
+        }
       }
 
       // 3. Make / Brand Filter (Normalized to 4 authorized makes)

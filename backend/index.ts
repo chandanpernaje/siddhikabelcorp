@@ -44,10 +44,21 @@ mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 5000 })
         { brandName: 'Minak' },
         { $set: { brandName: 'Mennekes' } }
       );
-      // Permanently remove Solar Cables and migrate any products to Domestic / House Wiring
+      // Permanently remove Solar Cables and migrate all LAPP INFRA / building wires to Domestic / House Wiring
       await mongoose.connection.collection('products').updateMany(
-        { categoryName: { $regex: /^solar cables$/i } },
-        { $set: { categoryName: 'Domestic / House Wiring' } }
+        { 
+          $or: [
+            { categoryName: { $regex: /^solar cables$/i } },
+            { name: { $regex: /infra/i } },
+            { categoryName: { $regex: /infra|domestic|house\s*wiring|building\s*wire/i } }
+          ]
+        },
+        { 
+          $set: { 
+            categoryName: 'Domestic / House Wiring',
+            subGroup: 'Building Wires / Single Cores'
+          } 
+        }
       );
       await mongoose.connection.collection('categories').deleteMany(
         { name: { $regex: /^solar cables$/i } }
@@ -2093,12 +2104,18 @@ app.get('/api/products', async (req, res) => {
         }
       }
 
+      let resolvedCategoryName = p.categoryName || 'General Products';
+      if (/infra/i.test(p.name || '') || /infra|domestic|house\s*wiring|solar/i.test(resolvedCategoryName)) {
+        resolvedCategoryName = 'Domestic / House Wiring';
+      }
+
       return {
         id: p._id.toString(),
         partNo: p.partNo,
         name: p.name,
-        category: { name: p.categoryName },
-        categoryName: p.categoryName,
+        category: { name: resolvedCategoryName },
+        categoryName: resolvedCategoryName,
+        subGroup: 'Building Wires / Single Cores',
         brand: { name: p.brandName },
         brandName: p.brandName,
         core: cleanCore || p.core,
@@ -2458,13 +2475,14 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
       if (!data || data.length === 0) continue;
 
       // Determine default category & brand from sheet name if applicable
-      let defaultCategory = 'Control Cables';
+      let defaultCategory = 'Power and Control Cables';
       const snLower = sheetName.toLowerCase();
-      if (snLower.includes('skintop')) defaultCategory = 'Cable Glands';
-      else if (snLower.includes('silvyn')) defaultCategory = 'Conduits & Accessories';
-      else if (snLower.includes('liy') || snLower.includes('unitronic')) defaultCategory = 'Data & Signal Cables';
-      else if (snLower.includes('uniplus') || snLower.includes('infra') || snLower.includes('fr')) defaultCategory = 'Single Core Wires';
-      else if (snLower.includes('power')) defaultCategory = 'Power Cables';
+      if (snLower.includes('skintop')) defaultCategory = 'Cable Glands & Counter Nuts';
+      else if (snLower.includes('silvyn')) defaultCategory = 'Rill, Conduit & Klick';
+      else if (snLower.includes('liy') || snLower.includes('unitronic') || snLower.includes('etherline')) defaultCategory = 'Data Communication Cables';
+      else if (snLower.includes('infra') || snLower.includes('house') || snLower.includes('domestic')) defaultCategory = 'Domestic / House Wiring';
+      else if (snLower.includes('uniplus') || snLower.includes('single core') || snLower.includes('fr')) defaultCategory = 'Control Cabinet Single Cores';
+      else if (snLower.includes('power')) defaultCategory = 'Power and Control Cables';
 
       for (const [index, row] of data.entries()) {
         try {
@@ -2498,7 +2516,10 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
           }
 
           const resolvedName = String(productName || (partNo ? `LAPP Product ${partNo}` : 'Industrial Cable'));
-          const categoryName = row['Category'] || row['Category Name'] ? String(row['Category'] || row['Category Name']).trim() : defaultCategory;
+          let categoryName = row['Category'] || row['Category Name'] ? String(row['Category'] || row['Category Name']).trim() : defaultCategory;
+          if (/infra/i.test(resolvedName) || /infra|domestic|house\s*wiring|solar/i.test(categoryName)) {
+            categoryName = 'Domestic / House Wiring';
+          }
           const brandName = row['Brand'] || row['Brand Name'] ? String(row['Brand'] || row['Brand Name']).trim() : 'LAPP KABEL';
 
           // Extract MRP / SP

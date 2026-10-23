@@ -104,24 +104,25 @@ export const LAPP_CATEGORY_CONFIGS: Record<string, CategorySeriesConfig> = {
     brandTitle: 'LAPP INFRA Building & House Wires',
     groupPrefix: 'INFRA',
     allLabel: 'All LAPP INFRA',
-    baselineTotal: 76,
+    baselineTotal: 78,
     series: [
       { id: 'frls', title: 'ÖLFLEX® INFRA FRLS', desc: 'Flame Retardant Low Smoke building wire for residential & commercial wiring (1100V)', pattern: /frls/i, baselineCount: 28 },
       { id: 'fr', title: 'ÖLFLEX® INFRA FR', desc: 'Flame Retardant PVC insulated house wire with high oxygen index for fire safety', pattern: /\bfr\b(?!.*(?:ls|zh))/i, baselineCount: 20 },
       { id: 'hrfr', title: 'ÖLFLEX® INFRA HRFR', desc: 'Heat Resistant Flame Retardant house wire for high-load and warm environments (85°C)', pattern: /hrfr/i, baselineCount: 16 },
-      { id: 'zhfr', title: 'ÖLFLEX® INFRA ZHFR', desc: 'Zero Halogen Flame Retardant eco-friendly building wire with zero toxic emissions', pattern: /zhfr/i, baselineCount: 12 },
+      { id: 'zhfr', title: 'ÖLFLEX® INFRA ZHFR', desc: 'Zero Halogen Flame Retardant eco-friendly building wire with zero toxic emissions', pattern: /zhfr/i, baselineCount: 14 },
     ]
   }
 };
 
-export const getLappCategoryKey = (catName: string): string => {
+export const getLappCategoryKey = (catName: string, prodName?: string): string => {
   const s = (catName || '').toLowerCase().trim();
-  if (s.includes('power') || s.includes('control cable')) return 'power and control cables';
-  if (s.includes('data') || s.includes('communication')) return 'data communication cables';
+  const p = (prodName || '').toLowerCase().trim();
+  if (p.includes('infra') || s.includes('domestic') || s.includes('house') || s.includes('infra') || s.includes('building') || s.includes('solar')) return 'domestic / house wiring';
+  if (s.includes('power') || s.includes('control cable') || p.includes('classic 110') || p.includes('classic 100')) return 'power and control cables';
+  if (s.includes('data') || s.includes('communication') || p.includes('unitronic') || p.includes('etherline')) return 'data communication cables';
   if (s.includes('single core') || s.includes('cabinet') || s.includes('panel')) return 'control cabinet single cores';
-  if (s.includes('gland') || s.includes('counter nut') || s.includes('nut')) return 'cable glands & counter nuts';
-  if (s.includes('rill') || s.includes('conduit') || s.includes('klick')) return 'rill, conduit & klick';
-  if (s.includes('domestic') || s.includes('house') || s.includes('infra') || s.includes('building') || s.includes('solar')) return 'domestic / house wiring';
+  if (s.includes('gland') || s.includes('counter nut') || s.includes('nut') || p.includes('skintop')) return 'cable glands & counter nuts';
+  if (s.includes('rill') || s.includes('conduit') || s.includes('klick') || p.includes('silvyn')) return 'rill, conduit & klick';
   return '';
 };
 
@@ -900,7 +901,12 @@ export const AdminProducts: React.FC = () => {
     const map: Record<string, number> = {};
     products.forEach((p) => {
       const catName = p.category?.name || p.categoryName || '';
-      if (catName) {
+      const name = String(p.name || '');
+      const isInfra = /infra|frls|hrfr|zhfr|building wire|house wire/i.test(name) || /infra|domestic|house|building|solar/i.test(catName);
+
+      if (isInfra) {
+        map['domestic / house wiring'] = (map['domestic / house wiring'] || 0) + 1;
+      } else if (catName) {
         const key = catName.trim().toLowerCase();
         map[key] = (map[key] || 0) + 1;
       }
@@ -925,8 +931,9 @@ export const AdminProducts: React.FC = () => {
     const matchingCatProducts = products.filter(p => {
       const brand = (p.brand?.name || p.brandName || '').toLowerCase();
       const cat = (p.category?.name || p.categoryName || '').toLowerCase();
+      const name = String(p.name || '').toLowerCase();
       const isLapp = brand.includes('lapp') || !brand;
-      const key = getLappCategoryKey(cat);
+      const key = getLappCategoryKey(cat, name);
       return isLapp && key === currentCategoryKey;
     });
 
@@ -1247,12 +1254,25 @@ export const AdminProducts: React.FC = () => {
         pSqmm.includes(q);
 
       const activeCatLower = activeCategory.toLowerCase().trim();
-      const matchesCategory = 
-        activeCategory === 'All' || 
-        pCat === activeCatLower ||
-        (activeCatLower === 'control cables' && pCat.includes('control')) ||
-        (activeCatLower === 'power cables' && pCat.includes('power')) ||
-        (activeCatLower === 'cable accessories' && (pCat.includes('gland') || pCat.includes('rill')));
+      const pCatLower = pCat.toLowerCase().trim();
+      const isInfraProduct = /infra|frls|hrfr|zhfr|building wire|house wire/i.test(pName) || /infra|domestic|house|building|solar/i.test(pCatLower);
+
+      let matchesCategory = false;
+      if (activeCategory === 'All') {
+        matchesCategory = true;
+      } else if (activeCatLower === 'domestic / house wiring' || activeCatLower.includes('domestic') || activeCatLower.includes('house') || activeCatLower.includes('infra')) {
+        matchesCategory = isInfraProduct || pCatLower.includes('domestic') || pCatLower.includes('house') || pCatLower.includes('infra');
+      } else if (activeCatLower === 'control cabinet single cores' || activeCatLower.includes('single core')) {
+        matchesCategory = !isInfraProduct && (pCatLower.includes('single core') || pCatLower.includes('cabinet') || pCatLower.includes('panel'));
+      } else if (activeCatLower === 'control cables' || activeCatLower === 'power and control cables') {
+        matchesCategory = !isInfraProduct && (pCatLower === activeCatLower || pCatLower.includes('control') || pCatLower.includes('power'));
+      } else if (activeCatLower === 'power cables') {
+        matchesCategory = !isInfraProduct && pCatLower.includes('power');
+      } else if (activeCatLower === 'cable accessories') {
+        matchesCategory = pCatLower.includes('gland') || pCatLower.includes('rill') || pCatLower.includes('accessory');
+      } else {
+        matchesCategory = pCatLower === activeCatLower;
+      }
 
       const activeBrandLower = activeBrand.toLowerCase().trim();
       const matchesBrand =
