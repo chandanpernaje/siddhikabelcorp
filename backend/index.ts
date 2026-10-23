@@ -1773,11 +1773,13 @@ app.get('/api/categories', async (req, res) => {
       return keyA.localeCompare(keyB);
     });
 
-    // Strictly deduplicate by make + category name
+    // Strictly restrict allCategories to the official 24 categories and deduplicate
+    const officialNamesLower = new Set(OFFICIAL_24_CATEGORIES.map(c => c.name.toLowerCase().trim()));
     const seenCat = new Set<string>();
     const deduplicatedCategories = sortedCategories.filter(c => {
-      const k = `${(c.make || 'LAPP').toLowerCase().trim()}:${(c.name || '').toLowerCase().trim()}`;
-      if (!c.name || seenCat.has(k)) return false;
+      const nameLower = (c.name || '').toLowerCase().trim();
+      const k = `${(c.make || 'LAPP').toLowerCase().trim()}:${nameLower}`;
+      if (!c.name || !officialNamesLower.has(nameLower) || seenCat.has(k)) return false;
       seenCat.add(k);
       return true;
     });
@@ -1917,7 +1919,32 @@ const getMakesHandler = async (req: express.Request, res: express.Response) => {
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
     });
 
-    res.json(dedupedMakes);
+    // Guarantee that all 4 approved makes exist in the response
+    const finalMakes = [...dedupedMakes];
+    for (const reqMake of APPROVED_MAKES_LIST) {
+      if (!seenMake.has(reqMake.toLowerCase())) {
+        const prodCount = await Product.countDocuments({ brandName: reqMake });
+        const catCount = await Category.countDocuments({ make: reqMake });
+        finalMakes.push({
+          _id: new mongoose.Types.ObjectId() as any,
+          name: reqMake,
+          description: defaultDescriptions[reqMake] || 'Authorized Manufacturer Make',
+          productCount: prodCount,
+          categoryCount: catCount || 6,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        seenMake.add(reqMake.toLowerCase());
+      }
+    }
+
+    finalMakes.sort((a, b) => {
+      const idxA = brandOrder.indexOf(a.name);
+      const idxB = brandOrder.indexOf(b.name);
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    });
+
+    res.json(finalMakes);
   } catch (error) {
     console.error('Error fetching makes:', error);
     res.json([
@@ -2051,7 +2078,7 @@ app.get('/api/products', async (req, res) => {
       // Fallback: extract core and sqmm from product name (e.g. 3G1.5, 4X2,5)
       if ((!cleanCore || !cleanSqmm) && p.name) {
         const nameMatch = String(p.name).match(/(\d+)\s*[xXgG]\s*([0-9]+(?:[.,][0-9]+)?)/);
-        if (nameMatch) {
+        if (nameMatch && nameMatch[1] && nameMatch[2]) {
           if (!cleanCore) {
             const parsedC = parseInt(nameMatch[1], 10);
             if (!isNaN(parsedC) && parsedC > 0) cleanCore = parsedC.toString();

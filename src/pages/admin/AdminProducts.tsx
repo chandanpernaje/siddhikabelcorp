@@ -146,27 +146,101 @@ interface MakeItem {
 }
 type BrandItem = MakeItem;
 
+export const DEFAULT_MAKES: MakeItem[] = [
+  {
+    _id: 'm_lapp',
+    name: 'LAPP',
+    description: 'Global pioneer in flexible control cables, industrial data systems & cable glands (ÖLFLEX®, UNITRONIC®, SKINTOP®)',
+    productCount: 822,
+    categoryCount: 6
+  },
+  {
+    _id: 'm_eaton',
+    name: 'Eaton',
+    description: 'Intelligent power management, industrial switchgear, motor protection breakers & contactors (PKZM0, DILM, NZM)',
+    productCount: 8,
+    categoryCount: 6
+  },
+  {
+    _id: 'm_partex',
+    name: 'Partex',
+    description: 'Swedish precision wire, cable and component marking systems, interlocking markers & portable thermal printers',
+    productCount: 6,
+    categoryCount: 6
+  },
+  {
+    _id: 'm_mennekes',
+    name: 'Mennekes',
+    description: 'Industrial earthing solutions, chemical electrodes, heavy-duty industrial plugs, sockets & distribution accessories (AMAPLAST, AMAXX®)',
+    productCount: 7,
+    categoryCount: 6
+  }
+];
+
+export const OFFICIAL_24_CATEGORIES_METADATA: { name: string; make: string; subGroup: string; description: string }[] = [
+  // LAPP (6)
+  { name: 'Power and Control Cables', make: 'LAPP', subGroup: 'ÖLFLEX® Power & Control', description: 'Flexible control cables, oil-resistant PVC/PUR cables, and heat-resistant power cables' },
+  { name: 'Data Communication Cables', make: 'LAPP', subGroup: 'UNITRONIC® / ETHERLINE®', description: 'Shielded data transmission cables, industrial ethernet cables, and bus system cables' },
+  { name: 'Control Cabinet Single Cores', make: 'LAPP', subGroup: 'Single Core Panel Wires', description: 'Hook-up wires, panel single cores, halogen-free and high-temperature single conductor wires' },
+  { name: 'Cable Glands & Counter Nuts', make: 'LAPP', subGroup: 'SKINTOP® Cable Glands', description: 'Polyamide, brass, and stainless steel strain relief cable glands and locknuts' },
+  { name: 'Rill, Conduit & Klick', make: 'LAPP', subGroup: 'SILVYN® Protective Conduits', description: 'Protective cable conduits, spiral hoses, and quick-click conduit connectors' },
+  { name: 'Domestic / House Wiring', make: 'LAPP', subGroup: 'Building Wires / Single Cores', description: 'Flame-retardant FR-LSH building wires, copper conductor house wiring cables' },
+  // Eaton (6)
+  { name: 'Switchgear & Protection', make: 'Eaton', subGroup: 'Motor Starters, Contactors & Breakers', description: 'Industrial motor control, power distribution switchgear, and safety isolators' },
+  { name: 'Motor Protection Breakers', make: 'Eaton', subGroup: 'PKZM0 Motor Breakers', description: 'Rotary motor protection with overload & short circuit release up to 150 kA' },
+  { name: 'Molded Case Circuit Breakers', make: 'Eaton', subGroup: 'NZM Compact MCCBs', description: 'Electronic trip molded case circuit breakers up to 1600A for industrial distribution' },
+  { name: 'Miniature Circuit Breakers & RCDs', make: 'Eaton', subGroup: 'FAZ DIN-Rail MCBs', description: '10kA and 15kA breaking capacity DIN rail miniature circuit breakers and residual current devices' },
+  { name: 'Power Contactors & Relays', make: 'Eaton', subGroup: 'DILM Power Contactors', description: 'Heavy-duty 3-pole and 4-pole contactors with electronic coils and auxiliary relays' },
+  { name: 'Power Quality & UPS', make: 'Eaton', subGroup: 'Capacitors & APFC Systems', description: 'Automatic power factor correction panels, harmonic filters, and industrial UPS systems' },
+  // Mennekes (6)
+  { name: 'Industrial Plugs & Sockets', make: 'Mennekes', subGroup: 'Heavy Duty CEE Plugs & Sockets', description: 'CEE-norm 16A to 125A industrial plugs, couplers, and switched interlocked receptacles' },
+  { name: 'AMAXX® & Distribution Enclosures', make: 'Mennekes', subGroup: 'Modular Distribution Units', description: 'Combination receptacle distribution enclosures in high-impact AMAPLAST housing' },
+  { name: 'Panel Mounted Receptacle Sockets', make: 'Mennekes', subGroup: 'Watertight Receptacles', description: 'Straight and angled panel mounted receptacles with nickel-plated contacts' },
+  { name: 'Chemical Earthing Electrodes', make: 'Mennekes', subGroup: 'Maintenance-Free Chemical Electrodes', description: 'High corrosion-resistant chemical earthing electrodes with crystalline earth compound' },
+  { name: 'Copper Clad Earth Rods & Accessories', make: 'Mennekes', subGroup: 'Earth Rods & Clamps', description: 'Molecularly bonded copper clad steel earth rods, driving heads, and bronze couplers' },
+  { name: 'Earthing Solutions', make: 'Mennekes', subGroup: 'Chemical Electrodes & Earthing Accessories', description: 'Low-impedance industrial earthing solutions and lightning protection grounding pits' },
+  // Partex (6)
+  { name: 'Cable Marking Systems', make: 'Partex', subGroup: 'PA Markers & ProMark Printers', description: 'Pre-printed interlocking cable markers, chevron-cut wire tags, and carrier strips' },
+  { name: 'Profile Marking Sleeves', make: 'Partex', subGroup: 'PO/POZ Profile Sleeves', description: 'Oval profile marking sleeves and halogen-free printable tubing for wire identification' },
+  { name: 'Stainless Steel Cable Markers', make: 'Partex', subGroup: 'PKS Embossed Steel Markers', description: 'Acid-proof AISI 316 stainless steel cable markers for harsh marine and chemical environments' },
+  { name: 'Component & Terminal Block Marking', make: 'Partex', subGroup: 'Snap-On Terminal Markers', description: 'Snap-on terminal block markers and component identification tags for switchboards' },
+  { name: 'Industrial Thermal Printers & Ribbons', make: 'Partex', subGroup: 'ProMark T-1000 Printers', description: 'Portable high-speed thermal transfer profile and label printers with resin ribbons' },
+  { name: 'Industrial Cable Ties & Fasteners', make: 'Partex', subGroup: 'Polyamide & Steel Cable Ties', description: 'UV-resistant nylon cable ties, stainless steel ball-lock ties, and fastening mounts' }
+];
+
 export const AdminProducts: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [makes, setMakes] = useState<MakeItem[]>([]);
+  const [makes, setMakes] = useState<MakeItem[]>(DEFAULT_MAKES);
   const brands = makes;
   const setBrands = setMakes;
 
-  // Canonical Brand Display Order: 1. LAPP, 2. Eaton, 3. Partex, 4. Mennekes (Strictly Deduplicated)
+  // Canonical Brand Display Order: 1. LAPP, 2. Eaton, 3. Partex, 4. Mennekes (Guaranteed 4 Approved Makes)
   const sortedMakes = React.useMemo(() => {
     const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
+    const source = makes.length > 0 ? makes : DEFAULT_MAKES;
     const seen = new Set<string>();
-    const deduped = makes.filter(m => {
-      const k = (m.name || '').toLowerCase().trim();
-      if (!k || seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
+    const deduped: MakeItem[] = [];
+    for (const m of source) {
+      const canonical = ALLOWED_MAKES.find(a => a.toLowerCase() === (m.name || '').toLowerCase().trim());
+      if (canonical) {
+        const k = canonical.toLowerCase();
+        if (!seen.has(k)) {
+          seen.add(k);
+          deduped.push({ ...m, name: canonical });
+        }
+      }
+    }
+    for (const fallback of DEFAULT_MAKES) {
+      if (!seen.has(fallback.name.toLowerCase())) {
+        deduped.push(fallback);
+        seen.add(fallback.name.toLowerCase());
+      }
+    }
     return deduped.sort((a, b) => {
-      const idxA = brandOrder.findIndex(o => o.toLowerCase() === (a.name || '').toLowerCase());
-      const idxB = brandOrder.findIndex(o => o.toLowerCase() === (b.name || '').toLowerCase());
+      const idxA = brandOrder.indexOf(a.name as any);
+      const idxB = brandOrder.indexOf(b.name as any);
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
     });
   }, [makes]);
@@ -281,29 +355,72 @@ export const AdminProducts: React.FC = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/categories`);
       if (res.ok) {
-        setCategories(await res.json());
+        const raw = await res.json();
+        if (Array.isArray(raw)) {
+          const obsoleteList = ['solar cables', 'control cables', 'power cables', 'data & communication', 'cable accessories'];
+          const cleaned = raw.filter((c: any) => {
+            const name = (c.name || '').toLowerCase().trim();
+            return name && !obsoleteList.includes(name);
+          });
+          setCategories(cleaned);
+          return;
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch categories', error);
+      console.warn('Failed to fetch categories, using fallbacks', error);
     }
   };
 
   const fetchMakes = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/makes`);
+      // 1. Try /api/makes first, then fallback to /api/brands if /api/makes 404s on deployed backend
+      let res = await fetch(`${API_BASE_URL}/api/makes`);
+      if (!res.ok) {
+        res = await fetch(`${API_BASE_URL}/api/brands`);
+      }
       if (res.ok) {
         const data = await res.json();
-        const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
-        const sorted = [...data].sort((a, b) => {
-          const idxA = brandOrder.findIndex(o => o.toLowerCase() === (a.name || '').toLowerCase());
-          const idxB = brandOrder.findIndex(o => o.toLowerCase() === (b.name || '').toLowerCase());
-          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-        });
-        setMakes(sorted);
+        if (Array.isArray(data) && data.length > 0) {
+          const brandOrder = ['LAPP', 'Eaton', 'Partex', 'Mennekes'];
+          const seen = new Set<string>();
+          const deduped: MakeItem[] = [];
+
+          for (const item of data) {
+            const matchName = ALLOWED_MAKES.find(m => m.toLowerCase() === (item.name || '').toLowerCase().trim());
+            if (matchName) {
+              const k = matchName.toLowerCase();
+              if (!seen.has(k)) {
+                seen.add(k);
+                deduped.push({
+                  ...item,
+                  name: matchName,
+                  description: item.description || DEFAULT_MAKES.find(d => d.name === matchName)?.description || ''
+                });
+              }
+            }
+          }
+
+          // Ensure all 4 approved makes exist
+          for (const fallback of DEFAULT_MAKES) {
+            if (!seen.has(fallback.name.toLowerCase())) {
+              deduped.push(fallback);
+              seen.add(fallback.name.toLowerCase());
+            }
+          }
+
+          const sorted = deduped.sort((a, b) => {
+            const idxA = brandOrder.indexOf(a.name as any);
+            const idxB = brandOrder.indexOf(b.name as any);
+            return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+          });
+          setMakes(sorted);
+          return;
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch makes', error);
+      console.warn('Failed to fetch makes, keeping defaults', error);
     }
+    setMakes(DEFAULT_MAKES);
   };
   const fetchBrands = fetchMakes;
 
@@ -829,46 +946,50 @@ export const AdminProducts: React.FC = () => {
   const canonicalMakeOrder = ['LAPP', 'Eaton', 'Mennekes', 'Partex'];
 
   const sortedCategories = React.useMemo(() => {
-    const activeCats = categories.filter(c => c.name?.toLowerCase().trim() !== 'solar cables');
-    const seenCat = new Set<string>();
-    const dedupedCats = activeCats.filter(c => {
-      const key = `${(c.make || 'LAPP').toLowerCase().trim()}:${(c.name || '').toLowerCase().trim()}`;
-      if (!c.name || seenCat.has(key)) return false;
-      seenCat.add(key);
-      return true;
+    const obsoleteList = ['solar cables', 'control cables', 'power cables', 'data & communication', 'cable accessories'];
+    const activeCats = categories.filter(c => {
+      const n = (c.name || '').toLowerCase().trim();
+      return n && !obsoleteList.includes(n);
     });
-    return [...dedupedCats].sort((a, b) => {
+
+    const seenCat = new Set<string>();
+    const dedupedCats: CategoryItem[] = [];
+    activeCats.forEach(c => {
+      const k = `${(c.make || 'LAPP').toLowerCase().trim()}:${(c.name || '').toLowerCase().trim()}`;
+      if (!seenCat.has(k)) {
+        seenCat.add(k);
+        dedupedCats.push(c);
+      }
+    });
+
+    // Ensure all 24 official categories are always present
+    OFFICIAL_24_CATEGORIES_METADATA.forEach((meta, idx) => {
+      const k = `${meta.make.toLowerCase()}:${meta.name.toLowerCase()}`;
+      if (!seenCat.has(k)) {
+        seenCat.add(k);
+        dedupedCats.push({
+          _id: `official_cat_${idx}`,
+          name: meta.name,
+          make: meta.make,
+          subGroup: meta.subGroup,
+          description: meta.description
+        });
+      }
+    });
+
+    const officialOrderMap = new Map<string, number>();
+    OFFICIAL_24_CATEGORIES_METADATA.forEach((c, i) => {
+      officialOrderMap.set(`${c.make.toLowerCase()}:${c.name.toLowerCase()}`, i);
+    });
+
+    return dedupedCats.sort((a, b) => {
       const makeA = a.make || 'LAPP';
       const makeB = b.make || 'LAPP';
-      const idxA = canonicalMakeOrder.indexOf(makeA);
-      const idxB = canonicalMakeOrder.indexOf(makeB);
-      if (idxA !== idxB) {
-        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-      }
-
-      // Strict client-specified order for LAPP categories:
-      // 1. Power and Control Cables
-      // 2. Data Communication Cables
-      // 3. Control Cabinet Single Cores
-      // 4. Cable Glands & Counter Nuts
-      // 5. Rill, Conduit & Klick
-      // 6. Domestic / House Wiring
-      if (makeA.toLowerCase() === 'lapp' && makeB.toLowerCase() === 'lapp') {
-        const getLappIdx = (n: string) => {
-          const s = (n || '').toLowerCase().trim();
-          if (s.includes('power') && s.includes('control')) return 1;
-          if (s.includes('data') || s.includes('communication') || s.includes('unitronic') || s.includes('etherline')) return 2;
-          if (s.includes('cabinet') || s.includes('single core') || s.includes('panel wire')) return 3;
-          if (s.includes('gland') || s.includes('locknut') || s.includes('skintop')) return 4;
-          if (s.includes('rill') || s.includes('conduit') || s.includes('klick') || s.includes('silvyn')) return 5;
-          if (s.includes('domestic') || s.includes('house') || s.includes('building') || s.includes('infra')) return 6;
-          return 99;
-        };
-        const orderA = getLappIdx(a.name || '');
-        const orderB = getLappIdx(b.name || '');
-        if (orderA !== orderB) return orderA - orderB;
-      }
-
+      const kA = `${makeA.toLowerCase()}:${(a.name || '').toLowerCase()}`;
+      const kB = `${makeB.toLowerCase()}:${(b.name || '').toLowerCase()}`;
+      const idxA = officialOrderMap.has(kA) ? officialOrderMap.get(kA)! : 999;
+      const idxB = officialOrderMap.has(kB) ? officialOrderMap.get(kB)! : 999;
+      if (idxA !== idxB) return idxA - idxB;
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [categories]);
@@ -1102,16 +1223,28 @@ export const AdminProducts: React.FC = () => {
 
   // Filter Products by Search, Category, Brand, and Sub-category (4-level hierarchy)
   const filteredProducts = React.useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+
     return products.filter((p) => {
-      const pCat = (p.category?.name || p.categoryName || '').toLowerCase().trim();
-      const pBrand = (p.brand?.name || p.brandName || '').toLowerCase().trim();
+      const pName = String(p.name || '').toLowerCase();
+      const pPartNo = String(p.partNo || '').toLowerCase();
+      const pDesc = String(p.description || '').toLowerCase();
+      const pBrand = String(p.brand?.name || p.brandName || p.make || '').toLowerCase().trim();
+      const pCat = String(p.category?.name || p.categoryName || '').toLowerCase().trim();
+      const pSub = String(p.subGroup || p.subCategory || '').toLowerCase().trim();
+      const pCore = String(p.core || '').toLowerCase().trim();
+      const pSqmm = String(p.sqmm || p.coreSize || p.size || '').toLowerCase().trim();
 
       const matchesSearch = 
-        !searchQuery.trim() ||
-        (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.partNo && p.partNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        pBrand.includes(searchQuery.toLowerCase()) ||
-        pCat.includes(searchQuery.toLowerCase());
+        !q ||
+        pName.includes(q) ||
+        pPartNo.includes(q) ||
+        pDesc.includes(q) ||
+        pBrand.includes(q) ||
+        pCat.includes(q) ||
+        pSub.includes(q) ||
+        pCore.includes(q) ||
+        pSqmm.includes(q);
 
       const activeCatLower = activeCategory.toLowerCase().trim();
       const matchesCategory = 
@@ -1136,8 +1269,6 @@ export const AdminProducts: React.FC = () => {
         } else {
           const seriesOpt = currentCategoryConfig.series.find(s => s.title === selectedSubSeries || s.id === selectedSubSeries);
           if (seriesOpt) {
-            const pName = String(p.name || '');
-            const pSub = String(p.subGroup || p.subCategory || '');
             matchesSubSeries = seriesOpt.pattern.test(pName) || seriesOpt.pattern.test(pSub);
           }
         }
@@ -1260,7 +1391,7 @@ export const AdminProducts: React.FC = () => {
           }`}
         >
           <Layers size={16} />
-          Category Management ({categories.length})
+          Category Management ({sortedCategories.length})
         </button>
         <button
           onClick={() => setActiveTab('Makes')}
@@ -1269,7 +1400,7 @@ export const AdminProducts: React.FC = () => {
           }`}
         >
           <Building size={16} />
-          Brand Management ({makes.length})
+          Brand Management ({sortedMakes.length})
         </button>
       </div>
 
@@ -1285,8 +1416,18 @@ export const AdminProducts: React.FC = () => {
                 placeholder="Search products by name, part no, category, or brand..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full pl-9 pr-8 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
             
             <div className="flex flex-wrap items-center gap-2">
@@ -1347,52 +1488,53 @@ export const AdminProducts: React.FC = () => {
           </div>
 
           {/* Category Quick Selector Pills in Products Catalog Tab */}
-          {(activeBrand === 'All' || activeBrand.toLowerCase() === 'lapp') && (
-            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Category / Group:</span>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory('All');
-                    setSelectedSubSeries('all');
-                    setActiveSubCategory('All');
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                    activeCategory === 'All'
-                      ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                  }`}
-                >
-                  All Categories ({products.length})
-                </button>
-                {displayedCategories.map((c) => {
-                  const isCatActive = activeCategory.toLowerCase() === c.name.toLowerCase();
-                  const count = categoryCountMap[c.name.toLowerCase().trim()] || 0;
-                  return (
-                    <button
-                      key={c._id || c.name}
-                      type="button"
-                      onClick={() => {
-                        setActiveCategory(c.name);
-                        setSelectedCategoryTab(c.name);
-                        setSelectedSubSeries('all');
-                        setActiveSubCategory('All');
-                      }}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                        isCatActive
-                          ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                      }`}
-                    >
-                      <span>{c.name}</span>
-                      {count > 0 && <span className="ml-1 opacity-80 text-[11px]">({count})</span>}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Category / Group:</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory('All');
+                  setSelectedSubSeries('all');
+                  setActiveSubCategory('All');
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                  activeCategory === 'All'
+                    ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                }`}
+              >
+                All Categories ({products.length})
+              </button>
+              {(activeBrand === 'All' 
+                ? sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === 'lapp') 
+                : sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === activeBrand.toLowerCase())
+              ).map((c) => {
+                const isCatActive = activeCategory.toLowerCase() === c.name.toLowerCase();
+                const count = categoryCountMap[c.name.toLowerCase().trim()] || 0;
+                return (
+                  <button
+                    key={c._id || c.name}
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory(c.name);
+                      setSelectedCategoryTab(c.name);
+                      setSelectedSubSeries('all');
+                      setActiveSubCategory('All');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                      isCatActive
+                        ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                    }`}
+                  >
+                    <span>{c.name}</span>
+                    {count > 0 && <span className="ml-1 opacity-80 text-[11px]">({count})</span>}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
 
           {/* Subseries 4-Pill Bar in Products Catalog Tab (Allows easy switching/changing between 4 series) */}
           {currentCategoryConfig && (
@@ -1705,7 +1847,7 @@ export const AdminProducts: React.FC = () => {
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Filter by Make:</span>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {ALLOWED_MAKES.map((m) => {
-                    const count = categories.filter(c => (c.make || 'LAPP').toLowerCase() === m.toLowerCase()).length;
+                    const count = sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === m.toLowerCase()).length;
                     const isActive = categoryMakeFilter === m;
                     return (
                       <button
@@ -2080,7 +2222,7 @@ export const AdminProducts: React.FC = () => {
                   </tr>
                 ) : (
                   sortedMakes.map((m) => {
-                    const catCount = categories.filter(c => (c.make || '').toLowerCase() === m.name.toLowerCase()).length;
+                    const catCount = sortedCategories.filter(c => (c.make || '').toLowerCase() === m.name.toLowerCase()).length || 6;
                     const prodCount = makeCountMap[m.name.toLowerCase()] ?? m.productCount ?? 0;
                     
                     const makeBadgeTheme = 
