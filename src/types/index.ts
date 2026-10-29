@@ -4,6 +4,7 @@ export interface Product {
   categoryName?: string;
   brand: string;
   brandName?: string;
+  productGroup?: string;
   partNo: string;
   name: string;
   specs: string[];

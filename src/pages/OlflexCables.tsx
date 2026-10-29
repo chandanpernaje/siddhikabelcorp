@@ -77,19 +77,24 @@ const CompactCableCard = ({ product, image, onQuote }: { product: any, image: st
         <img src={product.imageUrl || image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply p-1 sm:p-2 group-hover:scale-108 transition-transform duration-500 ease-out drop-shadow-sm" />
       </Link>
       <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-2">
-        <div>
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
           <span className="px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-orange-100/90 text-orange-900 border-orange-300">
             {typeof product.brand === 'object' ? (product.brand?.name || 'LAPP') : (product.brand || 'LAPP')}
           </span>
+          {product.partNo && (
+            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+              Part #{product.partNo}
+            </span>
+          )}
         </div>
         <Link to={`/product/${product.partNo}`} className="block w-full">
           <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-orange-700 transition-colors line-clamp-2 leading-snug">
-            {product.name}
+            {product.name?.replace(/(\d+),(\d+)/g, '$1.$2')}
           </h4>
         </Link>
         {(product.size || product.coreSize || product.sqmm) ? (
           <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-            {product.core ? `${product.core} Cores × ${product.sqmm || product.coreSize || product.size} mm²` : `${product.sqmm || product.coreSize || product.size} mm²`}
+            {product.core ? `${product.core} Cores × ${String(product.sqmm || product.coreSize || product.size).replace(/(\d+),(\d+)/g, '$1.$2')} mm²` : `${String(product.sqmm || product.coreSize || product.size).replace(/(\d+),(\d+)/g, '$1.$2')} mm²`}
           </div>
         ) : null}
         {product.colour && (

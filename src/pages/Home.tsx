@@ -670,7 +670,7 @@ export const Home: React.FC = () => {
             const brandLink = `/about-${brand.id}`;
 
             return (
-              <div id={`brand-section-${brand.id}`} key={brand.id} className="space-y-4 lg:space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div id={`brand-section-${brand.id}`} key={brand.id} className="scroll-mt-28 space-y-4 lg:space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Brand Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-slate-200 pb-4">
                   {/* Left Side: Text */}

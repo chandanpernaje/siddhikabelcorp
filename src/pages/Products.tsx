@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { AVAILABLE_CORES, COLOUR_OPTIONS, UOM_OPTIONS } from '../config/cableSpecs';
+import { resolveProductDatasheet } from '../config/productGroups';
 import { ColourSwatch } from '../components/ui/ColourSwatch';
 import { RFQModal } from '../components/ui/RFQModal';
 import { useCart } from '../context/CartContext';
@@ -365,15 +366,15 @@ export const Products: React.FC = () => {
 
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <Link to="/" className="hover:text-red-600 transition-colors font-medium">Home</Link>
+          <Link to="/" className="hover:text-orange-600 transition-colors font-medium">Home</Link>
           <span>/</span>
           <span className="text-slate-900 font-bold">Industrial Cable & Component Catalogue</span>
         </div>
 
         {/* Hero Banner */}
-        <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-red-950 text-white p-6 sm:p-10 shadow-xl border border-slate-700/50 relative overflow-hidden">
+        <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-orange-950 text-white p-6 sm:p-10 shadow-xl border border-slate-700/50 relative overflow-hidden">
           <div className="relative z-10 max-w-3xl space-y-3">
-            <div className="flex items-center gap-2 text-xs uppercase font-mono tracking-wider text-red-400 font-bold">
+            <div className="flex items-center gap-2 text-xs uppercase font-mono tracking-wider text-orange-400 font-bold">
               <Zap size={15} />
               <span>Direct Authorized Stockist · ISO 9001:2015 Certified Depot</span>
             </div>
@@ -400,7 +401,7 @@ export const Products: React.FC = () => {
               placeholder="Search by product name, part number, or keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all font-medium"
+              className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium"
             />
             {searchQuery && (
               <button 
@@ -432,7 +433,7 @@ export const Products: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-500 cursor-pointer hover:border-slate-300"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer hover:border-slate-300"
               >
                 <option value="name-asc">Product Name: A to Z</option>
                 <option value="name-desc">Product Name: Z to A</option>
@@ -450,7 +451,7 @@ export const Products: React.FC = () => {
             {activeFilterCount > 0 && (
               <button
                 onClick={resetAllFilters}
-                className="flex items-center gap-1 px-3 py-2 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 transition-colors"
+                className="flex items-center gap-1 px-3 py-2 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 transition-colors"
                 title="Reset all filters"
               >
                 <RotateCcw size={13} />
@@ -465,9 +466,9 @@ export const Products: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
             <span className="text-slate-400 font-semibold">Active Filters:</span>
             {selectedCategory !== 'All' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-lg font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg font-bold">
                 Category: {selectedCategory}
-                <button onClick={() => setSelectedCategory('All')} className="hover:text-red-900 ml-1"><X size={12} /></button>
+                <button onClick={() => setSelectedCategory('All')} className="hover:text-orange-900 ml-1"><X size={12} /></button>
               </span>
             )}
             {selectedBrand !== 'All' && (
@@ -511,11 +512,11 @@ export const Products: React.FC = () => {
           <aside className="hidden lg:block bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-6 sticky top-24">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                <Filter size={16} className="text-red-600" />
+                <Filter size={16} className="text-orange-600" />
                 Filter Specifications
               </h3>
               {activeFilterCount > 0 && (
-                <button onClick={resetAllFilters} className="text-[11px] font-bold text-red-600 hover:underline">
+                <button onClick={resetAllFilters} className="text-[11px] font-bold text-orange-600 hover:underline">
                   Clear All
                 </button>
               )}
@@ -529,7 +530,7 @@ export const Products: React.FC = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="All">All Categories ({products.length})</option>
                 {availableCategories.map((catName) => (
@@ -546,7 +547,7 @@ export const Products: React.FC = () => {
               <select
                 value={selectedCore}
                 onChange={(e) => setSelectedCore(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 font-mono"
               >
                 <option value="All">All Core Sizes</option>
                 {availableCores.map((c) => (
@@ -565,7 +566,7 @@ export const Products: React.FC = () => {
               <select
                 value={selectedSqmm}
                 onChange={(e) => setSelectedSqmm(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500 font-mono"
               >
                 <option value="All">All SQMM Sizes</option>
                 {availableSqmms.map((sq) => (
@@ -584,7 +585,7 @@ export const Products: React.FC = () => {
               <select
                 value={selectedColour}
                 onChange={(e) => setSelectedColour(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="All">All Colours</option>
                 {availableColours.map((col) => (
@@ -608,7 +609,7 @@ export const Products: React.FC = () => {
               <select
                 value={selectedUom}
                 onChange={(e) => setSelectedUom(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="All">All UOMs</option>
                 {availableUoms.map((uom) => (
@@ -625,7 +626,7 @@ export const Products: React.FC = () => {
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="All">All Makes</option>
                 {availableBrands.map((b) => (
@@ -651,14 +652,14 @@ export const Products: React.FC = () => {
             {/* Loading State */}
             {loading ? (
               <div className="bg-white rounded-3xl border border-slate-200 p-16 text-center space-y-3">
-                <div className="w-8 h-8 border-3 border-red-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-sm font-bold text-slate-700">Loading Product Catalogue...</p>
                 <p className="text-xs text-slate-400">Fetching technical specifications, cores, and live inventory</p>
               </div>
             ) : sortedProducts.length === 0 ? (
               /* Empty State */
               <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-sm">
-                <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center mx-auto">
                   <ShoppingBag size={28} />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800">No matching products found</h3>
@@ -667,7 +668,7 @@ export const Products: React.FC = () => {
                 </p>
                 <button
                   onClick={resetAllFilters}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-red-600 to-rose-700 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/20 hover:opacity-95 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold text-xs rounded-xl shadow-md shadow-orange-500/20 hover:opacity-95 transition-all cursor-pointer"
                 >
                   <RotateCcw size={14} />
                   Reset All Filters
@@ -685,7 +686,7 @@ export const Products: React.FC = () => {
                   return (
                     <div 
                       key={p.id}
-                      className="group bg-white rounded-2xl border border-slate-200/90 hover:border-red-400 hover:shadow-xl hover:shadow-red-500/10 transition-all duration-300 flex flex-col overflow-hidden relative"
+                      className="group bg-white rounded-2xl border border-slate-200/90 hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 flex flex-col overflow-hidden relative"
                     >
                       {/* Product Image Slot */}
                       <Link 
@@ -723,7 +724,7 @@ export const Products: React.FC = () => {
                         <div className="space-y-1.5">
                           {/* Brand Pill */}
                           <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 font-mono">
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200 font-mono">
                               {brandName}
                             </span>
                             {p.categoryName && (
@@ -736,7 +737,7 @@ export const Products: React.FC = () => {
                           {/* Product Title */}
                           <Link 
                             to={`/product/${p.partNo || p.id}`}
-                            className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-red-700 line-clamp-2 leading-snug transition-colors"
+                            className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-orange-700 line-clamp-2 leading-snug transition-colors"
                             title={p.name}
                           >
                             {p.name}
@@ -774,17 +775,20 @@ export const Products: React.FC = () => {
                                 <span className="text-slate-400 font-medium">Quote On Request</span>
                               )}
                             </div>
-                            {(p.datasheetUrl || p.categoryDatasheetUrl) && (
-                              <a
-                                href={p.datasheetUrl || p.categoryDatasheetUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[10px] font-bold text-red-600 hover:text-red-800 flex items-center gap-0.5"
-                                title="Download Technical Datasheet"
-                              >
-                                <FileText size={11} /> PDF
-                              </a>
-                            )}
+                            {(() => {
+                              const cardPdf = resolveProductDatasheet(p.name, p.datasheetUrl, p.categoryDatasheetUrl);
+                              return cardPdf ? (
+                                <a
+                                  href={cardPdf}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[10px] font-bold text-orange-600 hover:text-red-800 flex items-center gap-0.5 cursor-pointer"
+                                  title="Download Technical Datasheet"
+                                >
+                                  <FileText size={11} /> PDF
+                                </a>
+                              ) : null;
+                            })()}
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
@@ -797,7 +801,7 @@ export const Products: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenQuote(p)}
-                              className="py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-bold text-center transition-colors shadow-xs"
+                              className="py-1.5 px-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold text-center transition-colors shadow-xs"
                             >
                               Get Quote
                             </button>
@@ -847,7 +851,7 @@ export const Products: React.FC = () => {
           <div className="bg-white w-full max-w-sm h-full flex flex-col shadow-2xl p-6 space-y-5 overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-800 flex items-center gap-2">
-                <Filter size={18} className="text-red-600" />
+                <Filter size={18} className="text-orange-600" />
                 Filter Specifications
               </h3>
               <button onClick={() => setMobileFilterOpen(false)} className="p-1 rounded-lg hover:bg-slate-100">
@@ -954,7 +958,7 @@ export const Products: React.FC = () => {
               </button>
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs"
+                className="flex-1 py-2.5 bg-orange-500 text-white font-bold rounded-xl text-xs"
               >
                 Apply Filters
               </button>

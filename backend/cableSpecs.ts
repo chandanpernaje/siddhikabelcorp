@@ -62,6 +62,14 @@ export function validateCoreSqmm(core?: string | number | null, sqmm?: string | 
   return { valid: true };
 }
 
+export function formatSpecValue(val: string | number | null | undefined): string {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  if (s === '25' || s === '25 A') return '25A';
+  if (/^25\s*(?:a|amp|amperes?|amps?)$/i.test(s)) return '25A';
+  return s;
+}
+
 export interface UomOption {
   code: string;
   label: string;

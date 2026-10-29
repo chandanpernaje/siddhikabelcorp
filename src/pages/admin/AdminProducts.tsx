@@ -16,6 +16,13 @@ import {
   UOM_OPTIONS,
   COLOUR_OPTIONS
 } from '../../config/cableSpecs';
+import {
+  INITIAL_PRODUCT_GROUPS,
+  ProductGroupItem,
+  getStoredGroupDatasheets,
+  saveProductGroupDatasheet,
+  removeProductGroupDatasheet
+} from '../../config/productGroups';
 import { ColourSwatch } from '../../components/ui/ColourSwatch';
 import { formatUom, formatWeight, formatOD } from './AdminRFQs';
 
@@ -310,10 +317,12 @@ export const AdminProducts: React.FC = () => {
   const setSelectedOlflexSeries = setSelectedSubSeries;
   const [activeSubCategory, setActiveSubCategory] = useState<string>('All');
 
-  // Hierarchy form state for Add / Edit Product modal (Make -> Category -> Subgroup -> Product)
+  // Hierarchy form state for Add / Edit Product modal (Level 1: Brand -> Level 2: Brand Category -> Level 3: Product Group -> Level 4: Product / Variant)
   const [modalMake, setModalMake] = useState<string>('LAPP');
   const [modalCategory, setModalCategory] = useState<string>('');
   const [modalSubGroup, setModalSubGroup] = useState<string>('');
+  const [modalProductGroup, setModalProductGroup] = useState<string>('');
+  const [groupDatasheets, setGroupDatasheets] = useState<Record<string, string>>(getStoredGroupDatasheets());
 
   // Backwards compat aliases
   const isBrandModalOpen = isMakeModalOpen;
@@ -542,6 +551,46 @@ export const AdminProducts: React.FC = () => {
     }
   };
 
+  const handleUploadProductGroupDatasheet = (group: ProductGroupItem, file: File) => {
+    if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+      alert('Please upload a valid PDF datasheet file');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      alert('Datasheet PDF size should be less than 20MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      saveProductGroupDatasheet(group.name, base64);
+      saveProductGroupDatasheet(group.id, base64);
+      setGroupDatasheets(getStoredGroupDatasheets());
+      try {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('datasheet', file);
+        await fetch(`${API_BASE_URL}/api/product-groups/${group.id}/datasheet`, {
+          method: 'POST',
+          headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+          body: formData
+        });
+      } catch (err) {
+        console.warn('Backend sync optional', err);
+      }
+      alert(`Data Sheet (PDF) for Product Group "${group.name}" uploaded successfully!\nAll related cable variants will now display this datasheet in the frontend.`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveProductGroupDatasheet = (group: ProductGroupItem) => {
+    if (!window.confirm(`Are you sure you want to reset the custom datasheet for Product Group "${group.name}"?`)) return;
+    removeProductGroupDatasheet(group.name);
+    removeProductGroupDatasheet(group.id);
+    setGroupDatasheets(getStoredGroupDatasheets());
+    alert(`Custom datasheet for "${group.name}" has been removed and reset to default.`);
+  };
+
   const handleUploadCategoryImage = async (catId: string, file: File) => {
     try {
       const token = localStorage.getItem('token');
@@ -581,6 +630,7 @@ export const AdminProducts: React.FC = () => {
     setModalMake('LAPP');
     setModalCategory('Power and Control Cables');
     setModalSubGroup('ÖLFLEX® Power & Control');
+    setModalProductGroup('ÖLFLEX® CLASSIC 110');
     setCoreSqmmError(null);
     setIsModalOpen(true);
   };
@@ -607,6 +657,7 @@ export const AdminProducts: React.FC = () => {
     setModalMake(mMake);
     setModalCategory(mCat);
     setModalSubGroup(product.subGroup || product.subCategory || categorySubGroupMap[mCat.toLowerCase().trim()] || '');
+    setModalProductGroup(product.productGroup || product.subGroup || '');
 
     const existingColour = product.colour ? String(product.colour).trim() : '';
     const isStandardColour = COLOUR_OPTIONS.some(c => c.code.toLowerCase() === existingColour.toLowerCase());
@@ -771,7 +822,8 @@ export const AdminProducts: React.FC = () => {
     data.expiryDate = currentProduct?.expiryDate || null;
     data.brandName = modalMake || data.brandName || 'LAPP';
     data.categoryName = modalCategory || data.categoryName;
-    data.subGroup = modalSubGroup || data.subGroup || categorySubGroupMap[(data.categoryName || '').toLowerCase().trim()] || null;
+    data.productGroup = modalProductGroup || modalSubGroup || null;
+    data.subGroup = modalProductGroup || modalSubGroup || data.subGroup || categorySubGroupMap[(data.categoryName || '').toLowerCase().trim()] || null;
 
     try {
       const token = localStorage.getItem('token');
@@ -948,6 +1000,24 @@ export const AdminProducts: React.FC = () => {
     return counts;
   }, [currentCategoryConfig, currentCategoryKey, products]);
   const olflexCounts = currentSubSeriesCounts;
+
+  const activeProductGroups = React.useMemo(() => {
+    return INITIAL_PRODUCT_GROUPS.filter(g =>
+      g.brand.toLowerCase() === categoryMakeFilter.toLowerCase() &&
+      (g.categoryName.toLowerCase() === selectedCategoryTab.toLowerCase() ||
+       selectedCategoryTab.toLowerCase().includes(g.categoryName.toLowerCase()) ||
+       g.categoryName.toLowerCase().includes(selectedCategoryTab.toLowerCase()))
+    );
+  }, [categoryMakeFilter, selectedCategoryTab]);
+
+  const modalMatchingGroups = React.useMemo(() => {
+    return INITIAL_PRODUCT_GROUPS.filter(g =>
+      g.brand.toLowerCase() === modalMake.toLowerCase() &&
+      (g.categoryName.toLowerCase() === modalCategory.toLowerCase() ||
+       modalCategory.toLowerCase().includes(g.categoryName.toLowerCase()) ||
+       g.categoryName.toLowerCase().includes(modalCategory.toLowerCase()))
+    );
+  }, [modalMake, modalCategory]);
 
   // Canonical manufacturer make order and category priority (LAPP cables first)
   const canonicalMakeOrder = ['LAPP', 'Eaton', 'Mennekes', 'Partex'];
@@ -1754,12 +1824,12 @@ export const AdminProducts: React.FC = () => {
                               <p
                                 onClick={() => setViewProduct(p)}
                                 className="font-semibold text-slate-800 hover:text-red-700 line-clamp-1 cursor-pointer transition-colors max-w-xs"
-                                title={p.description || p.name}
+                                title={p.name || p.description}
                               >
-                                {p.description || p.name}
+                                {String(p.name || p.description).replace(/(\d+),(\d+)/g, '$1.$2')}
                               </p>
                               {p.description && p.name && p.description !== p.name && (
-                                <p className="text-[11px] text-slate-400 line-clamp-1 max-w-xs">{p.name}</p>
+                                <p className="text-[11px] text-slate-400 line-clamp-1 max-w-xs">{p.description}</p>
                               )}
                             </div>
                           </div>
@@ -1768,8 +1838,8 @@ export const AdminProducts: React.FC = () => {
                         {/* 4. Core */}
                         <td className="py-2.5 px-3 font-mono font-medium text-slate-800 text-center">
                           {p.core ? (
-                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-xs">
-                              {p.core} Cores
+                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold inline-block min-w-[24px]">
+                              {String(p.core).replace(/cores?/gi, '').trim()}
                             </span>
                           ) : (
                             <span className="text-slate-400 font-normal">-</span>
@@ -1779,8 +1849,8 @@ export const AdminProducts: React.FC = () => {
                         {/* 5. Cross Section */}
                         <td className="py-2.5 px-3 font-mono font-bold text-slate-800 text-center">
                           {(p.sqmm || p.coreSize || p.size) ? (
-                            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs">
-                              {p.sqmm || p.coreSize || p.size} SQ.MM
+                            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold inline-block min-w-[28px]">
+                              {String(p.sqmm || p.coreSize || p.size).replace(/sq\.?\s*mm/gi, '').replace(/mm²/gi, '').replace(/(\d+),(\d+)/g, '$1.$2').trim()}
                             </span>
                           ) : (
                             <span className="text-slate-400 font-normal">-</span>
@@ -1856,7 +1926,7 @@ export const AdminProducts: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Filter by Make:</span>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono flex items-center gap-1"><Building size={14} className="text-orange-600" /> Level 1: Brand (Make):</span>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {ALLOWED_MAKES.map((m) => {
                     const count = sortedCategories.filter(c => (c.make || 'LAPP').toLowerCase() === m.toLowerCase()).length;
@@ -1888,7 +1958,7 @@ export const AdminProducts: React.FC = () => {
 
             {/* Category Selector Pills */}
             <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Category / Group:</span>
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono flex items-center gap-1"><Layers size={14} className="text-orange-600" /> Level 2: Brand Category:</span>
               <div className="flex flex-wrap items-center gap-1.5">
                 {displayedCategories.map((c) => {
                   const isCatActive = selectedCategoryTab.toLowerCase() === c.name.toLowerCase();
@@ -2015,14 +2085,181 @@ export const AdminProducts: React.FC = () => {
             </div>
           )}
 
+          {/* LEVEL 3: PRODUCT GROUPS MANAGEMENT TABLE (Separate Management & Data Sheet PDF Upload) */}
+          {activeProductGroups.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+              <div className="p-3.5 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50/40 border-b border-orange-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="font-black text-xs text-orange-950 uppercase tracking-wider font-mono">
+                    Level 3: Product Groups & Technical Data Sheets (PDF)
+                  </span>
+                  <span className="text-[11px] font-bold text-orange-800 bg-orange-100/80 border border-orange-300 px-2 py-0.5 rounded-full">
+                    {selectedCategoryTab} ({activeProductGroups.length} Groups)
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium">
+                  Upload PDF directly to a Product Group to automatically serve all its product variants
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[750px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs font-bold">
+                    <tr>
+                      <th className="py-3 px-5">Level 3: Product Group</th>
+                      <th className="py-3 px-5">Technical Description</th>
+                      <th className="py-3 px-5">Catalog Variants (Level 4)</th>
+                      <th className="py-3 px-5">Data Sheet (PDF)</th>
+                      <th className="py-3 px-5 text-right">Quick Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {activeProductGroups.map((group) => {
+                      const customKey = group.name.toLowerCase().trim();
+                      const customId = group.id.toLowerCase().trim();
+                      const activePdf = groupDatasheets[customKey] || groupDatasheets[customId] || group.datasheetUrl;
+                      const isCustomUploaded = Boolean(groupDatasheets[customKey] || groupDatasheets[customId]);
+                      
+                      const matchingVariantsCount = products.filter(p => {
+                        const pName = String(p.name || '');
+                        const pSub = String(p.productGroup || p.subGroup || '');
+                        return group.pattern.test(pName) || group.pattern.test(pSub);
+                      }).length;
+                      const displayCount = matchingVariantsCount > 0 ? matchingVariantsCount : group.baselineCount;
+
+                      return (
+                        <tr key={group.id} className="hover:bg-orange-50/30 transition-colors">
+                          <td className="py-3 px-5">
+                            <div className="space-y-0.5">
+                              <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                                <span>{group.name}</span>
+                                <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded">
+                                  Group
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                Category: {group.categoryName}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-5 text-slate-600 font-medium max-w-xs">
+                            {group.description}
+                          </td>
+                          <td className="py-3 px-5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveBrand(group.brand);
+                                setActiveCategory(group.categoryName);
+                                setSelectedSubSeries(group.name);
+                                setSearchQuery(group.name.replace(/ÖLFLEX®\s*/i, '').replace(/UNITRONIC®\s*/i, '').trim());
+                                setActiveTab('Products');
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-orange-100 hover:text-orange-800 text-slate-800 font-bold rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                              title="Click to view all products in this group"
+                            >
+                              <span>{displayCount} Variants</span>
+                              <ChevronRight size={12} />
+                            </button>
+                          </td>
+                          <td className="py-3 px-5">
+                            {activePdf ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <a
+                                  href={activePdf}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  download={activePdf.startsWith('data:') ? `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_datasheet.pdf` : undefined}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-300 rounded-md font-bold text-xs shadow-2xs cursor-pointer"
+                                >
+                                  <FileText size={12} /> View PDF
+                                </a>
+                                {isAdmin && (
+                                  <>
+                                    <label className="text-[11px] font-semibold text-slate-600 hover:text-orange-700 cursor-pointer underline">
+                                      Replace
+                                      <input
+                                        type="file"
+                                        accept="application/pdf"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const f = e.target.files?.[0];
+                                          if (f) handleUploadProductGroupDatasheet(group, f);
+                                        }}
+                                      />
+                                    </label>
+                                    {isCustomUploaded && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveProductGroupDatasheet(group)}
+                                        className="text-[11px] text-red-500 hover:text-red-700 font-semibold cursor-pointer"
+                                        title="Reset to default datasheet"
+                                      >
+                                        Reset
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            ) : isAdmin ? (
+                              <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 border border-slate-200 rounded-md font-semibold text-xs cursor-pointer">
+                                <Upload size={12} /> Upload PDF
+                                <input
+                                  type="file"
+                                  accept="application/pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleUploadProductGroupDatasheet(group, f);
+                                  }}
+                                />
+                              </label>
+                            ) : (
+                              <span className="text-slate-400 italic">No Datasheet</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-5 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveBrand(group.brand);
+                                setActiveCategory(group.categoryName);
+                                setSelectedSubSeries(group.name);
+                                setSearchQuery(group.name.replace(/ÖLFLEX®\s*/i, '').replace(/UNITRONIC®\s*/i, '').trim());
+                                setActiveTab('Products');
+                              }}
+                              className="px-3 py-1 bg-slate-900 hover:bg-orange-600 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            >
+                              <span>Manage Variants</span>
+                              <ChevronRight size={12} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <span className="font-extrabold text-xs text-slate-700 uppercase tracking-wider font-mono">
+                Level 2: Authorized Brand Categories ({displayedCategories.length})
+              </span>
+              <span className="text-[11px] text-slate-500 font-medium">
+                Click any category row to manage its Level 3 Product Groups above
+              </span>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm min-w-[750px]">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
                   <tr>
                     <th className="py-3 px-6 font-semibold">Make</th>
-                    <th className="py-3 px-6 font-semibold">Product Category / Group</th>
-                    <th className="py-3 px-6 font-semibold">Subgroup</th>
+                    <th className="py-3 px-6 font-semibold">Brand Category (Level 2)</th>
+                    <th className="py-3 px-6 font-semibold">Product Groups / Subgroup</th>
                     <th className="py-3 px-6 font-semibold">Description</th>
                     <th className="py-3 px-6 font-semibold">Category Datasheet (PDF)</th>
                     {isAdmin && <th className="py-3 px-6 font-semibold text-right">Action</th>}
@@ -2460,10 +2697,10 @@ export const AdminProducts: React.FC = () => {
 
                 {/* 3. Product Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {/* Hierarchy Step 1: Make (Manufacturer) */}
+                  {/* Hierarchy Level 1: Brand (Manufacturer) */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      1. Make (Manufacturer) *
+                      Level 1: Brand (Manufacturer) *
                     </label>
                     <select
                       name="brandName"
@@ -2478,7 +2715,7 @@ export const AdminProducts: React.FC = () => {
                         }
                       }}
                       required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                     >
                       {ALLOWED_MAKES.map((m) => (
                         <option key={m} value={m}>{m}</option>
@@ -2486,10 +2723,10 @@ export const AdminProducts: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Hierarchy Step 2: Product Category */}
+                  {/* Hierarchy Level 2: Brand Category */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      2. Product Category / Group *
+                      Level 2: Brand Category *
                     </label>
                     <select
                       name="categoryName"
@@ -2503,7 +2740,7 @@ export const AdminProducts: React.FC = () => {
                         }
                       }}
                       required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                     >
                       <option value="">Select Category...</option>
                       {filteredFormCategories.map((c) => (
@@ -2512,31 +2749,54 @@ export const AdminProducts: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Hierarchy Step 3: Sub-category / Subgroup */}
+                  {/* Hierarchy Level 3: Product Group */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      3. Sub-category / Series
+                      Level 3: Product Group *
                     </label>
-                    <input
-                      type="text"
-                      name="subGroup"
-                      value={modalSubGroup}
-                      onChange={(e) => setModalSubGroup(e.target.value)}
-                      placeholder="e.g. ÖLFLEX® Power & Control or Series"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-slate-50/50"
-                    />
+                    {modalMatchingGroups.length > 0 ? (
+                      <select
+                        name="productGroup"
+                        value={modalProductGroup || modalSubGroup}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setModalProductGroup(val);
+                          setModalSubGroup(val);
+                        }}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium"
+                      >
+                        <option value="">Select Product Group...</option>
+                        {modalMatchingGroups.map((g) => (
+                          <option key={g.id} value={g.name}>{g.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        name="subGroup"
+                        value={modalSubGroup}
+                        onChange={(e) => {
+                          setModalSubGroup(e.target.value);
+                          setModalProductGroup(e.target.value);
+                        }}
+                        placeholder="e.g. ÖLFLEX® CLASSIC 110"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                      />
+                    )}
                   </div>
 
-                  {/* Hierarchy Step 4: Final Product Name */}
+                  {/* Hierarchy Level 4: Final Product / Variant Name */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">4. Product Name *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Level 4: Product / Variant Name *
+                    </label>
                     <input
                       type="text"
                       name="name"
                       defaultValue={currentProduct?.name || ''}
                       required
                       placeholder="e.g. ÖLFLEX® CLASSIC 110 3G1.5"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     />
                   </div>
 
@@ -2923,8 +3183,8 @@ export const AdminProducts: React.FC = () => {
                   <ChevronRight size={13} className="text-slate-400 shrink-0" />
 
                   {/* Step 4: Final Product */}
-                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-md font-bold text-[11px] border border-emerald-300 truncate max-w-[200px]" title={viewProduct.name}>
-                    Product: {viewProduct.name}
+                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-md font-bold text-[11px] border border-emerald-300 truncate max-w-[200px]" title={String(viewProduct.name).replace(/(\d+),(\d+)/g, '$1.$2')}>
+                    Product: {String(viewProduct.name).replace(/(\d+),(\d+)/g, '$1.$2')}
                   </span>
                 </div>
               </div>
@@ -2952,13 +3212,13 @@ export const AdminProducts: React.FC = () => {
                   <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                     <span className="font-semibold text-slate-500">Core</span>
                     <span className="font-mono font-medium text-slate-800">
-                      {viewProduct.core ? `${viewProduct.core} Cores` : '-'}
+                      {viewProduct.core ? String(viewProduct.core).replace(/cores?/gi, '').trim() : '-'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="font-semibold text-slate-500">Cross Section</span>
                     <span className="font-mono font-bold text-slate-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                      {(viewProduct.sqmm || viewProduct.coreSize || viewProduct.size) ? `${viewProduct.sqmm || viewProduct.coreSize || viewProduct.size} SQ.MM` : '-'}
+                      {(viewProduct.sqmm || viewProduct.coreSize || viewProduct.size) ? String(viewProduct.sqmm || viewProduct.coreSize || viewProduct.size).replace(/sq\.?\s*mm/gi, '').replace(/mm²/gi, '').replace(/(\d+),(\d+)/g, '$1.$2').trim() : '-'}
                     </span>
                   </div>
                 </div>

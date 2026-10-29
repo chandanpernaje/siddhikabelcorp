@@ -128,7 +128,7 @@ export const Header: React.FC = () => {
   };
 
   const navLinks = [
-    { label: "Products", path: "/products" },
+    { label: "Products", path: "/#brand-section-lapp" },
     { label: "Industries & Solutions", path: "/industries" },
     { label: "Company", path: "/#about" },
     { label: "Contact", path: "/#contact" },
@@ -138,13 +138,13 @@ export const Header: React.FC = () => {
     <>
       <header className="sticky top-0 z-40 bg-white text-slate-900 border-b border-slate-200 shadow-sm relative backdrop-blur-xl">
         {/* Bottom glowing multi-color brand accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-zinc-500 via-red-500 to-zinc-400 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-zinc-500 via-orange-500 to-zinc-400 pointer-events-none" />
 
         <div className="w-[95%] max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           {/* Zone 1: Official Siddhi Kabel Logo Lockup */}
           <Link
             to="/"
-            className="flex items-center shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-xl hover:opacity-80 transition-opacity"
+            className="flex items-center shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-xl hover:opacity-80 transition-opacity"
             title="Siddhi Kabel Corporation - Authorized Industrial Distributor"
           >
             <img
@@ -175,12 +175,12 @@ export const Header: React.FC = () => {
                   onClick={(e) => handleNavClick(e, link.path, false)}
                   className={`transition-all py-1.5 px-3.5 rounded-xl text-sm font-bold flex items-center gap-1.5 ${
                     isActive
-                      ? "text-red-700 bg-red-50 border border-red-200 shadow-2xs font-extrabold"
-                      : "text-slate-700 hover:text-red-600 hover:bg-slate-50 font-semibold"
+                      ? "text-orange-700 bg-orange-50 border border-orange-200 shadow-2xs font-extrabold"
+                      : "text-slate-700 hover:text-orange-600 hover:bg-slate-50 font-semibold"
                   }`}
                 >
                   {link.label}
-                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0 animate-pulse" />}
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-orange-600 shrink-0 animate-pulse" />}
                 </Link>
               );
             })}
@@ -206,7 +206,7 @@ export const Header: React.FC = () => {
                 className="hidden sm:flex h-9 w-9 sm:h-11 sm:w-auto items-center justify-center gap-2 px-0 sm:px-3 rounded-lg sm:rounded-xl bg-white sm:bg-slate-100 border border-slate-200 text-xs text-slate-800 hover:bg-slate-200 transition-colors shrink-0"
                 title="Manage B2B Profile & RFQs"
               >
-                <div className="w-5 h-5 sm:w-5 sm:h-5 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-[10px] sm:text-[10px] shrink-0">
+                <div className="w-5 h-5 sm:w-5 sm:h-5 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-[10px] sm:text-[10px] shrink-0">
                   {user.name.charAt(0)}
                 </div>
                 <span className="hidden sm:block max-w-[110px] truncate font-medium">
@@ -218,7 +218,7 @@ export const Header: React.FC = () => {
                 onClick={() => openAuthModal("signin")}
                 className="hidden sm:flex h-9 w-9 sm:h-11 sm:w-auto px-0 sm:px-3 rounded-lg sm:rounded-xl bg-white sm:bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-800 hover:text-slate-900 hover:bg-slate-200 transition-colors items-center justify-center gap-1.5 shrink-0"
               >
-                <User className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5 text-red-600 shrink-0" />
+                <User className="w-[18px] h-[18px] sm:w-3.5 sm:h-3.5 text-orange-600 shrink-0" />
                 <span className="hidden sm:inline">Sign In / Sign Up</span>
               </button>
             )}
@@ -226,7 +226,7 @@ export const Header: React.FC = () => {
             {/* Quotation Cart Button */}
             <button
               onClick={openCart}
-              className="flex items-center justify-center gap-2 sm:gap-2.5 h-9 w-9 sm:h-11 sm:w-auto px-0 sm:px-3 rounded-lg sm:rounded-xl bg-[#c52328] sm:bg-gradient-to-r sm:from-red-600 sm:via-red-700 sm:to-red-800 hover:opacity-90 sm:hover:from-red-700 sm:hover:to-red-900 text-white font-bold transition-all group relative active:scale-95 border border-transparent sm:border-red-500/40 shrink-0 shadow-none sm:shadow-md sm:shadow-red-600/20"
+              className="flex items-center justify-center gap-2 sm:gap-2.5 h-9 w-9 sm:h-11 sm:w-auto px-0 sm:px-3 rounded-lg sm:rounded-xl bg-orange-600 sm:bg-gradient-to-r sm:from-orange-500 sm:via-orange-600 sm:to-amber-600 hover:opacity-90 sm:hover:from-orange-600 sm:hover:to-amber-700 text-white font-bold transition-all group relative active:scale-95 border border-transparent sm:border-orange-500/40 shrink-0 shadow-none sm:shadow-md sm:shadow-orange-500/20"
               aria-label="Quotation Cart"
             >
               <div className="relative shrink-0 flex items-center justify-center">
@@ -238,7 +238,7 @@ export const Header: React.FC = () => {
                 )}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-red-100/90 leading-none">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-orange-100/90 leading-none">
                   Quotation Cart
                 </span>
                 <span className="text-[11px] font-mono font-black text-white tabular-nums">
@@ -276,8 +276,8 @@ export const Header: React.FC = () => {
                     onClick={(e) => handleNavClick(e, link.path, true)}
                     className={`block px-3.5 py-2.5 text-sm rounded-xl transition-colors font-bold ${
                       isActive 
-                        ? "text-red-700 bg-red-50 border border-red-200" 
-                        : "text-slate-800 hover:text-red-600 hover:bg-slate-50 font-semibold"
+                        ? "text-orange-700 bg-orange-50 border border-orange-200" 
+                        : "text-slate-800 hover:text-orange-600 hover:bg-slate-50 font-semibold"
                     }`}
                   >
                     {link.label}

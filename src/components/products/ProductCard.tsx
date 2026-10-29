@@ -162,10 +162,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Card Content & Metadata */}
       <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-1.5">
         {/* Brand pill/logo equivalent */}
-        <div>
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
           <span className={`px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold ${style.badge}`}>
             {typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand}
           </span>
+          {product.partNo && (
+            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+              Part #{product.partNo}
+            </span>
+          )}
         </div>
 
         {/* Product Title */}
@@ -174,14 +179,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             to={customLink}
             className={`text-[12px] sm:text-sm font-bold text-slate-900 ${style.titleHover} transition-colors line-clamp-2 leading-snug`}
           >
-            {product.name}
+            {product.name?.replace(/(\d+),(\d+)/g, '$1.$2')}
           </Link>
         ) : isLappCat1 ? (
           <Link
             to="/olflex-cables"
             className={`text-[12px] sm:text-sm font-bold text-slate-900 ${style.titleHover} transition-colors line-clamp-2 leading-snug`}
           >
-            {product.name}
+            {product.name?.replace(/(\d+),(\d+)/g, '$1.$2')}
           </Link>
         ) : (
           <Link
@@ -189,7 +194,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             onClick={() => window.scrollTo(0,0)}
             className={`text-[12px] sm:text-sm font-bold text-slate-900 ${style.titleHover} transition-colors line-clamp-2 leading-snug`}
           >
-            {product.name}
+            {product.name?.replace(/(\d+),(\d+)/g, '$1.$2')}
           </Link>
         )}
 
@@ -199,7 +204,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
               {product.core ? `${product.core} Cores` : ''}
               {product.core && (product.sqmm || product.size) ? ' × ' : ''}
-              {product.sqmm || product.size ? `${product.sqmm || product.size} mm²` : ''}
+              {product.sqmm || product.size ? `${String(product.sqmm || product.size).replace(/(\d+),(\d+)/g, '$1.$2')} mm²` : ''}
             </span>
           </div>
         )}
