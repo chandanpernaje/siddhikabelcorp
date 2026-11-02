@@ -1414,22 +1414,20 @@ export const AdminProducts: React.FC = () => {
 
           {isAdmin && activeTab === 'Products' && (
             <>
-              <div className="relative">
+              <label
+                title="Import Excel"
+                className={`flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 text-xs ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
                 <input
                   type="file"
                   accept=".xlsx, .xls, .csv"
                   onChange={handleFileUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="hidden"
                   disabled={uploading}
                 />
-                <button
-                  disabled={uploading}
-                  className={`flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 text-xs ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-1" /> : <FileSpreadsheet size={14} className="mr-1" />}
-                  {uploading ? 'Importing...' : 'Import'}
-                </button>
-              </div>
+                {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-1" /> : <FileSpreadsheet size={14} className="mr-1" />}
+                {uploading ? 'Importing...' : 'Import'}
+              </label>
 
               <button
                 onClick={openAddModal}
