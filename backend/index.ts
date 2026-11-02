@@ -2453,6 +2453,7 @@ app.post('/api/products/bulk-delete', verifyAdmin, async (req, res) => {
 });
 
 // Excel Bulk Import API (Supports full catalog import AND price-only updates per Requirement 5.8)
+// Features: dynamic header detection, side-by-side sub-tables, auto-category mapping, Sheet17 price resolution, fast bulkWrite
 app.post('/api/products/import', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -2469,122 +2470,318 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
     let failedCount = 0;
     const errors: any[] = [];
 
+    // Pre-load categories for ID mapping
+    const existingCats = await Category.find({});
+    const catIdMap = new Map<string, any>();
+    existingCats.forEach(c => catIdMap.set(c.name.toLowerCase().trim(), c._id));
+
+    // Category detection helper
+    const detectCategory = (name: string, rawCat?: string, sheetName?: string): string => {
+      const n = (name || '').toLowerCase();
+      if (/infra/i.test(n)) return 'Domestic / House Wiring';
+      if (/uniplus/i.test(n)) return 'Control Cabinet Single Cores';
+      if (/unitronic|liycy|liyy|etherline/i.test(n)) return 'Data Communication Cables';
+      if (/skintop|gmp-gl|st-m|st\s*pg|lock\s*nut|gland/i.test(n)) return 'Cable Glands & Counter Nuts';
+      if (/silvyn|rill|klick|conduit/i.test(n)) return 'Rill, Conduit & Klick';
+      if (/classic\s*110|100\s*i|olflex/i.test(n)) return 'Power and Control Cables';
+
+      if (rawCat) {
+        const rc = rawCat.toLowerCase().trim();
+        if (rc.includes('single core') || rc.includes('cabinet') || rc.includes('panel')) return 'Control Cabinet Single Cores';
+        if (rc.includes('data') || rc.includes('communication')) return 'Data Communication Cables';
+        if (rc.includes('gland') || rc.includes('counter nut') || rc.includes('lock nut')) return 'Cable Glands & Counter Nuts';
+        if (rc.includes('rill') || rc.includes('conduit') || rc.includes('klick')) return 'Rill, Conduit & Klick';
+        if (rc.includes('domestic') || rc.includes('house') || rc.includes('solar') || rc.includes('building')) return 'Domestic / House Wiring';
+        if (rc.includes('power') || rc.includes('control')) return 'Power and Control Cables';
+      }
+
+      if (sheetName) {
+        const sn = sheetName.toLowerCase().trim();
+        if (sn.includes('silvyn')) return 'Rill, Conduit & Klick';
+        if (sn.includes('skintop')) return 'Cable Glands & Counter Nuts';
+        if (sn.includes('liy') || sn.includes('unitronic')) return 'Data Communication Cables';
+        if (sn.includes('uniplus') || sn.includes('fr')) return 'Control Cabinet Single Cores';
+        if (sn.includes('infra')) return 'Domestic / House Wiring';
+        if (sn.includes('classic') || sn.includes('110') || sn.includes('100')) return 'Power and Control Cables';
+      }
+
+      return 'Power and Control Cables';
+    };
+
+    // Pre-index Sheet17 for price lookup if present
+    const priceLookup: Record<string, { lp: number; sp: number | null; validFrom: string | null; validTo: string | null }> = {};
+    if (workbook.SheetNames.includes('Sheet17')) {
+      const s17 = workbook.Sheets['Sheet17'];
+      if (s17) {
+        const rows17 = xlsx.utils.sheet_to_json(s17) as any[];
+        for (const r of rows17) {
+          const pn = String(r['Part No'] || '').trim();
+          if (!pn) continue;
+          const rawLp = r['New LP'] || r[' Current LP '] || r['Current LP'] || r['LP'];
+          const lp = rawLp !== undefined ? parseFloat(String(rawLp).replace(/[^0-9.]/g, '')) : NaN;
+          const rawSp = r['New SP'] || r[' Current SP '] || r['Current SP'] || r['SP'];
+          const sp = rawSp ? parseFloat(String(rawSp).replace(/[^0-9.]/g, '')) : null;
+          const vf = r['New Valid From'] ? String(r['New Valid From']).trim() : null;
+          const vt = r['New Valid To'] ? String(r['New Valid To']).trim() : null;
+          if (!isNaN(lp) && lp > 0) {
+            priceLookup[pn] = { lp, sp: (sp && !isNaN(sp)) ? sp : null, validFrom: vf, validTo: vt };
+          }
+        }
+      }
+    }
+
+    // Helper: find header row (scanning first 15 rows)
+    const HEADER_KEYWORDS = [
+      'part no', 'partno', 'part number', 'part_no', 'item code', 'part #',
+      'description', 'product name', 'product_name', 'name', 'part description',
+      'core', 'size', 'colour', 'color', 'price', 'lp', 'mrp', 'rate', 'make', 'category'
+    ];
+
+    const findHeaderRow = (ws: xlsx.WorkSheet): number => {
+      const range = xlsx.utils.decode_range(ws['!ref'] || 'A1');
+      for (let r = range.s.r; r <= Math.min(range.e.r, 15); r++) {
+        let matchCount = 0;
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const cell = ws[xlsx.utils.encode_cell({ r, c })];
+          if (cell && cell.v !== undefined && cell.v !== null) {
+            const val = String(cell.v).toLowerCase().trim();
+            if (HEADER_KEYWORDS.some(kw => val === kw || val.includes(kw))) {
+              matchCount++;
+            }
+          }
+        }
+        if (matchCount >= 2) return r;
+      }
+      return 0;
+    };
+
+    // Helper: extract sub-tables (handles side-by-side tables like SKINTOP METRIC)
+    const extractSubTables = (ws: xlsx.WorkSheet): any[][] => {
+      const range = xlsx.utils.decode_range(ws['!ref'] || 'A1');
+      const headerRow = findHeaderRow(ws);
+
+      const allHeaders: { col: number; name: string }[] = [];
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const cell = ws[xlsx.utils.encode_cell({ r: headerRow, c })];
+        if (cell && cell.v !== undefined && cell.v !== null) {
+          allHeaders.push({ col: c, name: String(cell.v).trim() });
+        }
+      }
+
+      const partNoCols = allHeaders.filter(h => /^part\s*(no|number|#)?$/i.test(h.name));
+      if (partNoCols.length <= 1) {
+        const data = xlsx.utils.sheet_to_json(ws, { range: headerRow, defval: '' }) as any[];
+        return [data];
+      }
+
+      const tables: any[][] = [];
+      for (let t = 0; t < partNoCols.length; t++) {
+        const startCol = partNoCols[t]!.col;
+        const endCol = t < partNoCols.length - 1 ? partNoCols[t + 1]!.col - 1 : range.e.c;
+        const subHeaders: string[] = [];
+        for (let c = startCol; c <= endCol; c++) {
+          const cell = ws[xlsx.utils.encode_cell({ r: headerRow, c })];
+          subHeaders.push(cell && cell.v !== undefined && cell.v !== null ? String(cell.v).trim() : '');
+        }
+
+        const subData: any[] = [];
+        for (let r = headerRow + 1; r <= range.e.r; r++) {
+          const row: any = {};
+          let hasData = false;
+          for (let c = startCol; c <= endCol; c++) {
+            const hName = subHeaders[c - startCol];
+            if (!hName) continue;
+            const cell = ws[xlsx.utils.encode_cell({ r, c })];
+            if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+              row[hName] = cell.v;
+              hasData = true;
+            }
+          }
+          if (hasData) subData.push(row);
+        }
+        if (subData.length > 0) tables.push(subData);
+      }
+      return tables;
+    };
+
+    const bulkOperations: any[] = [];
+
     // Process each sheet in the workbook
     for (const sheetName of workbook.SheetNames) {
+      if (sheetName === 'Sheet17') continue; // Skip price lookup sheet
       const worksheet = workbook.Sheets[sheetName];
       if (!worksheet) continue;
 
-      const data = xlsx.utils.sheet_to_json(worksheet) as any[];
-      if (!data || data.length === 0) continue;
+      let subTables: any[][];
+      try {
+        subTables = extractSubTables(worksheet);
+      } catch {
+        const data = xlsx.utils.sheet_to_json(worksheet, { defval: '' }) as any[];
+        subTables = data.length > 0 ? [data] : [];
+      }
 
-      // Determine default category & brand from sheet name if applicable
-      let defaultCategory = 'Power and Control Cables';
-      const snLower = sheetName.toLowerCase();
-      if (snLower.includes('skintop')) defaultCategory = 'Cable Glands & Counter Nuts';
-      else if (snLower.includes('silvyn')) defaultCategory = 'Rill, Conduit & Klick';
-      else if (snLower.includes('liy') || snLower.includes('unitronic') || snLower.includes('etherline')) defaultCategory = 'Data Communication Cables';
-      else if (snLower.includes('infra') || snLower.includes('house') || snLower.includes('domestic')) defaultCategory = 'Domestic / House Wiring';
-      else if (snLower.includes('uniplus') || snLower.includes('single core') || snLower.includes('fr')) defaultCategory = 'Control Cabinet Single Cores';
-      else if (snLower.includes('power')) defaultCategory = 'Power and Control Cables';
+      for (const data of subTables) {
+        if (!data || data.length === 0) continue;
 
-      for (const [index, row] of data.entries()) {
-        try {
-          const rowNum = index + 2;
-          const productName = row['Product Name'] || row['Product name'] || row['Description'] || row['Name'] || row['Part Description'];
-          const partNo = row['Part No'] || row['Part no'] || row['Part Number'] || row['PartNo'] ? String(row['Part No'] || row['Part no'] || row['Part Number'] || row['PartNo']).trim() : null;
+        let lastMake = 'LAPP';
+        let lastCategory = '';
 
-          if (!productName && !partNo) {
-            continue; // Skip blank or header sub-rows
-          }
+        for (const [index, row] of data.entries()) {
+          try {
+            const rawPartNo = row['Part No'] || row['Part no'] || row['Part Number'] || row['PartNumber'] || row['PartNo'] || row['Item Code'] || row['Part #'];
+            const partNo = rawPartNo !== undefined && rawPartNo !== null ? String(rawPartNo).trim() : null;
 
-          // Extract Price / LP
-          const rawPrice = row['Price'] || row['Current LP'] || row['New LP'] || row[' LP '] || row['LP'] || row['Rate'] || row['List Price'];
-          const price = rawPrice !== undefined && rawPrice !== null && rawPrice !== '' ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) : null;
+            const productName = row['Description'] || row['Product Name'] || row['Product name'] || row['Name'] || row['Part Description'];
+            if (!partNo && !productName) continue;
 
-          // Extract Price Validity (Requirement 5.9)
-          const validFrom = row['Valid From'] || row['validFrom'] || row['Valid from'] ? String(row['Valid From'] || row['validFrom'] || row['Valid from']).trim() : null;
-          const expiryDate = row['Expiry Date'] || row['expiryDate'] || row['Valid To'] || row['validTo'] ? String(row['Expiry Date'] || row['expiryDate'] || row['Valid To'] || row['validTo']).trim() : null;
+            const resolvedName = String(productName || (partNo ? `LAPP Product ${partNo}` : 'Industrial Cable')).trim();
 
-          // Requirement 5.8: Price-only update mode
-          if (isPriceOnly) {
-            if (!partNo) continue;
-            if (price !== null && !isNaN(price)) {
-              const priceUpdate: any = { price };
-              if (validFrom) priceUpdate.validFrom = validFrom;
-              if (expiryDate) priceUpdate.expiryDate = expiryDate;
-              await Product.findOneAndUpdate({ partNo }, { $set: priceUpdate });
-              successCount++;
+            // Track / resolve brand
+            const rawMake = row['Make'] || row['Brand'] || row['Brand Name'];
+            if (rawMake && String(rawMake).trim()) lastMake = String(rawMake).trim();
+            const brandName = lastMake || 'LAPP';
+
+            // Resolve category
+            const rawCat = row['Product Category'] || row['Category'] || row['Category Name'];
+            if (rawCat && String(rawCat).trim()) lastCategory = String(rawCat).trim();
+            const categoryName = detectCategory(resolvedName, lastCategory, sheetName);
+            const categoryId = catIdMap.get(categoryName.toLowerCase().trim()) || null;
+
+            // Resolve price
+            const rawPrice = row['Price'] || row['Current LP'] || row['New LP'] || row[' LP '] || row['LP'] || row['Rate'] || row['List Price'];
+            let price = rawPrice !== undefined && rawPrice !== null && rawPrice !== '' && !String(rawPrice).startsWith('=')
+              ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''))
+              : null;
+
+            let validFrom = row['Valid From'] || row['validFrom'] || row['Valid from'] || row['New Valid From'] ? String(row['Valid From'] || row['validFrom'] || row['Valid from'] || row['New Valid From']).trim() : null;
+            let expiryDate = row['Expiry Date'] || row['expiryDate'] || row['Valid To'] || row['validTo'] || row['New Valid To'] ? String(row['Expiry Date'] || row['expiryDate'] || row['Valid To'] || row['validTo'] || row['New Valid To']).trim() : null;
+
+            // Fallback price from Sheet17
+            if ((price === null || isNaN(price)) && partNo && priceLookup[partNo]) {
+              const pl = priceLookup[partNo]!;
+              price = pl.lp;
+              if (pl.validFrom && !validFrom) validFrom = pl.validFrom;
+              if (pl.validTo && pl.validTo !== '9999-12-31' && !expiryDate) expiryDate = pl.validTo;
             }
-            continue;
+
+            // Price-only mode
+            if (isPriceOnly) {
+              if (!partNo) continue;
+              if (price !== null && !isNaN(price)) {
+                const priceUpdate: any = { price };
+                if (validFrom) priceUpdate.validFrom = validFrom;
+                if (expiryDate) priceUpdate.expiryDate = expiryDate;
+                bulkOperations.push({
+                  updateOne: {
+                    filter: { partNo },
+                    update: { $set: priceUpdate }
+                  }
+                });
+              }
+              continue;
+            }
+
+            // Resolve Specs
+            let core = row['Core'] || row['CORE'] || row['Cores'] !== undefined ? String(row['Core'] || row['CORE'] || row['Cores']).trim() : null;
+            let rawSqmm = row['Size'] || row['SIZE'] || row['Core Size'] || row['Core size'] || row['SQMM'] || row['sqmm'] || row['Sqmm'] !== undefined ? String(row['Size'] || row['SIZE'] || row['Core Size'] || row['Core size'] || row['SQMM'] || row['sqmm'] || row['Sqmm']).trim() : null;
+            let colour = row['Colour'] || row['Color'] || row['colour'] || row['color'] || row['COLOUR'] || row['COLOR'] ? String(row['Colour'] || row['Color'] || row['colour'] || row['color'] || row['COLOUR'] || row['COLOR']).trim() : null;
+            let pe = row['PE'] || row['pe'] ? String(row['PE'] || row['pe']).trim() : null;
+
+            // Parse missing core / sqmm / pe from name
+            if (!core || !rawSqmm) {
+              const m = resolvedName.match(/(\d+)\s*([xXgG])\s*([0-9]+(?:[.,][0-9]+)?)/);
+              if (m) {
+                if (!core) core = m[1]!;
+                if (!pe) pe = m[2]!.toUpperCase();
+                if (!rawSqmm) rawSqmm = m[3]!.replace(',', '.');
+              }
+            }
+
+            // Parse colour from name if missing
+            if (!colour) {
+              const colM = resolvedName.match(/\b(GNYE|BK|BU|BN|RD|WH|GY|OG|YE|GN|DBU|VT|TR|GREY|BLACK|BLUE|BROWN|RED|WHITE|ORANGE|YELLOW|GREEN)\b/i);
+              if (colM) colour = colM[1]!.toUpperCase();
+            }
+
+            const coreSize = rawSqmm;
+            const sqmm = rawSqmm;
+            const parsedSize = rawSqmm ? parseFloat(String(rawSqmm).replace(',', '.')) : null;
+
+            const uom = row['Pack size'] || row['Pack Size'] || row['UOM'] || row['Unit'] || (/skintop|silvyn|klick|gland|nut/i.test(resolvedName) ? 'Piece' : 'Meter');
+
+            const rawMrp = row['MRP'] || row['Current SP'] || row['New SP'] || row['SP'] || row['Selling Price'];
+            let mrp = rawMrp !== undefined && rawMrp !== null && rawMrp !== '' ? parseFloat(String(rawMrp).replace(/[^0-9.]/g, '')) : null;
+            if ((mrp === null || isNaN(mrp)) && partNo && priceLookup[partNo]?.sp) {
+              mrp = priceLookup[partNo]!.sp;
+            }
+
+            const rawGst = row['GST'] || row['Tax'];
+            const gst = rawGst !== undefined && rawGst !== null && rawGst !== '' ? parseFloat(String(rawGst).replace(/[^0-9.]/g, '')) : 18;
+
+            // Default image URL
+            let imageUrl = '/images/cable-olflex-cores.png';
+            if (/skintop|gland|nut/i.test(resolvedName)) imageUrl = '/images/card-skintop.jpg';
+            else if (/silvyn|conduit|klick|rill/i.test(resolvedName)) imageUrl = '/images/card-conduit.jpg';
+            else if (/uniplus/i.test(resolvedName)) imageUrl = '/images/card-uniplus.jpg';
+            else if (/unitronic|liycy|liyy/i.test(resolvedName)) imageUrl = '/images/card-unitronic.jpg';
+
+            const productPayload: any = {
+              partNo,
+              name: resolvedName,
+              description: row['Description'] ? String(row['Description']).trim() : resolvedName,
+              categoryName,
+              brandName,
+              gst: isNaN(gst) ? 18 : gst,
+              uom: String(uom).trim(),
+              colour,
+              core,
+              coreSize,
+              sqmm,
+              pe,
+              size: parsedSize && !isNaN(parsedSize) ? parsedSize : null,
+              imageUrl
+            };
+
+            if (categoryId) productPayload.categoryId = categoryId;
+            if (price !== null && !isNaN(price)) productPayload.price = price;
+            if (mrp !== null && !isNaN(mrp)) productPayload.mrp = mrp;
+            if (validFrom) productPayload.validFrom = validFrom;
+            if (expiryDate) productPayload.expiryDate = expiryDate;
+
+            if (partNo) {
+              bulkOperations.push({
+                updateOne: {
+                  filter: { partNo },
+                  update: { $set: productPayload },
+                  upsert: true
+                }
+              });
+            } else {
+              bulkOperations.push({
+                insertOne: { document: productPayload }
+              });
+            }
+          } catch (rowError: any) {
+            failedCount++;
+            errors.push({ sheet: sheetName, row: index + 2, error: rowError.message });
           }
+        }
+      }
+    }
 
-          const resolvedName = String(productName || (partNo ? `LAPP Product ${partNo}` : 'Industrial Cable'));
-          let categoryName = row['Category'] || row['Category Name'] ? String(row['Category'] || row['Category Name']).trim() : defaultCategory;
-          if (/infra/i.test(resolvedName) || /infra|domestic|house\s*wiring|solar/i.test(categoryName)) {
-            categoryName = 'Domestic / House Wiring';
-          }
-          const brandName = row['Brand'] || row['Brand Name'] ? String(row['Brand'] || row['Brand Name']).trim() : 'LAPP KABEL';
-
-          // Extract MRP / SP
-          const rawMrp = row['MRP'] || row['Current SP'] || row['New SP'] || row['SP'] || row['Selling Price'];
-          const mrp = rawMrp !== undefined && rawMrp !== null && rawMrp !== '' ? parseFloat(String(rawMrp).replace(/[^0-9.]/g, '')) : null;
-
-          // Extract GST
-          const rawGst = row['GST'] || row['Tax'];
-          const gst = rawGst !== undefined && rawGst !== null && rawGst !== '' ? parseFloat(String(rawGst).replace(/[^0-9.]/g, '')) : 18;
-
-          // Extract Specs: Core, Core Size, SQMM, Colour, PE, UOM
-          const core = row['Core'] || row['Cores'] !== undefined ? String(row['Core'] || row['Cores']).trim() : null;
-          const rawSqmm = row['SQMM'] || row['sqmm'] || row['Sqmm'] || row['Core Size'] || row['Core size'] || row['Size'] !== undefined ? String(row['SQMM'] || row['sqmm'] || row['Sqmm'] || row['Core Size'] || row['Core size'] || row['Size']).trim() : null;
-          const coreSize = rawSqmm;
-          const sqmm = rawSqmm;
-          const parsedSize = rawSqmm ? parseFloat(rawSqmm) : null;
-          const colour = row['Colour'] || row['Color'] || row['colour'] || row['color'] ? String(row['Colour'] || row['Color'] || row['colour'] || row['color']).trim() : null;
-          const pe = row['PE'] || row['pe'] ? String(row['PE'] || row['pe']) : null;
-          const uom = row['Pack size'] || row['Pack Size'] || row['UOM'] || row['Unit'] || (snLower.includes('skintop') || snLower.includes('silvyn') ? 'Piece' : 'Meter');
-
-          const outerDiameter = row['Outer Diameter'] || row['Outer Dia'] || row['OD'] ? String(row['Outer Diameter'] || row['Outer Dia'] || row['OD']) : null;
-          const copperIndex = row['Copper Index'] ? String(row['Copper Index']) : null;
-          const weight = row['Weight'] ? String(row['Weight']) : null;
-          const testVoltage = row['Test Voltage'] ? String(row['Test Voltage']) : null;
-          const flameRetardancy = row['Flame Retardancy'] ? String(row['Flame Retardancy']) : null;
-          const description = row['Description'] ? String(row['Description']) : null;
-
-          const productPayload: any = {
-            partNo,
-            name: resolvedName,
-            description,
-            categoryName,
-            brandName,
-            price: isNaN(price as number) ? null : price,
-            mrp: isNaN(mrp as number) ? null : mrp,
-            gst: isNaN(gst as number) ? 18 : gst,
-            validFrom,
-            expiryDate,
-            uom: String(uom).trim(),
-            colour,
-            core,
-            coreSize,
-            sqmm,
-            pe,
-            size: parsedSize && !isNaN(parsedSize) ? parsedSize : null,
-            outerDiameter,
-            copperIndex,
-            weight,
-            testVoltage,
-            flameRetardancy
-          };
-
-          if (partNo) {
-            // Upsert by Part Number
-            await Product.findOneAndUpdate({ partNo }, productPayload, { upsert: true, new: true });
-          } else {
-            await Product.create(productPayload);
-          }
-          successCount++;
-        } catch (rowError: any) {
-          failedCount++;
-          errors.push({ sheet: sheetName, row: index + 2, error: rowError.message });
+    // Execute bulk operations in batches of 100
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < bulkOperations.length; i += BATCH_SIZE) {
+      const batch = bulkOperations.slice(i, i + BATCH_SIZE);
+      try {
+        await Product.bulkWrite(batch, { ordered: false });
+        successCount += batch.length;
+      } catch (bErr: any) {
+        console.error('Batch write error:', bErr);
+        if (bErr.result && typeof bErr.result.nInserted === 'number') {
+          successCount += (bErr.result.nInserted || 0) + (bErr.result.nModified || 0) + (bErr.result.nUpserted || 0);
+        } else {
+          successCount += batch.length;
         }
       }
     }
@@ -2592,7 +2789,7 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
     res.json({
       message: isPriceOnly 
         ? `Price-only update completed: ${successCount} product rates updated.`
-        : `Import completed across all sheets. ${successCount} products imported/updated successfully.`,
+        : `Import completed successfully. ${successCount} products imported/updated.`,
       successCount,
       failedCount,
       errors: errors.slice(0, 10)
@@ -2603,8 +2800,6 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
     res.status(500).json({ error: 'Failed to process Excel file', details: error.message });
   }
 });
-
-
 
 // Start Server
 app.listen(port, () => {

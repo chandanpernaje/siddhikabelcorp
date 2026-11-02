@@ -465,7 +465,10 @@ export const AdminProducts: React.FC = () => {
       setUploadResult(data);
 
       if (res.ok) {
-        fetchProducts();
+        await fetchProducts();
+        alert(data.message || `Import completed: ${data.successCount || 0} products imported/updated.`);
+      } else {
+        alert(data.error || 'Failed to import file');
       }
     } catch (error) {
       console.error('Upload failed', error);
@@ -1488,6 +1491,49 @@ export const AdminProducts: React.FC = () => {
           Brand Management ({sortedMakes.length})
         </button>
       </div>
+
+      {uploadResult && (
+        <div
+          role="status"
+          className={`flex items-start gap-2.5 rounded-xl border p-3 text-xs shadow-xs my-3 transition-all ${
+            uploadResult.error || (uploadResult.failedCount > 0 && uploadResult.successCount === 0)
+              ? 'border-red-200 bg-red-50 text-red-800'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+          }`}
+        >
+          {uploadResult.error ? (
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-600" />
+          ) : (
+            <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+          )}
+          <div className="flex-1">
+            <p className="font-bold text-sm">
+              {uploadResult.error
+                ? uploadResult.error
+                : uploadResult.message || `Import completed: ${uploadResult.successCount || 0} products processed.`}
+            </p>
+            {uploadResult.successCount !== undefined && !uploadResult.error && (
+              <p className="mt-0.5 opacity-90">
+                ✅ {uploadResult.successCount} products imported/updated successfully
+                {uploadResult.failedCount > 0 ? `, ${uploadResult.failedCount} failed` : ''}.
+              </p>
+            )}
+            {uploadResult.errors && uploadResult.errors.length > 0 && (
+              <p className="mt-1 text-red-700">
+                First error: {uploadResult.errors[0].error} (Sheet: {uploadResult.errors[0].sheet}, Row: {uploadResult.errors[0].row})
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setUploadResult(null)}
+            className="p-1 hover:bg-black/5 rounded-md cursor-pointer shrink-0"
+            title="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: PRODUCTS CATALOG */}
       {activeTab === 'Products' && (
