@@ -14,6 +14,27 @@ export const AdminDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Retrieve current admin role from local storage
+  const currentAdmin = (() => {
+    try {
+      const str = localStorage.getItem('siddhi_admin_user');
+      return str ? JSON.parse(str) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const rawRole = (currentAdmin?.role || '').toLowerCase().trim();
+  const isSuperAdmin = rawRole.includes('super');
+  const isAdmin = rawRole.includes('admin') || isSuperAdmin;
+  const isSalesManager = rawRole.includes('manager');
+  const isSalesRole = (
+    rawRole.includes('executive') || 
+    rawRole.includes('salesman') || 
+    rawRole.includes('salesperson') || 
+    rawRole.includes('sales')
+  ) && !isAdmin && !isSalesManager;
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -38,32 +59,34 @@ export const AdminDashboard: React.FC = () => {
   }, []);
 
   const stats = [
-    { 
-      title: 'Total Customers', 
-      value: data.totalCustomers, 
-      icon: Building, 
-      color: 'text-sky-600', 
-      bg: 'bg-sky-50', 
-      cardBg: 'from-white via-white to-sky-50/50',
-      border: 'border-sky-200/90', 
-      trend: '+12%', 
-      trendColor: 'text-sky-700 bg-sky-50 border-sky-200',
-      up: true, 
-      link: '/admin/users' 
-    },
-    { 
-      title: 'Total Products', 
-      value: data.totalProducts, 
-      icon: ShoppingBag, 
-      color: 'text-slate-700', 
-      bg: 'bg-slate-100', 
-      cardBg: 'from-white via-white to-slate-100/60',
-      border: 'border-slate-200', 
-      trend: '+4%', 
-      trendColor: 'text-slate-700 bg-slate-100 border-slate-200',
-      up: true, 
-      link: '/admin/products' 
-    },
+    ...(!isSalesRole ? [
+      { 
+        title: 'Total Customers', 
+        value: data.totalCustomers, 
+        icon: Building, 
+        color: 'text-sky-600', 
+        bg: 'bg-sky-50', 
+        cardBg: 'from-white via-white to-sky-50/50',
+        border: 'border-sky-200/90', 
+        trend: '+12%', 
+        trendColor: 'text-sky-700 bg-sky-50 border-sky-200',
+        up: true, 
+        link: '/admin/users' 
+      },
+      { 
+        title: 'Total Products', 
+        value: data.totalProducts, 
+        icon: ShoppingBag, 
+        color: 'text-slate-700', 
+        bg: 'bg-slate-100', 
+        cardBg: 'from-white via-white to-slate-100/60',
+        border: 'border-slate-200', 
+        trend: '+4%', 
+        trendColor: 'text-slate-700 bg-slate-100 border-slate-200',
+        up: true, 
+        link: '/admin/products' 
+      },
+    ] : []),
     { 
       title: 'Total RFQs (Quotes)', 
       value: data.totalRFQs, 
@@ -103,8 +126,8 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-      {/* KPI Cards in 4 Harmonious Light Colors: Light Sky Blue, Light Grey, Light Red, Light Orange */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* KPI Cards: 4 for Admins, 2 (RFQs & Actions) for Sales */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isSalesRole ? 'xl:grid-cols-2' : 'xl:grid-cols-4'} gap-6`}>
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (

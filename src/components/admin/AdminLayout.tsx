@@ -181,7 +181,7 @@ export const AdminLayout: React.FC = () => {
   const isSuperAdmin = rawRole.includes('super');
   const isAdmin = rawRole.includes('admin') || isSuperAdmin;
   const isSalesManager = rawRole.includes('manager');
-  const isSalesExecutive = (rawRole.includes('executive') || rawRole.includes('salesman') || rawRole.includes('salesperson')) && !isAdmin && !isSalesManager;
+  const isSalesExecutive = (rawRole.includes('executive') || rawRole.includes('salesman') || rawRole.includes('salesperson') || rawRole.includes('sales')) && !isAdmin && !isSalesManager;
 
   // Phase 1 Route Guard: Sales Executive has No Access to Products and User Management
   if (isSalesExecutive && (location.pathname.startsWith('/admin/products') || location.pathname.startsWith('/admin/users'))) {
