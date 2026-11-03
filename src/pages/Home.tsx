@@ -717,6 +717,12 @@ export const Home: React.FC = () => {
                         product.id === "lapp-cat-4" ? "/olflex-cables?group=skintop" :
                         product.id === "lapp-cat-5" ? "/olflex-cables?group=silvyn" :
                         product.id === "lapp-cat-6" ? "/olflex-cables?group=infra" :
+                        product.id === "eaton-01" ? "/eaton-products?group=pkzm0" :
+                        product.id === "eaton-02" ? "/eaton-products?group=dilm" :
+                        product.id === "eaton-03" ? "/eaton-products?group=nzm" :
+                        product.id === "eaton-04" ? "/eaton-products?group=rmq" :
+                        product.id === "eaton-05" ? "/eaton-products?group=faz" :
+                        product.id === "eaton-06" ? "/eaton-products?group=powerxl" :
                         brand.path
                       }
                       onQuickView={(p) => setQuickViewProduct(p)}

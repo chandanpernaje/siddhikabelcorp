@@ -168,6 +168,8 @@ export const ProductDetail: React.FC = () => {
       if (eatonMatch.series === "DILM") eatonImg = "/images/eaton-dilm.jpg";
       else if (eatonMatch.series === "NZM") eatonImg = "/images/eaton-nzm.jpg";
       else if (eatonMatch.series === "FAZ") eatonImg = "/images/eaton-faz.jpg";
+      else if (eatonMatch.series === "RMQ") eatonImg = "/images/eaton-rmq.jpg";
+      else if (eatonMatch.series === "PowerXL") eatonImg = "/images/eaton-drives.jpg";
 
       return {
         id: `eaton-${eatonMatch.partNo}`,

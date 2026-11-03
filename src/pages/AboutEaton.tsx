@@ -12,6 +12,8 @@ export const AboutEaton: React.FC = () => {
   const productRanges = [
     {
       id: "eaton-01",
+      group: "pkzm0",
+      link: "/eaton-products?group=pkzm0",
       title: "PKZM0 Motor-Protective Circuit-Breakers",
       desc: "Rotary switch motor protection with overload and short-circuit protection up to 150 kA. Phase failure sensitive.",
       img: "/images/eaton-pkzm0.jpg",
@@ -19,6 +21,8 @@ export const AboutEaton: React.FC = () => {
     },
     {
       id: "eaton-02",
+      group: "dilm",
+      link: "/eaton-products?group=dilm",
       title: "DILM Power Contactors (7A to 1600A)",
       desc: "Robust 3-pole and 4-pole contactors with electronic coils, low holding power, and SmartWire-DT connectivity.",
       img: "/images/eaton-dilm.jpg",
@@ -26,6 +30,8 @@ export const AboutEaton: React.FC = () => {
     },
     {
       id: "eaton-03",
+      group: "nzm",
+      link: "/eaton-products?group=nzm",
       title: "NZM Compact Molded Case Circuit Breakers",
       desc: "4 frame sizes from 20A to 1600A with electronic trip units, onboard energy metering, and USB diagnostic access.",
       img: "/images/eaton-nzm.jpg",
@@ -33,20 +39,26 @@ export const AboutEaton: React.FC = () => {
     },
     {
       id: "eaton-04",
-      title: "FAZ DIN-Rail Miniature Circuit Breakers",
-      desc: "High performance 10kA and 15kA breaking capacity MCBs with dual-purpose terminals and captive screws.",
-      img: "/images/eaton-faz.jpg",
-      topic: "EATON FAZ MCB",
-    },
-    {
-      id: "eaton-05",
+      group: "rmq",
+      link: "/eaton-products?group=rmq",
       title: "RMQ-Titan 22mm Pilot Devices & Pushbuttons",
       desc: "IP67/IP69K operator controls with laser inscription, customizable LED illumination, and ergonomic actuation.",
       img: "/images/eaton-rmq.jpg",
       topic: "EATON RMQ-TITAN PUSHBUTTONS",
     },
     {
+      id: "eaton-05",
+      group: "faz",
+      link: "/eaton-products?group=faz",
+      title: "FAZ DIN-Rail Miniature Circuit Breakers",
+      desc: "High performance 10kA and 15kA breaking capacity MCBs with dual-purpose terminals and captive screws.",
+      img: "/images/eaton-faz.jpg",
+      topic: "EATON FAZ MCB",
+    },
+    {
       id: "eaton-06",
+      group: "powerxl",
+      link: "/eaton-products?group=powerxl",
       title: "PowerXL Variable Frequency Drives",
       desc: "Compact VFDs and soft starters for energy-efficient motor control and pump applications in harsh environments.",
       img: "/images/eaton-drives.jpg",
@@ -90,12 +102,18 @@ export const AboutEaton: React.FC = () => {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-3">
+              <Link
+                to="/eaton-products?group=pkzm0"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-blue-500/25 flex items-center gap-2"
+              >
+                <span>Browse Eaton Catalog</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
               <button
                 onClick={() => setRfqTopic("EATON COMPLETE SWITCHGEAR BOM")}
-                className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+                className="px-5 py-2.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center gap-2 shadow-sm"
               >
                 <span>Request Switchgear Quotation</span>
-                <ArrowRight className="w-4 h-4" />
               </button>
               <Link
                 to="/quotation"
@@ -111,20 +129,25 @@ export const AboutEaton: React.FC = () => {
         {/* Product Ranges */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
-              Eaton Moeller Core Series
-            </h2>
-            <span className="text-xs text-slate-500 font-mono font-medium">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Eaton Moeller Core Series Catalog
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium pt-1">
+                Click any series below to explore all catalog models, specifications, and request tailored quotes.
+              </p>
+            </div>
+            <span className="text-xs text-slate-500 font-mono font-medium hidden sm:block">
               6 Core Automation Lines
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {productRanges.map((cat, idx) => (
-              <div
+              <Link
                 key={idx}
+                to={cat.link}
                 className="group relative flex flex-col rounded-3xl h-full bg-white border border-slate-200 hover:border-blue-400 transition-all duration-300 hover:-translate-y-1.5 shadow-sm hover:shadow-xl overflow-hidden cursor-pointer"
-                onClick={() => setRfqTopic(cat.topic)}
               >
                 <div className="relative aspect-[4/3] bg-blue-50/50 flex items-center justify-center p-2 sm:p-4 overflow-hidden border-b border-slate-200/70">
                   <img
@@ -140,18 +163,24 @@ export const AboutEaton: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-2">
-                  <div>
-                    <span className="px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-slate-100 text-slate-700 border-slate-200">
-                      EATON
-                    </span>
+                <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-between space-y-2">
+                  <div className="space-y-1.5">
+                    <div>
+                      <span className="px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-slate-100 text-slate-700 border-slate-200">
+                        EATON
+                      </span>
+                    </div>
+                    
+                    <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                      {cat.title}
+                    </h4>
                   </div>
-                  
-                  <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    {cat.title}
-                  </h4>
+
+                  <span className="text-[11px] font-bold text-blue-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-1">
+                    View Catalog <ArrowRight className="w-3 h-3" />
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
