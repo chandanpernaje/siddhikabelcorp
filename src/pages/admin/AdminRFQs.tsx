@@ -226,11 +226,19 @@ export const AdminRFQs: React.FC = () => {
   const currentAdminStr = localStorage.getItem('siddhi_admin_user');
   const currentAdmin = currentAdminStr ? JSON.parse(currentAdminStr) : null;
   const rawRole = (currentAdmin?.role || '').toLowerCase();
-  const isSalesExec = (rawRole.includes('executive') || rawRole.includes('salesman')) && !rawRole.includes('admin') && !rawRole.includes('manager');
+  const isSalesExec = (rawRole.includes('sales') || rawRole.includes('executive') || rawRole.includes('salesman')) && !rawRole.includes('admin') && !rawRole.includes('manager');
+  const isSalesRole = isSalesExec;
   const isAdmin = rawRole.includes('admin') || !currentAdminStr;
   const isSalesManager = rawRole.includes('manager');
   const canAssign = isAdmin || isSalesManager;
   const canViewAll = !isSalesExec;
+
+  // For sales login, ensure Unassigned is never an active filter
+  useEffect(() => {
+    if (isSalesRole && statusFilter === 'Unassigned') {
+      setStatusFilter('All');
+    }
+  }, [isSalesRole, statusFilter]);
 
   const defaultSalesStaff: User[] = [
     { _id: 'sales-ramesh-id', name: 'Ramesh', role: 'Sales Executive' },
@@ -1051,7 +1059,9 @@ export const AdminRFQs: React.FC = () => {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
         {[
           { key: 'All', label: `All (${rfqs.length})`, active: 'bg-slate-800 text-white font-bold', inactive: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' },
-          { key: 'Unassigned', label: `Unassigned (${rfqs.filter(r => !r.assignedTo && !r.assignedToName).length})`, active: 'bg-purple-700 text-white font-bold shadow-xs', inactive: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' },
+          ...(!isSalesRole ? [
+            { key: 'Unassigned', label: `Unassigned (${rfqs.filter(r => !r.assignedTo && !r.assignedToName).length})`, active: 'bg-purple-700 text-white font-bold shadow-xs', inactive: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' }
+          ] : []),
           { key: 'Pending', label: `Pending (${rfqs.filter(r => r.status === 'Pending' || r.status === 'New' || r.status === 'Open' || r.status === 'Assigned' || r.status === 'RFQ Submitted' || r.status === 'Generated' || r.status === 'Process by Sales' || r.status === 'Processing').length})`, active: 'bg-amber-600 text-white font-bold shadow-xs', inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
           { key: 'Under Review', label: `Under Review (${rfqs.filter(r => r.status === 'Under Review').length})`, active: 'bg-sky-600 text-white font-bold shadow-xs', inactive: 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100' },
           { key: 'PO Received', label: `PO Received (${rfqs.filter(r => r.status === 'PO Received' || r.status === 'Approved').length})`, active: 'bg-emerald-600 text-white font-bold shadow-xs', inactive: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
