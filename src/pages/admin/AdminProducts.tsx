@@ -5,7 +5,7 @@ import {
   Upload, Plus, Download, FileSpreadsheet, Search, ShoppingBag, X,
   Image as ImageIcon, Trash2, Link as LinkIcon, RefreshCw, Layers, Tag,
   Edit2, FileText, CheckCircle2, AlertCircle, ExternalLink, Eye,
-  ArrowUpDown, ArrowUp, ArrowDown, Calendar, Check, Building, ChevronRight, Zap
+  ArrowUpDown, ArrowUp, ArrowDown, Calendar, Check, Building, ChevronRight, Zap, ChevronDown
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { API_BASE_URL } from '../../config/api';
@@ -269,6 +269,7 @@ export const AdminProducts: React.FC = () => {
   const [activeBrand, setActiveBrand] = useState<string>('All');
   const [sortField, setSortField] = useState<'name' | 'partNo' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [visibleLimit, setVisibleLimit] = useState(20);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
@@ -763,7 +764,7 @@ export const AdminProducts: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(sortedProducts.map(p => p.id));
+      setSelectedIds(displayedProducts.map(p => p.id));
     } else {
       setSelectedIds([]);
     }
@@ -1297,6 +1298,11 @@ export const AdminProducts: React.FC = () => {
   }, [products]);
   const brandCountMap = makeCountMap;
 
+  // Progressive rendering reset on filter change
+  useEffect(() => {
+    setVisibleLimit(20);
+  }, [searchQuery, activeCategory, activeBrand, selectedSubSeries, sortField, sortDirection]);
+
   // Canonical list of Makes strictly restricted to the 4 approved manufacturers
   const dropdownMakes = ALLOWED_MAKES;
   const dropdownBrands = dropdownMakes as readonly string[];
@@ -1382,6 +1388,11 @@ export const AdminProducts: React.FC = () => {
       return 0;
     });
   }, [filteredProducts, sortField, sortDirection]);
+
+  // Progressive pagination: first 20 products for fast loading, +50 on View More
+  const displayedProducts = React.useMemo(() => {
+    return sortedProducts.slice(0, visibleLimit);
+  }, [sortedProducts, visibleLimit]);
 
   const handleSort = (field: 'name' | 'partNo') => {
     if (sortField === field) {
@@ -1759,7 +1770,7 @@ export const AdminProducts: React.FC = () => {
                       <th className="py-2.5 px-3 w-10 text-center">
                         <input
                           type="checkbox"
-                          checked={sortedProducts.length > 0 && selectedIds.length === sortedProducts.length}
+                          checked={displayedProducts.length > 0 && selectedIds.length === displayedProducts.length}
                           onChange={handleSelectAll}
                           className="rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer w-3.5 h-3.5"
                         />
@@ -1819,7 +1830,7 @@ export const AdminProducts: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    sortedProducts.map((p, index) => (
+                    displayedProducts.map((p, index) => (
                       <tr key={p.id} className="hover:bg-red-50/20 transition-colors">
                         {isAdmin && (
                           <td className="py-2.5 px-3 text-center">
@@ -1959,6 +1970,43 @@ export const AdminProducts: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Progressive Pagination Footer (Initial 20 products, +50 on View More) */}
+            {sortedProducts.length > 0 && (
+              <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="text-slate-600 font-medium">
+                  Showing <strong className="text-slate-900 font-bold">{displayedProducts.length}</strong> of{' '}
+                  <strong className="text-slate-900 font-bold">{sortedProducts.length}</strong> products
+                  {sortedProducts.length < products.length && (
+                    <span className="text-slate-400 font-normal"> (filtered from {products.length} total)</span>
+                  )}
+                </div>
+                {visibleLimit < sortedProducts.length ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleLimit(prev => prev + 50)}
+                      className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded-xl font-bold shadow-2xs transition-all hover:scale-102 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>View More (+50 Products)</span>
+                      <ChevronDown size={14} className="text-slate-500" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleLimit(sortedProducts.length)}
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl font-semibold transition-colors cursor-pointer"
+                      title="Load all matching products"
+                    >
+                      View All ({sortedProducts.length})
+                    </button>
+                  </div>
+                ) : (
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-lg border border-emerald-200">
+                    All {sortedProducts.length} products loaded
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
