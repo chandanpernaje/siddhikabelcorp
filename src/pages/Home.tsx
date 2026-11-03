@@ -708,6 +708,8 @@ export const Home: React.FC = () => {
                     <ProductCard
                       key={product.id}
                       product={product}
+                      hidePartNo
+                      hidePrice
                       customLink={
                         product.id === "lapp-cat-1" ? "/olflex-cables" :
                         product.id === "lapp-cat-2" ? "/olflex-cables?group=unitronic" :

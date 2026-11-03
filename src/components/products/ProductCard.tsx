@@ -10,12 +10,16 @@ interface ProductCardProps {
   onQuickView: (product: Product) => void;
   onDirectQuote?: (product: Product) => void;
   customLink?: string;
+  hidePartNo?: boolean;
+  hidePrice?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onQuickView,
   customLink,
+  hidePartNo = false,
+  hidePrice = false,
 }) => {
   const { addToCart, cart } = useCart();
   const navigate = useNavigate();
@@ -166,7 +170,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <span className={`px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold ${style.badge}`}>
             {typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand}
           </span>
-          {product.partNo && (
+          {product.partNo && !hidePartNo && (
             <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
               Part #{product.partNo}
             </span>
@@ -217,7 +221,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Price & UOM */}
-        {product.price ? (
+        {!hidePrice && product.price ? (
           <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-900 pt-0.5">
             ₹{Number(product.price).toLocaleString('en-IN')}{' '}
             <span className="text-[10px] text-slate-500 font-normal">
