@@ -494,3 +494,4 @@ export const MENNEKES_PRODUCTS: MennekesProduct[] = [
     specs: ["Current: 32A", "Poles: 5P (3P+N+E)", "Voltage: 400V", "Protection: IP67 Watertight", "Threaded ring: Bayonet locking mechanism"]
   }
 ];
+

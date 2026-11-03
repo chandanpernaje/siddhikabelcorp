@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Zap, ShieldCheck, ArrowRight, FileText, Search } from 'lucide-react';
+import { Zap, ShieldCheck, Search } from 'lucide-react';
 import { RFQModal } from '../components/ui/RFQModal';
 import { EATON_PRODUCTS, EatonProduct } from '../data/eatonData';
 
@@ -19,12 +19,12 @@ const EatonCard: React.FC<{
   onQuote: (p: EatonProduct) => void;
 }> = ({ product, image, onQuote }) => {
   return (
-    <div className="group flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <div className="group relative flex flex-col rounded-3xl h-full bg-gradient-to-b from-blue-500/10 via-sky-50/70 to-white border border-blue-200/90 border-t-4 border-t-blue-500 hover:border-blue-400 transition-all duration-300 hover:-translate-y-1.5 shadow-sm hover:shadow-xl hover:shadow-blue-500/20 overflow-hidden">
+      {/* Product Image Slot with tinted brand background */}
       <Link
         to={`/product/${product.partNo}`}
-        className="h-44 sm:h-48 bg-slate-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden relative border-b border-slate-100"
+        className="relative aspect-[4/3] bg-gradient-to-b from-blue-100/50 via-sky-50/40 to-white flex items-center justify-center p-2 sm:p-4 overflow-hidden border-b border-blue-200/50 block"
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-100/60 to-transparent" />
         <img
           src={image}
           alt={product.name}
@@ -37,52 +37,33 @@ const EatonCard: React.FC<{
         />
       </Link>
 
-      <div className="flex flex-col flex-1 p-3.5 sm:p-4 justify-between space-y-3">
-        <div className="space-y-1.5 text-center">
-          <div className="flex items-center gap-1.5 flex-wrap justify-center">
-            <span className="px-2.5 py-0.5 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-blue-100/90 text-blue-900 border-blue-300">
-              EATON
+      {/* Card Content & Metadata */}
+      <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          <span className="px-2.5 py-0.5 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-blue-100/90 text-blue-900 border-blue-300">
+            EATON
+          </span>
+          {product.partNo && (
+            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+              Part #{product.partNo}
             </span>
-            {product.partNo && (
-              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
-                Part #{product.partNo}
-              </span>
-            )}
-          </div>
-
-          <Link to={`/product/${product.partNo}`} className="block">
-            <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug">
-              {product.name}
-            </h4>
-          </Link>
-        </div>
-
-        {/* Price & Actions */}
-        <div className="pt-2 border-t border-slate-100 space-y-2">
-          {product.price > 0 && (
-            <div className="text-center">
-              <span className="text-xs sm:text-sm font-black text-slate-900 font-mono">
-                ₹{product.price.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[10px] text-slate-500 font-normal"> / piece</span>
-            </div>
           )}
-
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Link
-              to={`/product/${product.partNo}`}
-              className="w-full py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-[11px] text-center transition-colors flex items-center justify-center"
-            >
-              Specs
-            </Link>
-            <button
-              onClick={() => onQuote(product)}
-              className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[11px] text-center transition-colors shadow-sm shadow-blue-500/20"
-            >
-              RFQ
-            </button>
-          </div>
         </div>
+
+        {/* Product Title */}
+        <Link to={`/product/${product.partNo}`} className="block w-full">
+          <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug">
+            {product.name}
+          </h4>
+        </Link>
+
+        {/* Price & UOM */}
+        {product.price > 0 && (
+          <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-900 pt-0.5">
+            ₹{product.price.toLocaleString('en-IN')}{' '}
+            <span className="text-[10px] text-slate-500 font-normal">/ piece</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -291,7 +272,7 @@ export const EatonProducts: React.FC = () => {
             </span>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {displayData.map(product => (
               <EatonCard
                 key={product.partNo}

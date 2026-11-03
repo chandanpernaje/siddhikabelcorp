@@ -382,3 +382,4 @@ export const PARTEX_PRODUCTS: PartexProduct[] = [
     specs: ["Size: 28 mm x 28 mm", "Tie entry: 4-way slot accepts up to 5.2mm wide ties", "Mounting: Heavy duty rubber adhesive + central screw hole", "Packaging: Pack of 100"]
   }
 ];
+
