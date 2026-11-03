@@ -723,6 +723,18 @@ export const Home: React.FC = () => {
                         product.id === "eaton-04" ? "/eaton-products?group=rmq" :
                         product.id === "eaton-05" ? "/eaton-products?group=faz" :
                         product.id === "eaton-06" ? "/eaton-products?group=powerxl" :
+                        product.id === "menn-01" ? "/mennekes-products?group=powertop" :
+                        product.id === "menn-02" ? "/mennekes-products?group=panel" :
+                        product.id === "menn-03" ? "/mennekes-products?group=amaxx" :
+                        product.id === "menn-04" ? "/mennekes-products?group=duo" :
+                        product.id === "menn-05" ? "/mennekes-products?group=evergum" :
+                        product.id === "menn-06" ? "/mennekes-products?group=phase" :
+                        product.id === "partex-01" ? "/partex-products?group=pa" :
+                        product.id === "partex-02" ? "/partex-products?group=promark" :
+                        product.id === "partex-03" ? "/partex-products?group=pks" :
+                        product.id === "partex-04" ? "/partex-products?group=ties" :
+                        product.id === "partex-05" ? "/partex-products?group=po" :
+                        product.id === "partex-06" ? "/partex-products?group=pc" :
                         brand.path
                       }
                       onQuickView={(p) => setQuickViewProduct(p)}

@@ -170,7 +170,7 @@ export const AboutEaton: React.FC = () => {
                         EATON
                       </span>
                     </div>
-                    
+
                     <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
                       {cat.title}
                     </h4>

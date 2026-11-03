@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { PRODUCTS_DATA, ALL_OLFLEX_PRODUCTS } from "../data/products";
 import { EATON_PRODUCTS } from "../data/eatonData";
+import { MENNEKES_PRODUCTS } from "../data/mennekesData";
+import { PARTEX_PRODUCTS } from "../data/partexData";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { RFQModal } from "../components/ui/RFQModal";
@@ -188,6 +190,70 @@ export const ProductDetail: React.FC = () => {
         application: eatonMatch.desc || "Industrial motor control, electrical protection, and switchgear distribution.",
         image: eatonImg,
         hsnCode: "85362030",
+      };
+    }
+
+    // 5. Match in MENNEKES_PRODUCTS by Part Number
+    const mennMatch = MENNEKES_PRODUCTS.find(
+      (p) => p.partNo && p.partNo.toLowerCase() === productId.toLowerCase()
+    );
+    if (mennMatch) {
+      let mennImg = "/images/menn-powertop.jpg";
+      if (mennMatch.series === "Panel Sockets") mennImg = "/images/menn-panel.jpg";
+      else if (mennMatch.series === "AMAXX") mennImg = "/images/menn-amaxx.jpg";
+      else if (mennMatch.series === "DUO") mennImg = "/images/menn-duo.jpg";
+      else if (mennMatch.series === "EverGUM") mennImg = "/images/menn-evergum.jpg";
+      else if (mennMatch.series === "Phase Inverters") mennImg = "/images/menn-phase.jpg";
+
+      return {
+        id: `menn-${mennMatch.partNo}`,
+        category: "switchgear" as const,
+        brand: "MENNEKES",
+        partNo: mennMatch.partNo,
+        name: mennMatch.name,
+        specs: (mennMatch.specs || []).map(formatSpecificationText),
+        voltage: mennMatch.voltage || "400V AC",
+        tempRange: "-25°C to +55°C",
+        conductor: "Heavy-duty nickel-plated contacts",
+        price: mennMatch.price,
+        unit: "piece" as const,
+        stock: "Bangalore Central Hub (In Stock - Genuine Mennekes)",
+        icon: "plug",
+        application: mennMatch.desc || "Industrial CEE pin and sleeve connections for harsh industrial environments.",
+        image: mennImg,
+        hsnCode: "85366990",
+      };
+    }
+
+    // 6. Match in PARTEX_PRODUCTS by Part Number
+    const partexMatch = PARTEX_PRODUCTS.find(
+      (p) => p.partNo && p.partNo.toLowerCase() === productId.toLowerCase()
+    );
+    if (partexMatch) {
+      let partexImg = "/images/partex-pa.jpg";
+      if (partexMatch.series === "ProMark") partexImg = "/images/partex-promark.jpg";
+      else if (partexMatch.series === "PO") partexImg = "/images/partex-po.jpg";
+      else if (partexMatch.series === "PC") partexImg = "/images/partex-pc.jpg";
+      else if (partexMatch.series === "PKS") partexImg = "/images/partex-pks.jpg";
+      else if (partexMatch.series === "Cable Ties") partexImg = "/images/partex-ties.jpg";
+
+      return {
+        id: `partex-${partexMatch.partNo}`,
+        category: "accessories" as const,
+        brand: "PARTEX",
+        partNo: partexMatch.partNo,
+        name: partexMatch.name,
+        specs: (partexMatch.specs || []).map(formatSpecificationText),
+        voltage: "N/A (Wire Marking)",
+        tempRange: "-30°C to +60°C",
+        conductor: "Self-extinguishing PVC / AISI 316 Stainless",
+        price: partexMatch.price,
+        unit: "piece" as const,
+        stock: "Bangalore Central Hub (In Stock - Genuine Partex)",
+        icon: "shield",
+        application: partexMatch.desc || "Swedish precision wire, cable and component marking systems.",
+        image: partexImg,
+        hsnCode: "39269099",
       };
     }
 

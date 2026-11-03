@@ -23,6 +23,8 @@ import { Home } from "./pages/Home";
 import { OlflexCables } from "./pages/OlflexCables";
 import { ProductDetail } from "./pages/ProductDetail";
 import { EatonProducts } from "./pages/EatonProducts";
+import { MennekesProducts } from "./pages/MennekesProducts";
+import { PartexProducts } from "./pages/PartexProducts";
 import { QuotationPage } from "./pages/QuotationPage";
 import { AboutLapp } from "./pages/AboutLapp";
 import { AboutEaton } from "./pages/AboutEaton";
@@ -95,6 +97,8 @@ export const App: React.FC = () => {
                 <Route path="products" element={<Products />} />
                 <Route path="olflex-cables" element={<OlflexCables />} />
                 <Route path="eaton-products" element={<EatonProducts />} />
+                <Route path="mennekes-products" element={<MennekesProducts />} />
+                <Route path="partex-products" element={<PartexProducts />} />
                 <Route path="product-detail" element={<ProductDetail />} />
                 <Route path="product/:id" element={<ProductDetail />} />
                 <Route path="quotation" element={<QuotationPage />} />

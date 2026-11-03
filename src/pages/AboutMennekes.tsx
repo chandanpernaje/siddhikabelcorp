@@ -12,6 +12,8 @@ export const AboutMennekes: React.FC = () => {
   const productRanges = [
     {
       id: "menn-01",
+      group: "powertop",
+      link: "/mennekes-products?group=powertop",
       title: "PowerTOP® Xtra CEE Plugs & Connectors",
       desc: "Ergonomic rubberized grip with rotating cable gland, nickel-plated contacts, and IP54 to IP67 protection.",
       img: "/images/menn-powertop.jpg",
@@ -19,6 +21,8 @@ export const AboutMennekes: React.FC = () => {
     },
     {
       id: "menn-02",
+      group: "panel",
+      link: "/mennekes-products?group=panel",
       title: "Panel Mounted Sockets (Straight & Angled)",
       desc: "Robust 16A, 32A, 63A, and 125A receptacles with high heat resistant contact carrier and screwless twin contact technology.",
       img: "/images/menn-panel.jpg",
@@ -26,6 +30,8 @@ export const AboutMennekes: React.FC = () => {
     },
     {
       id: "menn-03",
+      group: "amaxx",
+      link: "/mennekes-products?group=amaxx",
       title: "AMAXX® Receptacle Combination Enclosures",
       desc: "Custom combinable distribution units in AMAPLAST housing with integrated DIN-rail MCBs, RCDs, and CEE outlets.",
       img: "/images/menn-amaxx.jpg",
@@ -33,6 +39,8 @@ export const AboutMennekes: React.FC = () => {
     },
     {
       id: "menn-04",
+      group: "duo",
+      link: "/mennekes-products?group=duo",
       title: "DUO Interlocked Switched Sockets",
       desc: "Mechanical interlock prevents insertion or withdrawal of plugs under live electrical load. IP67 watertight.",
       img: "/images/menn-duo.jpg",
@@ -40,6 +48,8 @@ export const AboutMennekes: React.FC = () => {
     },
     {
       id: "menn-05",
+      group: "evergum",
+      link: "/mennekes-products?group=evergum",
       title: "EverGUM® Solid Rubber Enclosures",
       desc: "Unbreakable vulcanized rubber distribution boxes designed for brutal mechanical abuse on shipyards and construction sites.",
       img: "/images/menn-evergum.jpg",
@@ -47,6 +57,8 @@ export const AboutMennekes: React.FC = () => {
     },
     {
       id: "menn-06",
+      group: "phase",
+      link: "/mennekes-products?group=phase",
       title: "Phase Inverters & Motor Sockets",
       desc: "Enables fast 180° rotation of two phase pins to reverse 3-phase motor direction without rewiring connections.",
       img: "/images/menn-phase.jpg",
@@ -90,12 +102,18 @@ export const AboutMennekes: React.FC = () => {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-3">
+              <Link
+                to="/mennekes-products?group=powertop"
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-rose-500/25 flex items-center gap-2"
+              >
+                <span>Browse Mennekes Catalog</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
               <button
                 onClick={() => setRfqTopic("MENNEKES OEM BOX RATES")}
-                className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+                className="px-5 py-2.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center gap-2 shadow-sm"
               >
                 <span>Request Direct Factory Box RFQ</span>
-                <ArrowRight className="w-4 h-4" />
               </button>
               <Link
                 to="/quotation"
@@ -111,20 +129,25 @@ export const AboutMennekes: React.FC = () => {
         {/* Product Ranges */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
-              Mennekes Core Series
-            </h2>
-            <span className="text-xs text-slate-500 font-mono font-medium">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Mennekes Core Series Catalog
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium pt-1">
+                Click any series below to explore all catalog models, specifications, and request tailored quotes.
+              </p>
+            </div>
+            <span className="text-xs text-slate-500 font-mono font-medium hidden sm:block">
               IP44 &amp; IP67 Heavy Duty
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {productRanges.map((cat, idx) => (
-              <div
+              <Link
                 key={idx}
+                to={cat.link}
                 className="group relative flex flex-col rounded-3xl h-full bg-white border border-slate-200 hover:border-red-400 transition-all duration-300 hover:-translate-y-1.5 shadow-sm hover:shadow-xl overflow-hidden cursor-pointer"
-                onClick={() => setRfqTopic(cat.topic)}
               >
                 <div className="relative aspect-[4/3] bg-red-50/50 flex items-center justify-center p-2 sm:p-4 overflow-hidden border-b border-slate-200/70">
                   <img
@@ -140,18 +163,24 @@ export const AboutMennekes: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-center space-y-2">
-                  <div>
-                    <span className="px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-slate-100 text-slate-700 border-slate-200">
-                      MENNEKES
-                    </span>
+                <div className="flex flex-col flex-1 p-3 sm:p-4 items-center text-center justify-between space-y-2">
+                  <div className="space-y-1.5">
+                    <div>
+                      <span className="px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] tracking-wider uppercase font-bold bg-slate-100 text-slate-700 border-slate-200">
+                        MENNEKES
+                      </span>
+                    </div>
+                    
+                    <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
+                      {cat.title}
+                    </h4>
                   </div>
-                  
-                  <h4 className="text-[12px] sm:text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-                    {cat.title}
-                  </h4>
+
+                  <span className="text-[11px] font-bold text-red-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform pt-1">
+                    View Catalog <ArrowRight className="w-3 h-3" />
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
