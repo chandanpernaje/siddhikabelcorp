@@ -383,36 +383,120 @@ export const OlflexCables: React.FC = () => {
           <span className="text-slate-900 font-bold">{groupParam === "olflex" ? "ÖLFLEX® Cable Center" : groupTitle}</span>
         </div>
 
-        {/* Hero Header */}
-        <div className="relative rounded-3xl bg-white border border-slate-200 p-8 sm:p-10 overflow-hidden shadow-lg">
-          <div className="max-w-3xl relative z-10 space-y-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-amber-700 font-mono font-bold">
-              <Zap className="w-4 h-4 text-amber-600" />
-              <span>Official German Cable Configurator · Direct Stockist</span>
+        {/* Hero Header with Integrated Search & Filter Console on Desktop */}
+        <div className="relative rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 lg:p-10 overflow-hidden shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center relative z-10">
+            {/* Left Column: Brand & Technical Overview */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-amber-700 font-mono font-bold">
+                <Zap className="w-4 h-4 text-amber-600" />
+                <span>Official German Cable Configurator · Direct Stockist</span>
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">{groupTitle}</h1>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Engineered by LAPP Stuttgart. High flexibility, chemical and oil resistance according to DIN EN 50290-2-22, and VDE registration. Over 100+ standard configurations available with same-day dispatch from our Bangalore central warehouse.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono text-slate-600 pt-1 font-medium">
+                <span className="flex items-center gap-1.5 text-slate-900 font-bold">
+                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                  VDE Reg. No. 7030
+                </span>
+                <span>·</span>
+                <span>Test Voltage: 4000 V</span>
+                <span>·</span>
+                <span>Temp: -40°C to +80°C</span>
+                <span>·</span>
+                <span>Class 5 Bare Copper</span>
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">{groupTitle}</h1>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Engineered by LAPP Stuttgart. High flexibility, chemical and oil resistance according to DIN EN 50290-2-22, and VDE registration. Over 100+ standard configurations available with same-day dispatch from our Bangalore central warehouse.
-            </p>
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-600 pt-2 font-medium">
-              <span className="flex items-center gap-1.5 text-slate-900 font-bold">
-                <ShieldCheck className="w-4 h-4 text-amber-500" />
-                VDE Reg. No. 7030
-              </span>
-              <span>·</span>
-              <span>Test Voltage: 4000 V</span>
-              <span>·</span>
-              <span>Temp: -40°C to +80°C</span>
-              <span>·</span>
-              <span>Class 5 Bare Copper</span>
+
+            {/* Right Column: Search & Filters (Fills the blank desktop space) */}
+            <div className="lg:col-span-5 w-full">
+              <div className="bg-gradient-to-b from-slate-50 to-slate-100/70 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Search & Filter Cables</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-600 bg-white px-2.5 py-0.5 rounded-full border border-slate-200 font-mono shadow-2xs">
+                      {totalFilteredCount} matching
+                    </span>
+                    {(searchQuery || coreFilter || sqmmFilter) && (
+                      <button
+                        onClick={resetFilters}
+                        className="text-[11px] font-bold text-amber-600 hover:text-amber-800 transition-colors cursor-pointer"
+                        title="Reset all filters"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative w-full">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search part #, 3G1.5, 4x2.5..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 placeholder:text-slate-400 shadow-2xs"
+                  />
+                </div>
+
+                {/* Dropdowns Row */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Core Count */}
+                  <div className="relative">
+                    <select
+                      value={coreFilter}
+                      onChange={(e) => setCoreFilter(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 appearance-none font-medium cursor-pointer shadow-2xs"
+                    >
+                      <option value="">All Cores</option>
+                      {uniqueCores.map(core => (
+                        <option key={core} value={core.toString()}>{core} Cores</option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <svg className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Sqmm */}
+                  <div className="relative">
+                    <select
+                      value={sqmmFilter}
+                      onChange={(e) => setSqmmFilter(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 appearance-none font-medium cursor-pointer shadow-2xs"
+                    >
+                      <option value="">All Cross Sections</option>
+                      {uniqueSizes.map(size => (
+                        <option key={size} value={size.toString()}>{size} sq mm</option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <svg className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        
         {/* Filter Buttons */}
         <div className="flex flex-col gap-4">
-          
           <div className="flex overflow-x-auto hide-scrollbar bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 gap-1 items-center">
             <button 
               onClick={() => setActiveFilter('all')}
@@ -429,72 +513,6 @@ export const OlflexCables: React.FC = () => {
                 {sec.title}
               </button>
             ))}
-          </div>
-
-        </div>
-
-        {/* Search & Filters Container */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-sm">
-          <div className="flex flex-col lg:flex-row gap-4 items-center">
-            {/* Search */}
-            <div className="relative w-full lg:flex-1">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
-              </div>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search part #, 3G1.5, 4x2.5..."
-                className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 placeholder:text-slate-400"
-              />
-            </div>
-
-            {/* Core Count */}
-            <div className="relative w-full lg:w-48">
-              <select
-                value={coreFilter}
-                onChange={(e) => setCoreFilter(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 appearance-none"
-              >
-                <option value="">All Core Counts</option>
-                {uniqueCores.map(core => (
-                  <option key={core} value={core.toString()}>{core} Cores</option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-
-            {/* Sqmm */}
-            <div className="relative w-full lg:w-56">
-              <select
-                value={sqmmFilter}
-                onChange={(e) => setSqmmFilter(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 appearance-none"
-              >
-                <option value="">All Cross Sections</option>
-                {uniqueSizes.map(size => (
-                  <option key={size} value={size.toString()}>{size} sq mm</option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-
-            {/* Counter and Reset */}
-            <div className="flex items-center justify-end gap-3 text-sm text-slate-500 w-full lg:w-auto shrink-0">
-              <span>Showing <strong className="text-slate-900 font-bold">{totalFilteredCount}</strong></span>
-              <button 
-                onClick={resetFilters}
-                className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
-                title="Reset Filters"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </button>
-            </div>
           </div>
         </div>
 

@@ -194,37 +194,66 @@ export const PartexProducts: React.FC = () => {
           <span className="text-slate-900 font-bold">{groupInfo.title}</span>
         </div>
 
-        {/* Hero Header */}
-        <div className="relative rounded-3xl bg-white border border-slate-200 p-8 sm:p-10 overflow-hidden shadow-lg">
-          <div className="max-w-3xl relative z-10 space-y-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-700 font-mono font-bold">
-              <Tag className="w-4 h-4 text-zinc-600" />
-              <span>Official Partex Marking Partner · Direct Stockist</span>
+        {/* Hero Header with Integrated Search on Desktop */}
+        <div className="relative rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 lg:p-10 overflow-hidden shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center relative z-10">
+            {/* Left Column: Brand & Series Info */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-zinc-700 font-mono font-bold">
+                <Tag className="w-4 h-4 text-zinc-600" />
+                <span>Official Partex Marking Partner · Direct Stockist</span>
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">{groupInfo.title}</h1>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {groupInfo.desc}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono text-slate-600 pt-1 font-medium">
+                <span className="flex items-center gap-1.5 text-slate-900 font-bold">
+                  <ShieldCheck className="w-4 h-4 text-zinc-500" />
+                  Swedish Precision Engineered
+                </span>
+                <span>·</span>
+                <span>UL94-V0 Flammability</span>
+                <span>·</span>
+                <span>Direct Stock Ready</span>
+                <span>·</span>
+                <button
+                  onClick={() => {
+                    setRfqProductName(`PARTEX ${groupInfo.series} Complete Series RFQ`);
+                    setRfqProductPrice(null);
+                    setRfqModalOpen(true);
+                  }}
+                  className="text-zinc-700 hover:text-zinc-900 font-bold underline cursor-pointer"
+                >
+                  Request Series RFQ
+                </button>
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">{groupInfo.title}</h1>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              {groupInfo.desc}
-            </p>
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-600 pt-2 font-medium">
-              <span className="flex items-center gap-1.5 text-slate-900 font-bold">
-                <ShieldCheck className="w-4 h-4 text-zinc-500" />
-                Swedish Precision Engineered
-              </span>
-              <span>·</span>
-              <span>UL94-V0 Flammability</span>
-              <span>·</span>
-              <span>Direct Stock Ready</span>
-              <span>·</span>
-              <button
-                onClick={() => {
-                  setRfqProductName(`PARTEX ${groupInfo.series} Complete Series RFQ`);
-                  setRfqProductPrice(null);
-                  setRfqModalOpen(true);
-                }}
-                className="text-zinc-700 hover:text-zinc-900 font-bold underline cursor-pointer"
-              >
-                Request Series RFQ
-              </button>
+
+            {/* Right Column: Search Box (Fills the blank space on desktop) */}
+            <div className="lg:col-span-5 w-full">
+              <div className="bg-gradient-to-b from-slate-50 to-slate-100/70 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-zinc-700 animate-pulse" />
+                    <span>Search {groupInfo.series} Catalog</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-600 bg-white px-2.5 py-0.5 rounded-full border border-slate-200 font-mono shadow-2xs">
+                    {displayData.length} variants
+                  </span>
+                </div>
+
+                <div className="relative w-full">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder={`Search in ${groupInfo.series} by part number or name...`}
+                    className="w-full bg-white border border-slate-200 text-slate-900 text-xs sm:text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 focus:border-zinc-500 transition-all placeholder:text-slate-400 shadow-2xs"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -253,20 +282,6 @@ export const PartexProducts: React.FC = () => {
               </button>
             );
           })}
-        </div>
-
-        {/* Search */}
-        <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder={`Search in ${groupInfo.series} by part number or name...`}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-zinc-500/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
         </div>
 
         {/* Products Grid */}
