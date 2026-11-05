@@ -26,61 +26,11 @@
 
   body {
     background-color: #f8fafc;
-    color: #020617;
-    font-weight: 600;
+    color: #0f172a;
+    font-weight: 500;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* High-Contrast Readability & Accessibility Enhancements */
-  .text-slate-400,
-  .text-gray-400,
-  .text-zinc-400 {
-    color: #1e293b;
-    font-weight: 600;
-  }
-
-  .text-slate-500,
-  .text-gray-500,
-  .text-zinc-500 {
-    color: #0f172a;
-    font-weight: 600;
-  }
-
-  .text-slate-600,
-  .text-gray-600,
-  .text-zinc-600 {
-    color: #020617;
-    font-weight: 600;
-  }
-
-  .text-slate-700,
-  .text-gray-700,
-  .text-zinc-700 {
-    color: #000000;
-    font-weight: 600;
-  }
-
-  /* Text inside dark containers (dark cards, banners, footers) must stay bright white/silver */
-  [class*="bg-slate-9"] .text-slate-400,
-  [class*="bg-slate-8"] .text-slate-400,
-  [class*="bg-gray-9"] .text-slate-400,
-  [class*="bg-black"] .text-slate-400,
-  [class*="bg-slate-9"] .text-slate-500,
-  [class*="bg-slate-8"] .text-slate-500,
-  [class*="bg-slate-9"] .text-slate-300,
-  [class*="bg-slate-9"] .text-slate-200,
-  [class*="bg-slate-8"] .text-slate-300 {
-    color: #e2e8f0 !important;
-  }
-
-  /* Sharp visible borders for cards, tables and badges */
-  .border-slate-100,
-  .border-slate-200,
-  .border-gray-100,
-  .border-gray-200 {
-    border-color: #cbd5e1 !important;
   }
 
   /* Custom Tabular numbers */
