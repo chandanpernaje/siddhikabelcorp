@@ -278,6 +278,7 @@ export const EatonProducts: React.FC = () => {
           })}
         </div>
 
+
         {/* Products Grid */}
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">

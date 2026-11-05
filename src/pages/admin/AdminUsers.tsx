@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2, Edit2, Eye } from 'lucide-react';
+import { Users, RefreshCw, UserCheck, Mail, Shield, Plus, X, Building, Phone, MapPin, FileText, CheckCircle2, AlertCircle, Trash2, Edit2, Eye, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { API_BASE_URL } from '../../config/api';
 
 interface User {
@@ -33,6 +34,151 @@ export const AdminUsers: React.FC = () => {
   
   // Customer Create / Edit Modal State
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [customerImporting, setCustomerImporting] = useState(false);
+  const [customerImportResult, setCustomerImportResult] = useState<{ message: string; isError?: boolean } | null>(null);
+
+  // Download Customer Excel Template (Requirement 9)
+  const handleDownloadCustomerTemplate = () => {
+    const templateRows = [
+      {
+        'Customer ID': 'CUST-001',
+        'Customer Name': 'Rajesh Sharma',
+        'Company Name': 'Apex Switchgear & Controls Pvt Ltd',
+        'Email': 'purchase@apexswitchgear.com',
+        'Contact Details': '+91 9876543210',
+        'Address': 'Plot 42, Phase II, Peenya Industrial Area',
+        'City': 'Bengaluru',
+        'State': 'Karnataka',
+        'Pincode': '560058',
+        'GSTIN': '29ABCDE1234F1Z5',
+        'Status': 'Active'
+      },
+      {
+        'Customer ID': 'CUST-002',
+        'Customer Name': 'Sunil Mehta',
+        'Company Name': 'Sunil Electricals & Automation',
+        'Email': 'orders@sunilelectricals.in',
+        'Contact Details': '+91 9845012345',
+        'Address': 'Shop 12, Electric Market, Chickpet',
+        'City': 'Bengaluru',
+        'State': 'Karnataka',
+        'Pincode': '560053',
+        'GSTIN': '29XYZAB5678C1Z2',
+        'Status': 'Active'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateRows);
+    ws['!cols'] = [
+      { wch: 14 },
+      { wch: 20 },
+      { wch: 32 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 36 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 12 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'CustomerTemplate');
+    XLSX.writeFile(wb, 'Customer_Import_Template.xlsx');
+  };
+
+  // Import Customer Excel (Requirement 9)
+  const handleCustomerImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCustomerImporting(true);
+    setCustomerImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/customers/import`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setCustomerImportResult({
+          message: data.message || `Customer import completed: ${data.successCount || 0} created, ${data.updatedCount || 0} updated.`
+        });
+        fetchUsers();
+      } else {
+        setCustomerImportResult({
+          message: data.error || 'Failed to import customers. Please check file format.',
+          isError: true
+        });
+      }
+    } catch (err: any) {
+      setCustomerImportResult({
+        message: err.message || 'Network error during customer import',
+        isError: true
+      });
+    } finally {
+      setCustomerImporting(false);
+      e.target.value = '';
+    }
+  };
+
+  // Export Customers Excel (Requirement 9)
+  const handleCustomerExport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/customers/export`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Customers_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (apiErr) {
+      console.warn('Backend export failed, using client fallback:', apiErr);
+    }
+
+    // Client-side fallback using loaded customers
+    const exportData = customers.map((c, idx) => ({
+      'Serial Number': idx + 1,
+      'Customer ID': c._id,
+      'Customer Name': c.name || '',
+      'Company Name': c.company || '',
+      'Email': c.email || '',
+      'Contact Details': c.phone || '',
+      'Address': c.address || '',
+      'City': c.city || '',
+      'State': c.state || '',
+      'Pincode': c.pincode || '',
+      'GSTIN': c.gstin || '',
+      'Status': c.status || 'Active',
+      'Registered Date': c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Customers');
+    XLSX.writeFile(wb, `Customers_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
   const [editingCustomer, setEditingCustomer] = useState<User | null>(null);
   const [customerFormData, setCustomerFormData] = useState({
     name: '',
@@ -333,13 +479,52 @@ export const AdminUsers: React.FC = () => {
             Refresh
           </button>
           {isAdmin && activeTab === 'Customers' && (
-            <button 
-              onClick={openCreateCustomerModal}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white rounded-lg transition-all font-bold text-sm shadow-md shadow-red-600/20 cursor-pointer"
-            >
-              <Plus size={16} />
-              Add Customer
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleDownloadCustomerTemplate}
+                title="Download Customer Template"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-lg transition-colors border border-blue-200 text-xs cursor-pointer"
+              >
+                <Download size={14} />
+                Download Template
+              </button>
+
+              <label
+                title="Import Customers from Excel"
+                className={`flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 text-xs ${customerImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <input
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleCustomerImport}
+                  className="hidden"
+                  disabled={customerImporting}
+                />
+                {customerImporting ? (
+                  <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Upload size={14} />
+                )}
+                {customerImporting ? 'Importing...' : 'Import Excel'}
+              </label>
+
+              <button
+                onClick={handleCustomerExport}
+                title="Export Customers to Excel"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors border border-slate-200 text-xs cursor-pointer"
+              >
+                <FileSpreadsheet size={14} className="text-emerald-700" />
+                Export Excel
+              </button>
+
+              <button 
+                onClick={openCreateCustomerModal}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-red-600 via-red-700 to-rose-700 hover:opacity-95 text-white rounded-lg transition-all font-bold text-xs shadow-md shadow-red-600/20 cursor-pointer"
+              >
+                <Plus size={14} />
+                Add Customer
+              </button>
+            </div>
           )}
           {isAdmin && activeTab === 'Internal' && (
             <button 
@@ -352,6 +537,22 @@ export const AdminUsers: React.FC = () => {
           )}
         </div>
       </div>
+
+      {customerImportResult && (
+        <div className={`p-3 rounded-lg border text-xs flex items-center justify-between ${
+          customerImportResult.isError
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+        }`}>
+          <div className="flex items-center gap-2 font-medium">
+            {customerImportResult.isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+            <span>{customerImportResult.message}</span>
+          </div>
+          <button onClick={() => setCustomerImportResult(null)} className="text-slate-500 hover:text-slate-800">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Content Table */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">

@@ -26,8 +26,66 @@
 
   body {
     background-color: #f8fafc;
-    color: #0f172a;
+    color: #020617;
+    font-weight: 600;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* High-Contrast Readability & Accessibility Enhancements */
+  .text-slate-400,
+  .text-gray-400,
+  .text-zinc-400 {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  .text-slate-500,
+  .text-gray-500,
+  .text-zinc-500 {
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  .text-slate-600,
+  .text-gray-600,
+  .text-zinc-600 {
+    color: #020617;
+    font-weight: 600;
+  }
+
+  .text-slate-700,
+  .text-gray-700,
+  .text-zinc-700 {
+    color: #000000;
+    font-weight: 600;
+  }
+
+  /* Text inside dark containers (dark cards, banners, footers) must stay bright white/silver */
+  [class*="bg-slate-9"] .text-slate-400,
+  [class*="bg-slate-8"] .text-slate-400,
+  [class*="bg-gray-9"] .text-slate-400,
+  [class*="bg-black"] .text-slate-400,
+  [class*="bg-slate-9"] .text-slate-500,
+  [class*="bg-slate-8"] .text-slate-500,
+  [class*="bg-slate-9"] .text-slate-300,
+  [class*="bg-slate-9"] .text-slate-200,
+  [class*="bg-slate-8"] .text-slate-300,
+  footer .text-slate-400,
+  footer .text-slate-500,
+  footer .text-gray-400 {
+    color: #e2e8f0 !important;
+  }
+    font-weight: 600;
+  }
+
+  /* Sharp visible borders for cards, tables and badges */
+  .border-slate-100,
+  .border-slate-200,
+  .border-gray-100,
+  .border-gray-200 {
+    border-color: #cbd5e1 !important;
   }
 
   /* Custom Tabular numbers */
@@ -37,8 +95,12 @@
 }
 
 /* Force smooth transitions on all interactive elements */
-a, button, [role="button"],
-input, select, textarea,
+a,
+button,
+[role="button"],
+input,
+select,
+textarea,
 [class*="transition"] {
   transition-duration: 400ms !important;
   transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
@@ -78,13 +140,16 @@ button:disabled,
   width: 7px;
   height: 7px;
 }
+
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
@@ -94,6 +159,7 @@ button:disabled,
   0% {
     transform: translateX(0%);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -111,12 +177,16 @@ button:disabled,
 
 /* Print Styles for Official GST Commercial Quotation */
 @media print {
+
   /* Reset everything */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     box-shadow: none !important;
   }
 
-  html, body {
+  html,
+  body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
@@ -128,7 +198,7 @@ button:disabled,
   }
 
   /* Hide everything in body by default */
-  body > *:not(#rfq-print-overlay) {
+  body>*:not(#rfq-print-overlay) {
     display: none !important;
     visibility: hidden !important;
   }

@@ -13,6 +13,19 @@ import { useCart } from '../context/CartContext';
 
 type SortOption = 'name-asc' | 'name-desc' | 'category' | 'core-asc' | 'core-desc' | 'sqmm-asc' | 'sqmm-desc' | 'price-asc' | 'price-desc';
 
+const getBrandFallback = (brand?: any, name?: string) => {
+  const b = (typeof brand === 'object' ? brand?.name : brand || '').toLowerCase();
+  const n = (name || '').toLowerCase();
+  if (b.includes('eaton') || n.includes('pkzm') || n.includes('dilm') || n.includes('breaker') || n.includes('contactor')) return '/images/promo-eaton.jpg';
+  if (b.includes('mennekes') || n.includes('powertop') || n.includes('amaxx') || n.includes('socket') || n.includes('plug')) return '/images/promo-mennekes.jpg';
+  if (b.includes('partex') || n.includes('promark') || n.includes('pa ') || n.includes('marker')) return '/images/promo-partex.jpg';
+  if (n.includes('skintop') || n.includes('gland')) return '/images/card-skintop.jpg';
+  if (n.includes('silvyn') || n.includes('conduit')) return '/images/card-conduit.jpg';
+  if (n.includes('unitronic')) return '/images/card-unitronic.jpg';
+  if (n.includes('uniplus')) return '/images/card-uniplus.jpg';
+  return '/images/card-olflex.jpg';
+};
+
 export const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
@@ -649,6 +662,7 @@ export const Products: React.FC = () => {
               <span>Page {currentPage} of {totalPages}</span>
             </div>
 
+
             {/* Loading State */}
             {loading ? (
               <div className="bg-white rounded-3xl border border-slate-200 p-16 text-center space-y-3">
@@ -701,7 +715,7 @@ export const Products: React.FC = () => {
                             onError={(e) => {
                               const t = e.target as HTMLImageElement;
                               t.onerror = null;
-                              t.src = '/images/card-olflex.jpg';
+                              t.src = getBrandFallback(brandName, p.name);
                             }}
                           />
                         ) : (
@@ -728,7 +742,7 @@ export const Products: React.FC = () => {
                               {brandName}
                             </span>
                             {p.categoryName && (
-                              <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                              <span className="text-[11px] font-bold text-slate-900 truncate max-w-[130px]">
                                 {p.categoryName}
                               </span>
                             )}
@@ -746,7 +760,7 @@ export const Products: React.FC = () => {
                           {/* Technical Specifications: Core Size × SQMM */}
                           {(coreVal || sqmmVal) && (
                             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                              <span className="text-[11px] font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                              <span className="text-[11px] font-mono font-black text-slate-950 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
                                 {coreVal ? `${coreVal} Cores` : ''}
                                 {coreVal && sqmmVal ? ' × ' : ''}
                                 {sqmmVal ? `${sqmmVal} mm²` : ''}
@@ -769,10 +783,10 @@ export const Products: React.FC = () => {
                               {p.price ? (
                                 <>
                                   ₹{Number(p.price).toLocaleString('en-IN')}
-                                  <span className="text-[10px] text-slate-500 font-normal"> / {uomVal}</span>
+                                  <span className="text-[10px] text-slate-800 font-bold"> / {uomVal}</span>
                                 </>
                               ) : (
-                                <span className="text-slate-400 font-medium">Quote On Request</span>
+                                <span className="text-slate-900 font-black">Quote On Request</span>
                               )}
                             </div>
                             {(() => {

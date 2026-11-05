@@ -118,7 +118,7 @@ export const IndustriesSection: React.FC = () => {
                   {ind.title}
                 </h4>
                 
-                <p className="text-slate-500 text-xs sm:text-sm font-medium leading-relaxed relative z-10 group-hover:text-slate-600 transition-colors duration-300">
+                <p className="text-slate-800 text-xs sm:text-sm font-semibold leading-relaxed relative z-10 group-hover:text-slate-900 transition-colors duration-300">
                   {ind.desc}
                 </p>
                 
@@ -143,26 +143,26 @@ export const IndustriesSection: React.FC = () => {
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-6 leading-tight">
                 Our expertise goes beyond supplying products.
               </h2>
-              <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed mb-4">
+              <p className="text-slate-100 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed mb-4">
                 We understand that every industry has different operating conditions, technical requirements and application challenges.
               </p>
-              <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed">
+              <p className="text-slate-100 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed">
                 Our team works with OEMs, engineers, panel builders, system integrators, contractors and project teams to help identify suitable products for their applications.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 border-t border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-10 border-t border-slate-700/80">
               <div className="col-span-1 sm:col-span-2 lg:col-span-3 text-center mb-4">
-                <h4 className="text-xl font-bold text-white">Why Industries Choose Siddhi Kabel</h4>
+                <h4 className="text-2xl font-black text-white tracking-tight">Why Industries Choose Siddhi Kabel</h4>
               </div>
               {whyChoose.map((item, idx) => (
-                <div key={idx} className="flex gap-4 items-start p-4 rounded-xl hover:bg-slate-800/50 transition-colors">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                    <item.icon className="w-5 h-5" strokeWidth={2} />
+                <div key={idx} className="flex gap-4 items-start p-5 rounded-2xl bg-slate-800/90 border border-slate-700 hover:border-amber-400/60 hover:bg-slate-800 transition-all duration-300 shadow-md">
+                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                    <item.icon className="w-5 h-5 text-amber-400" strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h5 className="font-bold text-white text-sm mb-1">{item.title}</h5>
-                    <p className="text-slate-400 text-xs font-medium leading-relaxed">{item.desc}</p>
+                    <h5 className="font-bold text-white text-base mb-1.5">{item.title}</h5>
+                    <p className="text-slate-200 text-xs sm:text-sm font-normal leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}

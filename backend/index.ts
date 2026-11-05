@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
@@ -98,6 +99,13 @@ const productSchema = new mongoose.Schema({
   flameRetardancy: { type: String, default: null },
   imageUrl: { type: String, default: null },
   datasheetUrl: { type: String, default: null },
+  priceHistory: [{
+    price: { type: Number },
+    mrp: { type: Number },
+    validFrom: { type: String, default: null },
+    validTo: { type: String, default: null },
+    updatedAt: { type: Date, default: Date.now }
+  }],
 }, { timestamps: true });
 
 const categorySchema = new mongoose.Schema({
@@ -107,6 +115,13 @@ const categorySchema = new mongoose.Schema({
   description: { type: String, default: '' },
   imageUrl: { type: String, default: null },
   datasheetUrl: { type: String, default: null },
+  priceHistory: [{
+    price: { type: Number },
+    mrp: { type: Number },
+    validFrom: { type: String, default: null },
+    validTo: { type: String, default: null },
+    updatedAt: { type: Date, default: Date.now }
+  }],
 }, { timestamps: true });
 
 const brandSchema = new mongoose.Schema({
@@ -201,6 +216,25 @@ const notificationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Notification = mongoose.model('Notification', notificationSchema);
+
+const importedFileSchema = new mongoose.Schema({
+  fileName: { type: String, required: true },
+  fileSize: { type: Number, default: 0 },
+  productCount: { type: Number, default: 0 },
+  partNos: [{ type: String }],
+  productsSnapshot: [{
+    partNo: { type: String },
+    name: { type: String },
+    categoryName: { type: String },
+    brandName: { type: String },
+    price: { type: Number },
+    uom: { type: String }
+  }],
+  importedBy: { type: String, default: 'Admin' },
+  mode: { type: String, default: 'catalog' }
+}, { timestamps: true });
+
+const ImportedFile: any = mongoose.models.ImportedFile || mongoose.model('ImportedFile', importedFileSchema);
 
 const customCuttingSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -867,6 +901,55 @@ app.post('/api/admin/customers/import', verifyAdmin, upload.single('file'), asyn
   } catch (error: any) {
     console.error('Customer import failed:', error);
     res.status(500).json({ error: 'Customer import failed', details: error.message });
+  }
+});
+
+// Customer Master Excel Export (Requirement 9)
+app.get('/api/admin/customers/export', verifyAdmin, async (req, res) => {
+  try {
+    const customers = await User.find({ role: 'Customer' }).sort({ createdAt: -1 }).lean();
+    const rows = customers.map((c: any, idx: number) => ({
+      'Serial Number': idx + 1,
+      'Customer ID': c._id.toString(),
+      'Customer Name': c.name || '',
+      'Company Name': c.company || '',
+      'Email': c.email || '',
+      'Contact Details': c.phone || '',
+      'Address': c.address || '',
+      'City': c.city || '',
+      'State': c.state || '',
+      'Pincode': c.pincode || '',
+      'GSTIN': c.gstin || '',
+      'Status': c.status || 'Active',
+      'Registered Date': c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : ''
+    }));
+
+    const ws = xlsx.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 14 },
+      { wch: 26 },
+      { wch: 22 },
+      { wch: 28 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 30 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 16 }
+    ];
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, 'Customers');
+    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="Customers_Export.xlsx"');
+    res.send(buffer);
+  } catch (error: any) {
+    console.error('Customer export failed:', error);
+    res.status(500).json({ error: 'Customer export failed', details: error.message });
   }
 });
 
@@ -2154,6 +2237,127 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+// --- Imported Excel Files Management APIs ---
+
+// 1. Get list of all imported files
+app.get('/api/products/imported-files', async (req, res) => {
+  try {
+    const files = await ImportedFile.find()
+      .select('-productsSnapshot')
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json(files);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch imported files', details: err.message });
+  }
+});
+
+// 2. Get single imported file with its product snapshot & live products for viewing
+app.get('/api/products/imported-files/:id', async (req, res) => {
+  try {
+    const file = await ImportedFile.findById(req.params.id);
+    if (!file) return res.status(404).json({ error: 'Imported file not found' });
+
+    // Fetch live matching products currently in the catalog
+    const liveProducts = await Product.find({ partNo: { $in: file.partNos } })
+      .select('partNo name categoryName brandName price uom imageUrl updatedAt')
+      .limit(500);
+
+    res.json({
+      ...file.toObject(),
+      liveProducts
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch file details', details: err.message });
+  }
+});
+
+// 3. Delete imported file record and optionally remove its imported products
+app.delete('/api/products/imported-files/:id', async (req, res) => {
+  try {
+    const file = await ImportedFile.findById(req.params.id);
+    if (!file) return res.status(404).json({ error: 'Imported file not found' });
+
+    const deleteProducts = req.query.deleteProducts !== 'false';
+    let deletedProductCount = 0;
+
+    if (deleteProducts && file.partNos && file.partNos.length > 0) {
+      const delResult = await Product.deleteMany({ partNo: { $in: file.partNos } });
+      deletedProductCount = delResult.deletedCount || 0;
+    }
+
+    await ImportedFile.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: deleteProducts
+        ? `Deleted file "${file.fileName}" and removed ${deletedProductCount} products from catalog.`
+        : `Deleted file record "${file.fileName}".`,
+      deletedProductCount,
+      fileId: req.params.id
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete imported file', details: err.message });
+  }
+});
+
+// Bulk Product Image Upload API (maps image filename to product partNo)
+app.post('/api/products/bulk-images', verifyAdmin, upload.array('images', 300), async (req, res) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No image files uploaded' });
+    }
+
+    const updated: any[] = [];
+    const unmatched: string[] = [];
+
+    for (const file of files) {
+      const originalName = file.originalname || '';
+      const ext = path.extname(originalName);
+      const baseName = path.basename(originalName, ext).trim();
+      if (!baseName) continue;
+
+      const slashVariant = baseName.replace(/_/g, '/');
+      const hyphenVariant = baseName.replace(/_/g, '-');
+
+      const matchedProd = await Product.findOne({
+        $or: [
+          { partNo: baseName },
+          { partNo: slashVariant },
+          { partNo: hyphenVariant }
+        ]
+      });
+
+      if (matchedProd) {
+        const mime = file.mimetype || 'image/png';
+        const base64 = `data:${mime};base64,${file.buffer.toString('base64')}`;
+        await Product.updateOne(
+          { _id: matchedProd._id },
+          { $set: { imageUrl: base64, updatedAt: new Date() } }
+        );
+        updated.push({
+          partNo: matchedProd.partNo,
+          name: matchedProd.name,
+          fileName: originalName
+        });
+      } else {
+        unmatched.push(originalName);
+      }
+    }
+
+    res.json({
+      message: `Processed ${files.length} image(s): ${updated.length} matched and updated, ${unmatched.length} unmatched.`,
+      matchedCount: updated.length,
+      unmatchedCount: unmatched.length,
+      updated,
+      unmatched
+    });
+  } catch (error: any) {
+    console.error('Bulk image upload failed:', error);
+    res.status(500).json({ error: 'Bulk image upload failed', details: error.message });
+  }
+});
+
 // Get Single Product API
 app.get('/api/products/:id', async (req, res) => {
   try {
@@ -2397,6 +2601,30 @@ app.put('/api/products/:id', verifyAdmin, async (req, res) => {
     if (data.brandName && !data.brandId) {
       const br = await Brand.findOne({ name: data.brandName.trim() });
       if (br) data.brandId = br._id;
+    }
+
+    // Price History Tracking (Requirement 10)
+    try {
+      const existing = await Product.findById(req.params.id);
+      if (existing && existing.price !== undefined && existing.price !== null && data.price !== undefined && data.price !== null && existing.price !== data.price) {
+        const validTo = data.validFrom || new Date().toISOString().split('T')[0];
+        await Product.updateOne(
+          { _id: req.params.id },
+          {
+            $push: {
+              priceHistory: {
+                price: existing.price,
+                mrp: existing.mrp,
+                validFrom: existing.validFrom || null,
+                validTo: validTo,
+                updatedAt: new Date()
+              }
+            }
+          }
+        );
+      }
+    } catch (histErr) {
+      console.warn('Failed to record price history:', histErr);
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, data, { returnDocument: 'after' });
@@ -2786,13 +3014,69 @@ app.post('/api/products/import', upload.single('file'), async (req, res) => {
       }
     }
 
+    // Collect touched part numbers & build preview snapshot
+    const importedPartNos: string[] = [];
+    const productsSnapshot: any[] = [];
+    for (const op of bulkOperations) {
+      if (op.updateOne) {
+        const pn = op.updateOne.filter?.partNo;
+        if (pn && !importedPartNos.includes(pn)) {
+          importedPartNos.push(pn);
+          const p = op.updateOne.update?.$set;
+          if (p && productsSnapshot.length < 500) {
+            productsSnapshot.push({
+              partNo: pn,
+              name: p.name,
+              categoryName: p.categoryName,
+              brandName: p.brandName,
+              price: p.price,
+              uom: p.uom
+            });
+          }
+        }
+      } else if (op.insertOne) {
+        const doc = op.insertOne.document;
+        if (doc?.partNo && !importedPartNos.includes(doc.partNo)) {
+          importedPartNos.push(doc.partNo);
+          if (productsSnapshot.length < 500) {
+            productsSnapshot.push({
+              partNo: doc.partNo,
+              name: doc.name,
+              categoryName: doc.categoryName,
+              brandName: doc.brandName,
+              price: doc.price,
+              uom: doc.uom
+            });
+          }
+        }
+      }
+    }
+
+    // Save ImportedFile audit log
+    let savedFileRecord: any = null;
+    try {
+      savedFileRecord = await ImportedFile.create({
+        fileName: req.file.originalname || 'products_import.xlsx',
+        fileSize: req.file.size || 0,
+        productCount: successCount,
+        partNos: importedPartNos,
+        productsSnapshot,
+        mode: isPriceOnly ? 'price_only' : 'catalog'
+      });
+    } catch (saveErr) {
+      console.warn('Could not record ImportedFile:', saveErr);
+    }
+
     res.json({
       message: isPriceOnly 
         ? `Price-only update completed: ${successCount} product rates updated.`
         : `Import completed successfully. ${successCount} products imported/updated.`,
       successCount,
       failedCount,
-      errors: errors.slice(0, 10)
+      errors: errors.slice(0, 10),
+      fileId: savedFileRecord?._id,
+      fileName: savedFileRecord?.fileName || req.file.originalname,
+      importedPartNos
     });
 
   } catch (error: any) {

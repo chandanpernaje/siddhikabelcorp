@@ -30,6 +30,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   
   const isInCart = !isLappCategory && cart.some((item) => item.id === product.id);
 
+  const getBrandFallback = (brand?: any, name?: string) => {
+    const b = (typeof brand === 'object' ? brand?.name : brand || '').toLowerCase();
+    const n = (name || '').toLowerCase();
+    if (b.includes('eaton') || n.includes('pkzm') || n.includes('dilm') || n.includes('breaker') || n.includes('contactor')) return '/images/promo-eaton.jpg';
+    if (b.includes('mennekes') || n.includes('powertop') || n.includes('amaxx') || n.includes('socket') || n.includes('plug')) return '/images/promo-mennekes.jpg';
+    if (b.includes('partex') || n.includes('promark') || n.includes('pa ') || n.includes('marker')) return '/images/promo-partex.jpg';
+    if (n.includes('skintop') || n.includes('gland')) return '/images/card-skintop.jpg';
+    if (n.includes('silvyn') || n.includes('conduit')) return '/images/card-conduit.jpg';
+    if (n.includes('unitronic')) return '/images/card-unitronic.jpg';
+    if (n.includes('uniplus')) return '/images/card-uniplus.jpg';
+    return '/images/card-olflex.jpg';
+  };
+
   // Dynamic rich brand styling matching each industrial manufacturer
   const getBrandStyle = (brand: string) => {
     const b = brand.toLowerCase();
@@ -122,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.onerror = null;
-                  target.src = "/images/card-olflex.jpg";
+                  target.src = getBrandFallback(product.brand, product.name);
                 }}
               />
             </Link>
@@ -136,7 +149,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.onerror = null;
-                  target.src = "/images/card-olflex.jpg";
+                  target.src = getBrandFallback(product.brand, product.name);
                 }}
               />
             </Link>
@@ -150,7 +163,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.onerror = null;
-                  target.src = "/images/card-olflex.jpg";
+                  target.src = getBrandFallback(product.brand, product.name);
                 }}
               />
             </Link>
@@ -171,7 +184,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand}
           </span>
           {product.partNo && !hidePartNo && (
-            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+            <span className="text-[10px] sm:text-[11px] font-mono font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-300">
               Part #{product.partNo}
             </span>
           )}
@@ -205,7 +218,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Specifications: Core x SQMM */}
         {(product.core || product.sqmm || product.size) && (
           <div className="flex flex-wrap items-center justify-center gap-1 pt-0.5">
-            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+            <span className="text-[10px] sm:text-[11px] font-mono font-extrabold text-slate-950 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
               {product.core ? `${product.core} Cores` : ''}
               {product.core && (product.sqmm || product.size) ? ' × ' : ''}
               {product.sqmm || product.size ? `${String(product.sqmm || product.size).replace(/(\d+),(\d+)/g, '$1.$2')} mm²` : ''}
@@ -222,9 +235,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Price & UOM */}
         {!hidePrice && product.price ? (
-          <div className="text-[11px] sm:text-xs font-mono font-bold text-slate-900 pt-0.5">
+          <div className="text-[11px] sm:text-xs font-mono font-black text-slate-950 pt-0.5">
             ₹{Number(product.price).toLocaleString('en-IN')}{' '}
-            <span className="text-[10px] text-slate-500 font-normal">
+            <span className="text-[10px] text-slate-800 font-bold">
               / {product.uom || product.unit || 'Meter'}
             </span>
           </div>

@@ -516,6 +516,7 @@ export const OlflexCables: React.FC = () => {
           </div>
         </div>
 
+
         {/* Dynamic Sections */}
         <div className="space-y-12">
           {filteredSections.map(section => {

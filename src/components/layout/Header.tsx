@@ -130,7 +130,7 @@ export const Header: React.FC = () => {
   const navLinks = [
     { label: "Products", path: "/#brand-section-lapp" },
     { label: "Industries & Solutions", path: "/industries" },
-    { label: "Company", path: "/#about" },
+    { label: "About Us", path: "/#about" },
     { label: "Contact", path: "/#contact" },
   ];
 

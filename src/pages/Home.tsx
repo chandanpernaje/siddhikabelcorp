@@ -593,6 +593,7 @@ export const Home: React.FC = () => {
             </div>
           </div>
         </div>
+          
       </section>
 
       {/* ======================================================== */}
@@ -607,7 +608,7 @@ export const Home: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
               Our Authorised Brand Partners
             </h2>
-            <p className="text-sm sm:text-base text-slate-500 font-medium max-w-2xl">
+            <p className="text-sm sm:text-base text-slate-800 font-bold max-w-2xl">
               Siddhi Kabel is the certified regional distributor and factory-direct partner for world-leading electrical brands.
             </p>
           </div>
@@ -636,8 +637,8 @@ export const Home: React.FC = () => {
                   <h3 className={`text-lg sm:text-xl font-black tracking-tight mb-2 relative z-10 ${bStyle.text}`}>
                     {brand.name}
                   </h3>
-                  <p className="text-sm text-slate-600 font-medium relative z-10 leading-snug">
-                    <span className="block font-bold text-slate-400 text-xs mb-0.5 uppercase tracking-wider">{brand.origin}</span>
+                  <p className="text-sm text-slate-900 font-bold relative z-10 leading-snug">
+                    <span className="block font-black text-slate-800 text-xs mb-0.5 uppercase tracking-wider">{brand.origin}</span>
                     {brand.description.split('.')[0]}
                   </p>
                 </a>
@@ -645,6 +646,7 @@ export const Home: React.FC = () => {
             })}
           </div>
         </div>
+          
       </section>
 
       {/* ======================================================== */}
@@ -760,6 +762,7 @@ export const Home: React.FC = () => {
             );
           })}
         </div>
+          
       </section>
 
 
@@ -887,6 +890,7 @@ export const Home: React.FC = () => {
           </div>
           </div>
         </div>
+          
       </section>
 
 
@@ -1149,6 +1153,7 @@ export const Home: React.FC = () => {
           )}
           </div>
         </div>
+          
       </section>
 
 

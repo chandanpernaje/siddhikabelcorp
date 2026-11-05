@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
   const [rfqModalOpen, setRfqModalOpen] = useState(false);
 
   return (
-    <footer id="contact" className="bg-sky-50 border-t border-sky-100 text-slate-600 text-xs">
+    <footer id="contact" className="bg-sky-50 border-t border-sky-200 text-slate-800 text-xs font-medium">
 
       {/* Main Footer Links */}
       <div className="w-[95%] max-w-[1920px] mx-auto py-14 px-4 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">

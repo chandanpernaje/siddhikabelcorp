@@ -21,6 +21,7 @@ import { useToast } from "../context/ToastContext";
 import { RFQModal } from "../components/ui/RFQModal";
 import { ImageZoomModal } from "../components/ui/ImageZoomModal";
 import { CustomCuttingModal } from "../components/ui/CustomCuttingModal";
+import { SpecialRequirementModal } from "../components/ui/SpecialRequirementModal";
 import { ColourSwatch } from "../components/ui/ColourSwatch";
 import { API_BASE_URL } from "../config/api";
 import { CORE_TO_SQMM_MAP } from "../config/cableSpecs";
@@ -36,6 +37,19 @@ const formatSpecificationText = (text: string | null | undefined): string => {
   return normalized
     .replace(/(?:Rating|Current|Capacity|Rated Current|Spec|Specification)\s*:\s*25\b(?!\s*(?:mm|sqmm|core))/gi, '$&: 25A')
     .replace(/\b25\s*(?:amps?|amperes?)\b/gi, '25A');
+};
+
+const getBrandFallback = (brand?: any, name?: string) => {
+  const b = (typeof brand === 'object' ? brand?.name : brand || '').toLowerCase();
+  const n = (name || '').toLowerCase();
+  if (b.includes('eaton') || n.includes('pkzm') || n.includes('dilm') || n.includes('breaker') || n.includes('contactor')) return '/images/promo-eaton.jpg';
+  if (b.includes('mennekes') || n.includes('powertop') || n.includes('amaxx') || n.includes('socket') || n.includes('plug')) return '/images/promo-mennekes.jpg';
+  if (b.includes('partex') || n.includes('promark') || n.includes('pa ') || n.includes('marker')) return '/images/promo-partex.jpg';
+  if (n.includes('skintop') || n.includes('gland')) return '/images/card-skintop.jpg';
+  if (n.includes('silvyn') || n.includes('conduit')) return '/images/card-conduit.jpg';
+  if (n.includes('unitronic')) return '/images/card-unitronic.jpg';
+  if (n.includes('uniplus')) return '/images/card-uniplus.jpg';
+  return '/images/card-olflex.jpg';
 };
 
 export const ProductDetail: React.FC = () => {
@@ -302,6 +316,7 @@ export const ProductDetail: React.FC = () => {
   const [selectedImg, setSelectedImg] = useState(product.image || "/images/cable-olflex-cores.png");
   const [rfqOpen, setRfqOpen] = useState(false);
   const [isCuttingModalOpen, setIsCuttingModalOpen] = useState(false);
+  const [isSpecialEnquiryModalOpen, setIsSpecialEnquiryModalOpen] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const imgBoxRef = useRef<HTMLDivElement>(null);
   const [scrollZoom, setScrollZoom] = useState(1);
@@ -734,7 +749,7 @@ export const ProductDetail: React.FC = () => {
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
-                    target.src = product.image || "/images/card-olflex.jpg";
+                    target.src = getBrandFallback(product.brand, product.name);
                   }}
                 />
               </div>
@@ -746,7 +761,7 @@ export const ProductDetail: React.FC = () => {
 
               {/* Requirement 2: Dynamic Part Number clearly visible on the Left Column */}
               <div className="absolute top-4 right-4 text-xs font-mono text-slate-800 font-bold bg-white/95 backdrop-blur-xs px-3 py-1 rounded-lg border border-slate-200 shadow-sm pointer-events-none flex items-center gap-1.5">
-                <span className="text-[10px] text-slate-400 uppercase">Part #</span>
+                <span className="text-[10px] text-slate-900 font-extrabold uppercase">Part #</span>
                 <span className="text-orange-600 font-black">{dynamicPartNo}</span>
               </div>
             </div>
@@ -773,8 +788,8 @@ export const ProductDetail: React.FC = () => {
             </div>
 
             {/* Left Catalog Reference Strip */}
-            <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-600 bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-2xs">
-              <span className="text-slate-500 font-sans">Catalog Reference:</span>
+            <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-900 bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-2xs">
+              <span className="text-slate-900 font-bold font-sans">Catalog Reference:</span>
               <span className="text-slate-900 font-black">
                 {primaryIdentifier} · Part #{dynamicPartNo}
               </span>
@@ -921,48 +936,48 @@ export const ProductDetail: React.FC = () => {
                     <span className="text-3xl sm:text-4xl font-black font-mono text-slate-900 tabular-nums">
                       ₹{calculatedPrice % 1 === 0 ? calculatedPrice.toLocaleString("en-IN") : calculatedPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
-                    <span className="text-xs text-slate-500 font-mono font-bold">
+                    <span className="text-xs text-slate-900 font-mono font-bold">
                       /{product.unit}
                     </span>
                   </div>
                 </div>
 
                 <div className="text-left sm:text-right">
-                  <span className="text-[11px] text-slate-500 font-bold block mb-1">
+                  <span className="text-[11px] text-slate-900 font-black block mb-1">
                     Update Qty ({product.unit === 'meter' ? 'Mtrs' : 'Nos'})
                   </span>
                   <div className="flex items-center justify-start sm:justify-end">
-                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                      <button onClick={handleStepDown} className="px-3.5 py-1.5 bg-slate-50 hover:bg-orange-50 hover:text-orange-600 text-slate-600 font-bold border-r border-slate-200 transition-colors active:bg-slate-200">-</button>
-                      <span className="px-5 py-1.5 text-base sm:text-sm font-black font-mono text-slate-900 bg-white min-w-[3.5rem] text-center">{qty}</span>
-                      <button onClick={handleStepUp} className="px-3.5 py-1.5 bg-slate-50 hover:bg-orange-50 hover:text-orange-600 text-slate-600 font-bold border-l border-slate-200 transition-colors active:bg-slate-200">+</button>
+                    <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden shadow-sm bg-white">
+                      <button onClick={handleStepDown} className="px-3.5 py-1.5 bg-slate-50 hover:bg-orange-50 hover:text-orange-600 text-slate-800 font-black border-r border-slate-300 transition-colors active:bg-slate-200">-</button>
+                      <span className="px-5 py-1.5 text-base sm:text-sm font-black font-mono text-slate-950 bg-white min-w-[3.5rem] text-center">{qty}</span>
+                      <button onClick={handleStepUp} className="px-3.5 py-1.5 bg-slate-50 hover:bg-orange-50 hover:text-orange-600 text-slate-800 font-black border-l border-slate-300 transition-colors active:bg-slate-200">+</button>
                     </div>
                   </div>
                 </div>
               </div>
 
               {product.unit === 'meter' && (
-                <div className="text-[10px] sm:text-[11px] text-amber-700 font-medium flex items-start gap-1 mt-1">
-                  <span className="text-amber-500 shrink-0">⚠️</span>
+                <div className="text-[10px] sm:text-[11px] text-amber-900 font-bold flex items-start gap-1 mt-1">
+                  <span className="text-amber-600 shrink-0">⚠️</span>
                   <span>Caution: order Multiple of  25 mtrs for all multicore</span>
                 </div>
               )}
 
               {/* Dynamic Cost Projection */}
-              <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
+              <div className="pt-3 border-t border-slate-200 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-900 font-bold">
                   <span>Total:</span>
-                  <span className="font-mono text-slate-900 font-bold tabular-nums">
+                  <span className="font-mono text-slate-950 font-black tabular-nums">
                     ₹{lineTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-900 font-bold">
                   <span>GST (18%):</span>
-                  <span className="font-mono text-slate-900 font-bold tabular-nums">
+                  <span className="font-mono text-slate-950 font-black tabular-nums">
                     ₹{gstLine.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-100">
+                <div className="flex justify-between text-sm font-black text-slate-950 pt-2 border-t border-slate-200">
                   <span>Estimated Total (Incl. GST):</span>
                   <span className="text-orange-600 font-mono tabular-nums text-lg font-black">
                     ₹{totalWithGst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -974,32 +989,47 @@ export const ProductDetail: React.FC = () => {
               <div className="grid grid-cols-1 gap-3 pt-1">
                 <button
                   onClick={handleAddToCart}
-                  className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 ${isInCart
-                      ? "bg-emerald-50 border border-emerald-300 text-emerald-800"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300"
+                  className={`py-3 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 ${isInCart
+                      ? "bg-emerald-50 border border-emerald-400 text-emerald-950"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-950 border border-slate-300"
                     }`}
                 >
                   {isInCart ? (
                     <>
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 text-emerald-700" />
                       <span>In RFQ Cart</span>
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4 text-slate-900" />
                       <span>Add to Quote Cart</span>
                     </>
                   )}
                 </button>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-900 font-bold pt-1">
                 <span>Direct Warehouse Dispatch from Bangalore</span>
                 <button
+                  type="button"
                   onClick={() => setIsCuttingModalOpen(true)}
-                  className="text-orange-600 font-bold hover:underline cursor-pointer"
+                  className="text-orange-600 font-extrabold hover:underline cursor-pointer"
                 >
                   Need Custom Project Cutting?
+                </button>
+              </div>
+
+              {/* Special Product Requirements & Lengths Enquiry Callout */}
+              <div className="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between gap-2.5 bg-orange-50/80 rounded-xl px-3 py-2 border border-orange-200">
+                <p className="text-[11px] font-bold text-slate-950 leading-snug">
+                  For any special product requirements or special cable lengths, please send an enquiry.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsSpecialEnquiryModalOpen(true)}
+                  className="shrink-0 inline-flex items-center text-[11px] font-black text-white bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors cursor-pointer"
+                >
+                  Click Here
                 </button>
               </div>
             </div>
@@ -1077,42 +1107,42 @@ export const ProductDetail: React.FC = () => {
               {/* Requirement 3: Technical data fields update dynamically */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Conductor Design</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Conductor Design</span>
                   <span className="text-slate-900 font-bold text-sm">
                     {product.conductor || "Fine-wire bare copper, Class 5"}
                   </span>
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Nominal Voltage</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Nominal Voltage</span>
                   <span className="text-slate-900 font-bold text-sm">
                     {product.voltage || "300 / 500 V"}
                   </span>
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Operating Temp</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Operating Temp</span>
                   <span className="text-slate-900 font-bold text-sm">
                     {product.tempRange || "-40°C to +80°C"}
                   </span>
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Bending Radius</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Bending Radius</span>
                   <span className="text-slate-900 font-bold text-sm">
                     Flexing: 10x OD
                   </span>
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Flame Retardancy</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Flame Retardancy</span>
                   <span className="text-slate-900 font-bold text-sm">
                     IEC 60332-1-2
                   </span>
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Oil Resistance</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Oil Resistance</span>
                   <span className="text-slate-900 font-bold text-sm">
                     DIN EN 50290-2-22
                   </span>
@@ -1120,7 +1150,7 @@ export const ProductDetail: React.FC = () => {
 
                 {/* Dynamic Cross Section */}
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Cross Section (SQMM)</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Cross Section (SQMM)</span>
                   <span className="text-slate-900 font-bold text-sm font-mono">
                     {isConfigurable ? `${sizeNum} mm²` : formatSpecificationText(dbProduct?.sqmm || product.sqmm || (product.size ? `${product.size} mm²` : '0.5 - 35 mm²'))}
                   </span>
@@ -1128,7 +1158,7 @@ export const ProductDetail: React.FC = () => {
 
                 {/* Dynamic Core Configuration */}
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">Core Configuration</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Core Configuration</span>
                   <span className="text-slate-900 font-bold text-sm font-mono">
                     {isConfigurable ? `${coreNum} Cores (${earthChar === 'G' ? 'With Earth G' : 'All Numbered X'})` : (dbProduct?.core ? `${dbProduct.core} Cores` : (product.core ? `${product.core} Cores` : 'Single & Multi-Core'))}
                   </span>
@@ -1137,7 +1167,7 @@ export const ProductDetail: React.FC = () => {
                 {/* Core Identification Spec Box */}
                 {isConfigurable && (
                   <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1 sm:col-span-2">
-                    <span className="text-slate-400 font-mono block">Core Identification Standard</span>
+                    <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Core Identification Standard</span>
                     <span className="text-slate-900 font-bold text-xs leading-relaxed">
                       {coreDescription}
                     </span>
@@ -1146,7 +1176,7 @@ export const ProductDetail: React.FC = () => {
 
                 {(dbProduct?.colour || product.colour) && (
                   <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                    <span className="text-slate-400 font-mono block">Sheath / Core Colour</span>
+                    <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">Sheath / Core Colour</span>
                     <div className="pt-0.5">
                       <ColourSwatch colour={dbProduct?.colour || product.colour} size="sm" />
                     </div>
@@ -1154,7 +1184,7 @@ export const ProductDetail: React.FC = () => {
                 )}
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-1">
-                  <span className="text-slate-400 font-mono block">UOM</span>
+                  <span className="text-slate-900 font-black uppercase text-[11px] font-mono tracking-wider block">UOM</span>
                   <span className="text-slate-900 font-bold text-sm">
                     {dbProduct?.uom || product.uom || product.unit || 'Meter (m)'}
                   </span>
@@ -1163,6 +1193,7 @@ export const ProductDetail: React.FC = () => {
             </div>
           </div>
         </div>
+
 
         {/* RFQ Modal */}
         <RFQModal
@@ -1177,6 +1208,12 @@ export const ProductDetail: React.FC = () => {
           onClose={() => setIsCuttingModalOpen(false)}
           productName={displayProductName}
           partNo={dynamicPartNo}
+        />
+
+        {/* Common Blank Special Requirement Enquiry Modal */}
+        <SpecialRequirementModal
+          isOpen={isSpecialEnquiryModalOpen}
+          onClose={() => setIsSpecialEnquiryModalOpen(false)}
         />
 
         {/* Fullscreen Image Zoom Modal (+/-) */}

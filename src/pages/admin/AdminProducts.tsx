@@ -270,7 +270,71 @@ export const AdminProducts: React.FC = () => {
   const [sortField, setSortField] = useState<'name' | 'partNo' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [visibleLimit, setVisibleLimit] = useState(20);
+
+  // Imported Excel files management state
+  const [importedFiles, setImportedFiles] = useState<any[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [isImportFilesModalOpen, setIsImportFilesModalOpen] = useState(false);
+  const [viewingFileDetail, setViewingFileDetail] = useState<any | null>(null);
+  const [loadingFileDetail, setLoadingFileDetail] = useState(false);
+  const [deletingFile, setDeletingFile] = useState<any | null>(null);
+  const [isDeletingFileAction, setIsDeletingFileAction] = useState(false);
+  const [showDeleteProductsPreview, setShowDeleteProductsPreview] = useState(false);
+  const [onlyShowImportedBatch, setOnlyShowImportedBatch] = useState(false);
+  const [lastImportedPartNos, setLastImportedPartNos] = useState<string[]>([]);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  // Bulk Product Images State (Requirement: Product Image Bulk Management)
+  const [isBulkImageModalOpen, setIsBulkImageModalOpen] = useState(false);
+  const [bulkImageFiles, setBulkImageFiles] = useState<File[]>([]);
+  const [bulkImageUploading, setBulkImageUploading] = useState(false);
+  const [bulkImageResult, setBulkImageResult] = useState<{
+    message: string;
+    matchedCount: number;
+    unmatchedCount: number;
+    updated: Array<{ partNo: string; name: string; fileName: string }>;
+    unmatched: string[];
+  } | null>(null);
+
+  const handleBulkImageUpload = async () => {
+    if (bulkImageFiles.length === 0) return;
+    setBulkImageUploading(true);
+    try {
+      const formData = new FormData();
+      bulkImageFiles.forEach((f) => formData.append('images', f));
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/products/bulk-images`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBulkImageResult(data);
+        fetchProducts();
+      } else {
+        setBulkImageResult({
+          message: data.error || 'Failed to upload images',
+          matchedCount: 0,
+          unmatchedCount: bulkImageFiles.length,
+          updated: [],
+          unmatched: bulkImageFiles.map(f => f.name)
+        });
+      }
+    } catch (err: any) {
+      setBulkImageResult({
+        message: err.message || 'Error uploading images',
+        matchedCount: 0,
+        unmatchedCount: bulkImageFiles.length,
+        updated: [],
+        unmatched: bulkImageFiles.map(f => f.name)
+      });
+    } finally {
+      setBulkImageUploading(false);
+    }
+  };
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
@@ -435,10 +499,68 @@ export const AdminProducts: React.FC = () => {
   };
   const fetchBrands = fetchMakes;
 
+  const fetchImportedFiles = async () => {
+    try {
+      setLoadingFiles(true);
+      const res = await fetch(`${API_BASE_URL}/api/products/imported-files`);
+      if (res.ok) {
+        const data = await res.json();
+        setImportedFiles(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch imported files', err);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const viewFileDetail = async (fileId: string) => {
+    try {
+      setLoadingFileDetail(true);
+      setViewingFileDetail({ _id: fileId, loading: true });
+      const res = await fetch(`${API_BASE_URL}/api/products/imported-files/${fileId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setViewingFileDetail(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch file detail', err);
+    } finally {
+      setLoadingFileDetail(false);
+    }
+  };
+
+  const executeDeleteFile = async (fileId: string, deleteProducts = true) => {
+    try {
+      setIsDeletingFileAction(true);
+      const res = await fetch(`${API_BASE_URL}/api/products/imported-files/${fileId}?deleteProducts=${deleteProducts}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await fetchImportedFiles();
+        await fetchProducts();
+        setDeletingFile(null);
+        setViewingFileDetail(null);
+        setOnlyShowImportedBatch(false);
+        setLastImportedPartNos([]);
+        alert(data.message || 'File and imported products deleted successfully.');
+      } else {
+        alert('Failed to delete imported file.');
+      }
+    } catch (err) {
+      console.error('Failed to delete imported file', err);
+      alert('Error occurred while deleting file.');
+    } finally {
+      setIsDeletingFileAction(false);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
     fetchBrands();
+    fetchImportedFiles();
   }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -465,9 +587,21 @@ export const AdminProducts: React.FC = () => {
       const data = await res.json();
       setUploadResult(data);
 
-      if (res.ok) {
+            if (res.ok) {
+        // Reset filters & search so newly imported products are immediately displayed at the top
+        setActiveCategory('All');
+        setActiveBrand('All');
+        setSelectedSubSeries('all');
+        setSearchQuery('');
+        setSortField(null);
+        setVisibleLimit(prev => Math.max(prev, (data.successCount || 20) + 10));
+
+        if (Array.isArray(data.importedPartNos) && data.importedPartNos.length > 0) {
+          setLastImportedPartNos(data.importedPartNos);
+        }
+
         await fetchProducts();
-        alert(data.message || `Import completed: ${data.successCount || 0} products imported/updated.`);
+        await fetchImportedFiles();
       } else {
         alert(data.error || 'Failed to import file');
       }
@@ -480,34 +614,40 @@ export const AdminProducts: React.FC = () => {
     }
   };
 
-  // Requirement 6.1: Product Excel Template Download
+  // Requirement 8: Product Excel Template Download
   const handleDownloadProductTemplate = () => {
     const templateRows = [
       {
+        'Serial Number': 1,
         'Part Number': '1119003',
-        'Description': 'ÖLFLEX® CLASSIC 110 3G1.5',
-        'Make': 'LAPP',
-        'Category': 'Control Cables',
+        'Product Name': 'ÖLFLEX® CLASSIC 110 3G1.5',
+        'Category': 'Power and Control Cables',
+        'Brand': 'LAPP',
         'Core': '3',
         'Cross Section': '1.5',
-        'UOM': 'Meter',
-        'List Price': 148.50,
         'Outer Diameter': '6.7 mm',
         'Weight': '75 kg/km',
+        'UOM': 'Meter',
+        'Price': 148.50,
+        'MRP': 165.00,
+        'GST (%)': 18,
         'Valid From': '2026-10-01',
         'Expiry Date': '2027-03-31'
       },
       {
+        'Serial Number': 2,
         'Part Number': 'EATON-PKZM0-10',
-        'Description': 'Eaton PKZM0-10 Motor Protective Circuit Breaker',
-        'Make': 'Eaton',
+        'Product Name': 'Eaton PKZM0-10 Motor Protective Circuit Breaker',
         'Category': 'Motor Protection',
+        'Brand': 'Eaton',
         'Core': '',
         'Cross Section': '',
-        'UOM': 'Piece',
-        'List Price': 2850.00,
         'Outer Diameter': '',
         'Weight': '0.35 kg',
+        'UOM': 'Piece',
+        'Price': 2850.00,
+        'MRP': 3100.00,
+        'GST (%)': 18,
         'Valid From': '2026-10-01',
         'Expiry Date': '2027-03-31'
       }
@@ -515,22 +655,69 @@ export const AdminProducts: React.FC = () => {
 
     const ws = XLSX.utils.json_to_sheet(templateRows);
     ws['!cols'] = [
-      { wch: 18 },
-      { wch: 38 },
-      { wch: 12 },
-      { wch: 22 },
-      { wch: 8 },
       { wch: 14 },
-      { wch: 10 },
+      { wch: 18 },
+      { wch: 42 },
+      { wch: 24 },
+      { wch: 12 },
+      { wch: 8 },
       { wch: 14 },
       { wch: 16 },
       { wch: 14 },
+      { wch: 10 },
       { wch: 14 },
       { wch: 14 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 14 }
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'ProductMaster');
     XLSX.writeFile(wb, 'Product_Catalog_Template.xlsx');
+  };
+
+  // Requirement 8: Product Excel Export
+  const handleExportProductsExcel = () => {
+    const listToExport = filteredProducts && filteredProducts.length > 0 ? filteredProducts : products;
+    const exportRows = listToExport.map((p, idx) => ({
+      'Serial Number': idx + 1,
+      'Part Number': p.partNo || '',
+      'Product Name': p.name || '',
+      'Category': p.categoryName || '',
+      'Brand': p.brandName || '',
+      'Core': p.core || '',
+      'Cross Section': p.sqmm || p.coreSize || '',
+      'Outer Diameter': p.outerDiameter || '',
+      'Weight': p.weight || '',
+      'UOM': p.uom || 'Meter',
+      'Price': p.price ?? '',
+      'MRP': p.mrp ?? '',
+      'GST (%)': p.gst ?? 18,
+      'Valid From': p.validFrom || '',
+      'Expiry Date': p.expiryDate || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportRows);
+    ws['!cols'] = [
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 38 },
+      { wch: 24 },
+      { wch: 14 },
+      { wch: 8 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 14 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 14 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    XLSX.writeFile(wb, `Products_Catalog_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   // Category file upload handlers (Requirement 5.5 & 5.6)
@@ -1311,6 +1498,10 @@ export const AdminProducts: React.FC = () => {
   const filteredProducts = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
+    if (onlyShowImportedBatch && lastImportedPartNos.length > 0) {
+      return products.filter(p => lastImportedPartNos.includes(String(p.partNo || '').trim()));
+    }
+
     return products.filter((p) => {
       const pName = String(p.name || '').toLowerCase();
       const pPartNo = String(p.partNo || '').toLowerCase();
@@ -1428,9 +1619,18 @@ export const AdminProducts: React.FC = () => {
 
           {isAdmin && activeTab === 'Products' && (
             <>
+              <button
+                onClick={handleDownloadProductTemplate}
+                title="Download Excel Template"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-lg transition-colors border border-blue-200 text-xs cursor-pointer"
+              >
+                <Download size={14} />
+                Download Template
+              </button>
+
               <label
                 title="Import Excel"
-                className={`flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 text-xs ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 text-xs ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <input
                   type="file"
@@ -1439,9 +1639,27 @@ export const AdminProducts: React.FC = () => {
                   className="hidden"
                   disabled={uploading}
                 />
-                {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-1" /> : <FileSpreadsheet size={14} className="mr-1" />}
-                {uploading ? 'Importing...' : 'Import'}
+                {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /> : <Upload size={14} />}
+                {uploading ? 'Importing...' : 'Import Excel'}
               </label>
+
+              <button
+                onClick={handleExportProductsExcel}
+                title="Export Products to Excel"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors border border-slate-200 text-xs cursor-pointer"
+              >
+                <FileSpreadsheet size={14} className="text-emerald-700" />
+                Export Excel
+              </button>
+
+              <button
+                onClick={() => { setIsBulkImageModalOpen(true); setBulkImageResult(null); setBulkImageFiles([]); }}
+                title="Bulk Product Images"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 font-semibold rounded-lg transition-colors border border-purple-200 text-xs cursor-pointer"
+              >
+                <ImageIcon size={14} />
+                Bulk Images
+              </button>
 
               <button
                 onClick={openAddModal}
@@ -1761,7 +1979,7 @@ export const AdminProducts: React.FC = () => {
           )}
 
           {/* Products Table Container */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+          <div id="products-catalog-table" className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm min-w-[950px]">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
@@ -3537,6 +3755,177 @@ export const AdminProducts: React.FC = () => {
               <X size={24} />
             </button>
             <img src={viewingImage} alt="Product" className="max-w-full max-h-[80vh] object-contain rounded-2xl bg-white/5 border border-white/10 shadow-2xl" />
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Bulk Product Images Modal (Requirement: Product Image Bulk Management) */}
+      {isBulkImageModalOpen && createPortal(
+        <div
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBulkImageModalOpen(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 relative my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <ImageIcon size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Bulk Product Image Upload</h3>
+                  <p className="text-xs text-slate-500">Auto-match images to products by Part Number</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBulkImageModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl text-xs text-purple-950 space-y-1.5">
+                <p className="font-semibold text-purple-900">How Image Mapping Works:</p>
+                <ul className="list-disc list-inside space-y-1 text-slate-700">
+                  <li>Name each image file with the product&apos;s <strong>Part Number</strong> (e.g. <code className="bg-white px-1.5 py-0.5 rounded border border-purple-200 text-purple-700 font-mono">1119003.jpg</code>, <code className="bg-white px-1.5 py-0.5 rounded border border-purple-200 text-purple-700 font-mono">55501010.png</code>).</li>
+                  <li>Slashes in part numbers can be replaced with underscores (e.g. <code className="bg-white px-1.5 py-0.5 rounded border border-purple-200 text-purple-700 font-mono">PART_123.jpg</code> matches <code className="font-mono">PART/123</code>).</li>
+                  <li>Supports formats: JPG, PNG, WEBP, SVG. Multiple files can be selected at once.</li>
+                </ul>
+              </div>
+
+              {/* Upload Dropzone */}
+              <div className="border-2 border-dashed border-slate-300 hover:border-purple-500 rounded-xl p-6 text-center transition-colors bg-slate-50/50">
+                <input
+                  type="file"
+                  id="bulk-product-images-input"
+                  multiple
+                  accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setBulkImageFiles(files);
+                    setBulkImageResult(null);
+                  }}
+                  className="hidden"
+                  disabled={bulkImageUploading}
+                />
+                <label
+                  htmlFor="bulk-product-images-input"
+                  className="flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2">
+                    <Upload size={22} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-800">
+                    {bulkImageFiles.length > 0
+                      ? `${bulkImageFiles.length} image(s) selected`
+                      : 'Click to select multiple images'}
+                  </span>
+                  <span className="text-xs text-slate-500 mt-1">PNG, JPG, WEBP, SVG</span>
+                </label>
+              </div>
+
+              {/* File list preview */}
+              {bulkImageFiles.length > 0 && !bulkImageResult && (
+                <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-lg p-2.5 bg-slate-50 space-y-1">
+                  <div className="text-[11px] font-bold text-slate-600 mb-1">
+                    Selected Files ({bulkImageFiles.length}):
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {bulkImageFiles.slice(0, 30).map((f, i) => (
+                      <span key={i} className="text-[11px] bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                        {f.name}
+                      </span>
+                    ))}
+                    {bulkImageFiles.length > 30 && (
+                      <span className="text-[11px] text-slate-500 py-0.5">
+                        +{bulkImageFiles.length - 30} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Results View */}
+              {bulkImageResult && (
+                <div className="space-y-2.5">
+                  <div className={`p-3 rounded-xl border text-xs ${
+                    bulkImageResult.matchedCount > 0
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-amber-50 border-amber-200 text-amber-800'
+                  }`}>
+                    <div className="font-bold flex items-center gap-1.5">
+                      {bulkImageResult.matchedCount > 0 ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                      {bulkImageResult.message}
+                    </div>
+                  </div>
+
+                  {bulkImageResult.updated && bulkImageResult.updated.length > 0 && (
+                    <div className="border border-emerald-200 bg-emerald-50/50 rounded-lg p-2.5 max-h-32 overflow-y-auto text-xs">
+                      <div className="font-bold text-emerald-900 mb-1">
+                        Matched Products ({bulkImageResult.updated.length}):
+                      </div>
+                      <div className="space-y-1 text-emerald-800">
+                        {bulkImageResult.updated.map((u, i) => (
+                          <div key={i} className="flex items-center justify-between text-[11px]">
+                            <span>Part #{u.partNo} - {u.name}</span>
+                            <span className="text-slate-500 font-mono">{u.fileName}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {bulkImageResult.unmatched && bulkImageResult.unmatched.length > 0 && (
+                    <div className="border border-amber-200 bg-amber-50/50 rounded-lg p-2.5 max-h-32 overflow-y-auto text-xs">
+                      <div className="font-bold text-amber-900 mb-1">
+                        Unmatched Files ({bulkImageResult.unmatched.length}) - No matching Part Number:
+                      </div>
+                      <div className="flex flex-wrap gap-1 text-[11px] text-amber-800">
+                        {bulkImageResult.unmatched.map((fn, i) => (
+                          <span key={i} className="bg-white border border-amber-200 px-1.5 py-0.5 rounded font-mono">
+                            {fn}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsBulkImageModalOpen(false)}
+                  className="px-3.5 py-1.5 text-xs text-slate-600 hover:text-slate-800 font-medium rounded-lg hover:bg-slate-100 cursor-pointer"
+                >
+                  Close
+                </button>
+                {bulkImageFiles.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBulkImageUpload}
+                    disabled={bulkImageUploading}
+                    className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md shadow-purple-600/20 disabled:opacity-50 cursor-pointer"
+                  >
+                    {bulkImageUploading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Uploading & Mapping...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} />
+                        Upload {bulkImageFiles.length} Image(s)
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>,
         document.body
