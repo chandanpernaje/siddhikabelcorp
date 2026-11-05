@@ -71,10 +71,7 @@
   [class*="bg-slate-8"] .text-slate-500,
   [class*="bg-slate-9"] .text-slate-300,
   [class*="bg-slate-9"] .text-slate-200,
-  [class*="bg-slate-8"] .text-slate-300,
-  footer .text-slate-400,
-  footer .text-slate-500,
-  footer .text-gray-400 {
+  [class*="bg-slate-8"] .text-slate-300 {
     color: #e2e8f0 !important;
   }
 

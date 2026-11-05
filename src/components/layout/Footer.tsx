@@ -50,32 +50,32 @@ export const Footer: React.FC = () => {
 
         {/* Col 2: Brand Portfolios */}
         <div className="space-y-3">
-          <h4 className="text-slate-900 font-semibold text-sm tracking-wide">
+          <h4 className="text-slate-950 font-bold text-sm tracking-wide">
             Authorized Brands
           </h4>
           <ul className="space-y-2">
             <li>
-              <Link to="/about-lapp" onClick={() => window.scrollTo(0, 0)} className="hover:text-blue-400 transition-colors">
+              <Link to="/about-lapp" onClick={() => window.scrollTo(0, 0)} className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 LAPP Kabel Stuttgart
               </Link>
             </li>
             <li>
-              <Link to="/about-eaton" onClick={() => window.scrollTo(0, 0)} className="hover:text-blue-400 transition-colors">
+              <Link to="/about-eaton" onClick={() => window.scrollTo(0, 0)} className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 EATON Moeller Switchgear
               </Link>
             </li>
             <li>
-              <Link to="/about-mennekes" onClick={() => window.scrollTo(0, 0)} className="hover:text-blue-400 transition-colors">
+              <Link to="/about-mennekes" onClick={() => window.scrollTo(0, 0)} className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 MENNEKES Industrial Plugs
               </Link>
             </li>
             <li>
-              <Link to="/about-partex" onClick={() => window.scrollTo(0, 0)} className="hover:text-blue-400 transition-colors">
+              <Link to="/about-partex" onClick={() => window.scrollTo(0, 0)} className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 PARTEX Marking Systems
               </Link>
             </li>
             <li>
-              <Link to="/olflex-cables" onClick={() => window.scrollTo(0, 0)} className="hover:text-blue-400 transition-colors">
+              <Link to="/olflex-cables" onClick={() => window.scrollTo(0, 0)} className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 ÖLFLEX® Cable Center
               </Link>
             </li>
@@ -84,36 +84,35 @@ export const Footer: React.FC = () => {
 
         {/* Col 3: Product Categories */}
         <div className="space-y-3">
-          <h4 className="text-slate-900 font-semibold text-sm tracking-wide">
+          <h4 className="text-slate-950 font-bold text-sm tracking-wide">
             Product Catalogs
           </h4>
           <ul className="space-y-2">
             <li>
-              <a href="/#catalog" className="hover:text-blue-400 transition-colors">
+              <a href="/#catalog" className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 ÖLFLEX® Flexible Control Cables
               </a>
             </li>
             <li>
-              <a href="/#catalog" className="hover:text-blue-400 transition-colors">
+              <a href="/#catalog" className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 Industrial Ethernet &amp; PROFINET
               </a>
             </li>
             <li>
-              <a href="/#catalog" className="hover:text-blue-400 transition-colors">
+              <a href="/#catalog" className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 CEE 16A/32A Watertight Plugs
               </a>
             </li>
             <li>
-              <a href="/#catalog" className="hover:text-blue-400 transition-colors">
+              <a href="/#catalog" className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 Motor Starters &amp; Contactors
               </a>
             </li>
             <li>
-              <a href="/#catalog" className="hover:text-blue-400 transition-colors">
+              <a href="/#catalog" className="text-slate-800 hover:text-orange-600 font-semibold transition-colors">
                 SKINTOP® Cable Gland Systems
               </a>
             </li>
-
           </ul>
         </div>
 
@@ -124,37 +123,37 @@ export const Footer: React.FC = () => {
           </h4>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <MapPin className="w-4 h-4 text-rose-400 shrink-0 mt-1" />
-              <div className="flex flex-col">
-                <span className="font-semibold text-slate-700">Siddhi Kabel Corporation Private Limited</span>
+              <MapPin className="w-4 h-4 text-orange-600 shrink-0 mt-1" />
+              <div className="flex flex-col text-slate-900 font-semibold leading-relaxed">
+                <span className="font-bold text-slate-950">Siddhi Kabel Corporation Private Limited</span>
                 <span>No.3, 1st Main Road, 1st Block,</span>
                 <span>Banashankari 3rd Stage,</span>
                 <span>Bangalore 560 085.</span>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Phone className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <Phone className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
               <div className="flex flex-col">
-                <a href="tel:+919620000947" className="font-semibold text-slate-700 hover:text-rose-400 transition-colors">+91 96200 00947</a>
-                <a href="tel:+919886058511" className="text-slate-500 hover:text-rose-400 transition-colors text-xs">+91 98860 58511</a>
+                <a href="tel:+919620000947" className="font-extrabold text-slate-950 hover:text-orange-600 transition-colors text-sm">+91 96200 00947</a>
+                <a href="tel:+919886058511" className="font-bold text-slate-900 hover:text-orange-600 transition-colors text-xs">+91 98860 58511</a>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Mail className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <div className="flex flex-col gap-1.5">
+              <Mail className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-2">
                 <div className="flex flex-col">
-                  <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Information</span>
-                  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=info@siddhikabel.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition-colors">info@siddhikabel.com</a>
+                  <span className="text-[11px] uppercase tracking-wider text-slate-900 font-black">Information</span>
+                  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=info@siddhikabel.com" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-950 hover:text-orange-600 underline transition-colors">info@siddhikabel.com</a>
                 </div>
 
                 <div className="flex flex-col">
-                  <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Enquiry</span>
-                  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=enquiry@siddhikabel.com" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition-colors">enquiry@siddhikabel.com</a>
+                  <span className="text-[11px] uppercase tracking-wider text-slate-900 font-black">Enquiry</span>
+                  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=enquiry@siddhikabel.com" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-950 hover:text-orange-600 underline transition-colors">enquiry@siddhikabel.com</a>
                 </div>
               </div>
             </div>
-            <div className="flex items-start gap-3 text-slate-600">
-              <Clock className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 text-slate-900 font-semibold">
+              <Clock className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
               <div className="flex flex-col">
                 <span>Mon - Fri: 9:30 AM - 6:30 PM</span>
                 <span>Sat: 9:30 AM - 5:00 PM</span>
